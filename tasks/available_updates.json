@@ -1,0 +1,7 @@
+{
+  "description": "Collects information about available updates on a target system",
+  "implementations": [
+    {"name": "available_updates.sh", "requirements": ["shell"]},
+    {"name": "available_updates.ps1", "requirements": ["powershell"]}
+  ]
+}
