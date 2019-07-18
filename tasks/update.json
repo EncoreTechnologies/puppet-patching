@@ -1,0 +1,22 @@
+{
+  "description": "Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windows Update and `choco update`.",
+  "implementations": [
+    {"name": "update.sh", "requirements": ["shell"]},
+    {
+      "name": "update.ps1",
+      "requirements": ["powershell"],
+      "files": ["patching/files/powershell/TaskUtils.ps1"]
+    }
+  ],
+  "parameters": {
+    "names": {
+      "description": "Name of the package(s) to update. If nothing is passed then all packages will be updated.",
+      "type": "Optional[Array[String]]"
+    },
+    "log_file": {
+      "description": "Log file for patching actions.",
+      "type": "Optional[String[1]]"
+    }
+  }
+}
+
