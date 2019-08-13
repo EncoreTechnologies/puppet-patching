@@ -1,0 +1,17 @@
+{
+  "description": "Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.",
+  "implementations": [
+    {
+      "name": "cache_update.sh",
+      "requirements": ["shell"],
+      "files": ["patching/files/bash/os_test.sh"]
+    },
+    {
+      "name": "cache_update.ps1",
+      "requirements": ["powershell"],
+      "files": ["patching/files/powershell/TaskUtils.ps1"]
+    }
+  ],
+  "parameters": {}
+}
+

@@ -32,7 +32,7 @@ function Invoke-CommandAsLocal {
   # Write script to file and create log file
   $script_file_name = Join-Path ([System.IO.Path]::GetTempPath()) "bolt_script_$($time_stamp).ps1"
   $log_file_name = Join-Path ([System.IO.Path]::GetTempPath()) "bolt_logfile_$($time_stamp).log"
-
+  
   Try {
     New-Item -Path $log_file_name -ItemType "file" | Out-Null
     New-Item -Path $script_file_name -ItemType "file" -Value $ScriptBlock | Out-Null
@@ -113,7 +113,7 @@ function Invoke-CommandAsLocal {
     # Get the task exit code and any logging information
     $output = Get-Content $log_file_name
     $exit_code = $task.LastTaskResult
-
+    
     $return_object | Add-Member -MemberType NoteProperty -Name CommandOutput -Value $output
     $return_object | Add-Member -MemberType NoteProperty -Name ExitCode -Value $exit_code
   }
@@ -135,4 +135,73 @@ function Invoke-CommandAsLocal {
   }
 
   return $return_object
+}
+
+
+# Tests if a command (cli or cmdlet) exists or not
+# if it exists, returns true, otherwise false
+function Test-CommandExists([String]$command) {
+  $oldPreference = $ErrorActionPreference
+  $ErrorActionPreference = 'stop'
+  try {
+    Get-Command $command
+    return $True
+  } catch {
+    return $False
+  }
+  Finally {
+    $ErrorActionPreference=$oldPreference
+  }
+}
+
+################################################################################
+
+# inspired by 
+# https://stackoverflow.com/questions/22002748/hashtables-from-convertfrom-json-have-different-type-from-powershells-built-in-h
+function Convert-PSObjectToHashtable {
+  param (
+    [Parameter(ValueFromPipeline)]
+    $InputObject
+  )
+
+  process
+  {
+    if ($null -eq $InputObject) {
+      return $null
+    }
+
+    if ($InputObject -is [System.Collections.IList]) {
+      $array = @()
+      foreach ($object in $InputObject) {
+        if ($object -is [System.Collections.IList]) {
+          $array += @(Convert-PSObjectToHashtable @($object))
+        } else {
+          $array += (Convert-PSObjectToHashtable $object)
+        }
+      }
+      return @($array)
+    } elseif ($InputObject -is [System.Collections.IDictionary]) {
+      $hash = @{}
+      foreach ($key in $InputObject.Keys) {
+        if ($InputObject[$key]-is [System.Collections.IList]) {
+          $hash[$key] = @(Convert-PSObjectToHashtable @($InputObject[$key]))
+        } else {
+          $hash[$key] = Convert-PSObjectToHashtable $InputObject[$key]
+        }
+      }
+      return $hash
+    } elseif ($InputObject -is [psobject]) {
+      $hash = @{}
+      foreach ($property in $InputObject.PSObject.Properties) {
+        if ($property.Value -is [System.Collections.IList]) {
+          $hash[$property.Name] = @(Convert-PSObjectToHashtable @($property.Value))
+        } else {
+          $hash[$property.Name] = Convert-PSObjectToHashtable $property.Value
+        }
+      }
+      return $hash
+    } else {
+      return $InputObject
+    }
+  }
 }

@@ -1,7 +1,15 @@
 {
   "description": "Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windows Update and `choco update`.",
   "implementations": [
-    {"name": "update.sh", "requirements": ["shell"]},
+    {
+      "name": "update.sh",
+      "requirements": ["shell"],
+      "files": [
+        "patching/files/bash/os_test.sh",
+        "patching/files/bash/update_rh.sh",
+        "patching/files/bash/update_deb.sh"
+      ]
+    },
     {
       "name": "update.ps1",
       "requirements": ["powershell"],
@@ -9,12 +17,20 @@
     }
   ],
   "parameters": {
+    "provider": {
+      "description": "What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not used. For Windows the available values are: 'windows', 'chocolatey', 'all' (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all' is passed and Chocolatey isn't installed then Chocolatey will simply be skipped. If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.",
+      "type": "Optional[String[1]]"
+    },
     "names": {
       "description": "Name of the package(s) to update. If nothing is passed then all packages will be updated.",
       "type": "Optional[Array[String]]"
     },
+    "result_file": {
+      "description": "Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json",
+      "type": "Optional[String[1]]"
+    },
     "log_file": {
-      "description": "Log file for patching actions.",
+      "description": "Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.log",
       "type": "Optional[String[1]]"
     }
   }
