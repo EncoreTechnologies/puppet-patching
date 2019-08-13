@@ -29,7 +29,7 @@ $script_block = {
       if(($status -ne $null) -and $status.RebootPending){
         return $true
       }
-    }catch{}
+    } catch {}
   
     return $false
   }
