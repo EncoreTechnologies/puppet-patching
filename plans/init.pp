@@ -1,5 +1,5 @@
-# Bolt plan to update packages on Linux host
-plan patching::linux (
+# Bolt plan to update hosts (linux and windows together)
+plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,
   String[1]        $log_file       = '/var/log/patching.log',
