@@ -16,7 +16,9 @@ function Invoke-CommandAsLocal {
   param (
     [parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]$ScriptBlock,
-    [String]$ExecutionTimeLimit = "PT3H"
+    [String]$ExecutionTimeLimit = "PT3H",
+    [Boolean]$KeepLogFile = $false,
+    [String]$_installdir = ''
   )
 
   # Build new object to return to user
@@ -126,10 +128,14 @@ function Invoke-CommandAsLocal {
     # Clean up all items created for this function
     # https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-itaskfolder-deletetask
     # Parameters Positions [0]task name [1]additional flags
-    $schduled_tasks_root.DeleteTask($task_name, $null) | Out-Null
-    Remove-Item -Path $log_file_name -Force | Out-Null
-    Remove-Item -Path $script_file_name -Force | Out-Null
-
+    # $schduled_tasks_root.DeleteTask($task_name, $null) | Out-Null
+    if ($KeepLogFile)  {
+      $return_object | Add-Member -MemberType NoteProperty -Name LogFile -Value $log_file_name
+    }
+    else {
+      Remove-Item -Path $log_file_name -Force | Out-Null
+    }
+   # Remove-Item -Path $script_file_name -Force | Out-Null
     # Close Schedule Service connection
     [System.Runtime.Interopservices.Marshal]::ReleaseComObject($scheduler_service) | Out-Null
   }
@@ -204,4 +210,81 @@ function Convert-PSObjectToHashtable {
       return $InputObject
     }
   }
+}
+
+################################################################################
+
+# Searches Windows Update API for all available updates and returns them in a list
+# This performs a search across all possible Server Selection options. 
+# This returns a list of IUpdateResults, the caller is responsible for 
+# interpreting those results.
+function Search-WindowsUpdateResults {
+  param (
+    [String]$criteria ='IsInstalled=0'
+  )
+  # criteria above, searches for updates that aren't installed yet 
+  # https://docs.microsoft.com/en-us/windows/desktop/api/wuapi/nf-wuapi-iupdatesearcher-search
+
+  $updateSession = New-Object -ComObject 'Microsoft.Update.Session'
+  $updateSession.ClientApplicationID = 'windows-update-installer'
+
+  $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
+  $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
+  $updateSearcher = $updateSession.CreateUpdateSearcher()
+  
+  # https://docs.microsoft.com/en-us/windows/win32/api/wuapicommon/ne-wuapicommon-serverselection
+  #
+  # typedef enum tagServerSelection {
+  #   ssDefault,       # 0
+  #   ssManagedServer, # 1
+  #   ssWindowsUpdate, # 2
+  #   ssOthers         # 3
+  # } ServerSelection;
+  #
+  # search all servers
+  $serverSelectionList = @(0, 1, 2)
+  $resultHash = @{}
+  foreach ($serverSelection in $serverSelectionList) {
+    $updateSearcher.ServerSelection = $serverSelection
+    $searchResult = $updateSearcher.Search($criteria)
+    $value = @{ 'result' = $searchResult; }
+    switch ($serverSelection)
+    {
+      0 { $value['name'] = 'Default'; break }
+      1 { $value['name'] = 'ManagedServer'; break }
+      2 { $value['name'] = 'WindowsUpdate'; break }
+      default { $value['name'] = 'Other'; break }
+    }
+    $resultHash[$serverSelection] = $value
+  }
+  return $resultHash
+}
+
+# Searches Windows Update API for all available updates and returns them in a list
+# This performs a search across all possible Server Selection options. 
+# This returns a de-duplicated list of IUpdate objects found across all update servers.
+function Search-WindowsUpdate {
+  param (
+    [String]$criteria ='IsInstalled=0'
+  )
+  $updateList = @()
+  $updatesById = @{}
+  $searchResultHash = Search-WindowsUpdateResults -criteria $criteria
+  foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
+    $value = $searchResultHash[$serverSelection]
+    $searchResult = $value['result']
+    foreach ($update in $searchResult.Updates) {
+      $updateId = $update.Identity.UpdateID
+      
+      # keep a list of de-duplicated updates, based on update ID
+      # we need to do this since we're searching multiple servers and the same
+      # update may be available from >1 source
+      if ($updatesById.ContainsKey($updateId)) {
+        continue;
+      }
+      $updatesById[$updateId] = $update
+      $updateList += $upate
+    }
+  }
+  return @($updateList)
 }

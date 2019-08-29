@@ -1,6 +1,8 @@
 # Bolt plan to check if targets need reboot and have patch_reboot flag set.
 plan patching::reboot_required (
   TargetSpec $nodes,
+  Boolean $reboot = false,
+  String $message = 'NOTICE: This system is currently being updated.',
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
 
@@ -9,11 +11,20 @@ plan patching::reboot_required (
 
   # print out pretty message
   out::message("Host reboot required status: ('+' reboot required; '-' reboot NOT required)")
-  $reboot_required = $reboot_results.filter_set|$res| { !$res['reboot_required'] }.targets
-  $reboot_not_required = $reboot_results.filter_set|$res| { $res['reboot_required'] }.targets
+  $reboot_required = $reboot_results.filter_set|$res| { $res['reboot_required'] }.targets
+  $reboot_not_required = $reboot_results.filter_set|$res| { !$res['reboot_required'] }.targets
   $reboot_results.each|$res| {
     $symbol = ($res['reboot_required']) ? { true => '+' , default => '-' }
     out::message(" ${symbol} ${res.target.name}")
+  }
+
+  ## Reboot the hosts that require it
+  if $reboot and !$reboot_required.empty() {
+    run_plan('reboot',
+             nodes             => $reboot_required,
+             reconnect_timeout => 300,
+             message           => $message,
+             _catch_errors     => true)
   }
 
   # return our results

@@ -3,13 +3,11 @@
   "implementations": [
     {
       "name": "update_history.sh",
-      "requirements": ["shell"],
-      "files": ["patching/files/bash/os_test.sh"]
+      "requirements": ["shell"]
     },
     {
       "name": "update_history.ps1",
-      "requirements": ["powershell"],
-      "files": ["patching/files/powershell/TaskUtils.ps1"]
+      "requirements": ["powershell"]
     }
   ],
   "parameters": {

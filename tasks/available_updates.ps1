@@ -10,36 +10,31 @@ Param(
 Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
 function AvailableUpdates-Windows() {
-  $updateSession = New-Object -ComObject 'Microsoft.Update.Session'
-  $updateSearcher = $updateSession.CreateUpdateSearcher()
-  # https://docs.microsoft.com/en-us/windows/win32/api/wuapicommon/ne-wuapicommon-serverselection
-  #
-  # typedef enum tagServerSelection {
-  #   ssDefault,       # 0
-  #   ssManagedServer, # 1
-  #   ssWindowsUpdate, # 2
-  #   ssOthers         # 3
-  # } ServerSelection;
-  #
-  # search for updates that you see in the Windows Update application
-  $updateSearcher.ServerSelection = 2
-  # https://docs.microsoft.com/en-us/windows/desktop/api/wuapi/nf-wuapi-iupdatesearcher-search
-  # search for updates that aren't installed yet
-  $searchCriteria = 'IsInstalled=0'
-  $searchResult = $updateSearcher.Search($searchCriteria)
-  $updateList = @()
-  foreach ($update in $searchResult.Updates) {
+  $updateList = Search-WindowsUpdate
+  $availableUpdateList = @()
+
+  # for each update, collect information about it
+  foreach ($update in $updateList) {
+    $updateId = $update.Identity.UpdateID
+    if ($updatesById.ContainsKey($updateId)) {
+      continue;
+    }
+    $updatesById[$updateId] = $update
+    
     $kbIds = @()
     foreach ($kb in $update.KBArticleIDs) {
       $kbIds += $kb
     }
-    $updateList += @{
+    $availableUpdateList += @{
       'name' = $update.Title;
+      'id' = $updateId;
+      'version' = $update.Identity.RevisionNumber;
       'kb_ids' = $kbIds;
+      'server_selection' = $serverSelection;
       'provider' = 'windows';
-    } 
+    }
   }
-  return @($updateList | Sort-Object)
+  return @($availableUpdateList | Sort-Object)
 }
 
 function AvailableUpdates-Chocolatey([bool]$choco_required) {
@@ -56,37 +51,53 @@ function AvailableUpdates-Chocolatey([bool]$choco_required) {
 
   # determine what chocolatey packages need upgrading
   # run command: choco outdated
-  $output = iex "& choco outdated --limit-output"
+  $output = iex "& choco outdated --limit-output --ignore-unfound"
+  $exit_code = $LastExitCode
+  # Write-Host "chocolatey output: $output"
+  # Write-Host "chocolatey exit code: $exit_code"
+  # TODO on failure capture output
+  # TODO handle unfound packages more gracefully
+  
   # output is in the format:
   # package name|current version|available version|pinned?
   foreach ($line in $output) {
     $parts = $line.split('|')
     $updateList += @{
       'name' = $parts[0];
+      'version_old' = $parts[1];
       'version' = $parts[2];
       'pinned' = $parts[3];
       'provider' = 'chocolatey';
     }
   }
   
-  return @($updateList | Sort-Object)
+  return @{
+    'result' = @($updateList | Sort-Object);
+    'exit_code' = $exit_code;
+  }
 }
 
 if ($provider -eq '') {
   $provider = 'all'
 }
 
+$exit_code = 0
 if ($provider -eq 'windows') {
   $result = @{"updates" = (AvailableUpdates-Windows)}
 } elseif ($provider -eq 'chocolatey') {
-  $result = @{"updates" = @(AvailableUpdates-Chocolatey($True))}
+  $result_chocolatey = @{"updates" = @(AvailableUpdates-Chocolatey($True))}
+  $result = @($result_chocolatey['result'])
+  $exit_code = $result_chocolatey['exit_code']
 } elseif ($provider -eq 'all') {
   $updates_windows = @(AvailableUpdates-Windows)
-  $updates_chocolatey = @(AvailableUpdates-Chocolatey($False))
+  $result_chocolatey = AvailableUpdates-Chocolatey($False)
+  $updates_chocolatey = @($result_chocolatey['result'])
   $result = @{"updates" = @($updates_windows + $updates_chocolatey)}
+  $exit_code = $result_chocolatey['exit_code']
 } else {
   Write-Error "Unknown provider! Expected 'windows', 'chocolatey', 'all'. Got: $provider"
   exit 100
 }
 
 ConvertTo-Json -Depth 100 $result
+exit $exit_code

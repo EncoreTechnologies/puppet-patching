@@ -28,7 +28,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # Box details
     centos.vm.box = box_centos
     centos.vm.hostname = hostname
-    centos.vm.network :public_network, ip: "192.168.121.100"
+    centos.vm.network :private_network, ip: "192.168.121.100"
     centos.vm.synced_folder '.', '/vagrant', disabled: true
 
     # Box Specifications
@@ -59,7 +59,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # older version so we have some updates
     ubuntu.vm.box_version = '1.9.18'
     ubuntu.vm.hostname = hostname
-    ubuntu.vm.network :public_network, ip: "192.168.121.101"
+    ubuntu.vm.network :private_network, ip: "192.168.121.101"
     ubuntu.vm.synced_folder '.', '/vagrant', disabled: true
 
     # Box Specifications

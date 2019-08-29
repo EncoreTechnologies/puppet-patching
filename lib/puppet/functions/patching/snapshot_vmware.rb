@@ -1,14 +1,14 @@
 require 'rbvmomi'
 
-Puppet::Functions.create_function(:'patching::vmware_snapshot') do
-  dispatch :vmware_snapshot do
+Puppet::Functions.create_function(:'patching::snapshot_vmware') do
+  dispatch :snapshot_vmware do
     required_param 'Array',   :vm_names
     required_param 'String',  :snapshot_name
-    required_param 'String',  :vcenter_host
-    required_param 'String',  :vcenter_username
-    required_param 'String',  :vcenter_password
-    required_param 'String',  :vmware_datacenter
-    optional_param 'Boolean', :vcenter_insecure
+    required_param 'String',  :vsphere_host
+    required_param 'String',  :vsphere_username
+    required_param 'String',  :vsphere_password
+    required_param 'String',  :vsphere_datacenter
+    optional_param 'Boolean', :vsphere_insecure
     optional_param 'String',  :snapshot_description
     optional_param 'Boolean', :snapshot_memory
     optional_param 'Boolean', :snapshot_quiesce
@@ -16,13 +16,13 @@ Puppet::Functions.create_function(:'patching::vmware_snapshot') do
     return_type 'Array'
   end
 
-  def vmware_snapshot(vm_names,
+  def snapshot_vmware(vm_names,
                       snapshot_name,
-                      vcenter_host,
-                      vcenter_username,
-                      vcenter_password,
-                      vmware_datacenter,
-                      vcenter_insecure = true,
+                      vsphere_host,
+                      vsphere_username,
+                      vsphere_password,
+                      vsphere_datacenter,
+                      vsphere_insecure = true,
                       snapshot_description = nil,
                       snapshot_memory = false,
                       snapshot_quiesce = false,
@@ -33,22 +33,22 @@ Puppet::Functions.create_function(:'patching::vmware_snapshot') do
       raise "#{action} is an invalid action. Please choose from create or delete"
     end
 
-    # Compose vCenter credentials
+    # Compose vsphere credentials
     credentials = {
-      host: vcenter_host,
-      user: vcenter_username,
-      password: vcenter_password,
-      insecure: vcenter_insecure,
+      host: vsphere_host,
+      user: vsphere_username,
+      password: vsphere_password,
+      insecure: vsphere_insecure,
     }
 
-    # Establish a connection to vCenter
+    # Establish a connection to vsphere
     vim = RbVmomi::VIM.connect credentials
 
-    # Get the vCenter Datacenter that we are interested in
-    dc = vim.serviceInstance.find_datacenter(vmware_datacenter)
+    # Get the vsphere Datacenter that we are interested in
+    dc = vim.serviceInstance.find_datacenter(vsphere_datacenter)
 
     unless dc
-      raise "Could not find datacenter with name: #{vmware_datacenter}"
+      raise "Could not find datacenter with name: #{vsphere_datacenter}"
     end
 
     # Get all the VMs in the datacenter

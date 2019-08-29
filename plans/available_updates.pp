@@ -1,7 +1,7 @@
 plan patching::available_updates (
   TargetSpec $nodes,
   # TODO CSV and JSON outputs
-  Enum["none", "pretty", "csv"] $format = "none",
+  Enum["none", "pretty", "csv"] $format = "pretty",
 ) {
   $available_results = run_task('patching::available_updates', $nodes)
   case $format {

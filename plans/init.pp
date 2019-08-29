@@ -3,9 +3,11 @@ plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,
   String[1]        $log_file       = '/var/log/patching.log',
-  #Optional[String] $snapshot_plan = 'patching::vmware_snapshot',
-  Optional[String] $snapshot_plan  = undef,
-  String           $reboot_message = 'NOTICE: This system is currently being updated.',
+  Optional[String] $snapshot_plan  = 'patching::snapshot_vmware',
+  Boolean          $snapshot_create = true,
+  Boolean          $snapshot_delete = true,
+  Boolean          $reboot          = true,
+  String           $reboot_message  = 'NOTICE: This system is currently being updated.',
 ) {
   # TODO content promotion
 
@@ -46,7 +48,7 @@ plan patching (
     }
 
     ## Create VM snapshots
-    if $snapshot_plan {
+    if $snapshot_create and  $snapshot_plan and $snapshot_plan != ''{
       run_plan($snapshot_plan,
                nodes  => $update_targets,
                action => 'create')
@@ -56,48 +58,41 @@ plan patching (
     # TODO custom pre patch task/script/plan/etc
     run_plan('patching::pre_patch', nodes => $update_targets)
 
-    ############################################################
-    # start here
-    return()
-
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
                               log_file      => $log_file,
                               _catch_errors => true)
 
     ## Collect list of successful updates
-    $update_ok_targets = $up_result.ok_set.targets
+    $update_ok_targets = $update_result.ok_set.targets
     ## Collect list of failed updates
-    $update_error_targets = $up_result.error_set.targets
+    $update_errors = $update_result.error_set
 
     ## Check if any hosts with failed updates.
-    if $update_error_targets.empty {
+    if $update_errors.empty {
       $status = 'OK: No errors detected.'
     } else {
+      # TODO print out the full error message for each of these
       alert('The following hosts failed during update:')
-      $update_error_targets.each |$t| { alert(" ! ${$item.name}") }
+      alert($update_errors)
       $status = 'WARNING: Errors detected during update.'
     }
 
     if !$update_ok_targets.empty {
       ## Run post-patching script.
       # TODO custom pre patch task/script/plan/etc
-      run_plan('patching::post_patch', nodes => $update_ok_targets)
+      run_plan('patching::post_patch',
+               nodes => $update_ok_targets)
 
       ## Check if reboot required and reboot if true.
-      $reboot_required_result = run_plan('patching::reboot_required', nodes=> $update_ok_targets)
-      $reboot_targets = $reboot_required_result['reboot_required']
-
-      ## Reboot the hosts that require it
-      run_plan('reboot',
-               nodes             => $reboot_targets,
-               reconnect_timeout => 300,
-               message           => $reboot_message,
-               _catch_errors     => true)
+      run_plan('patching::reboot_required',
+               nodes => $update_ok_targets,
+               reboot => $reboot,
+               message => $reboot_message)
     }
 
     ## Remove VM snapshots
-    if $snapshot_plan {
+    if $snapshot_delete and $snapshot_plan and $snapshot_plan != '' {
       run_plan($snapshot_plan,
                nodes  => $update_ok_targets,
                action => 'delete')
@@ -105,15 +100,10 @@ plan patching (
 
   }
 
-  # TODO
-
   ## Collect summary report
-  # $report = run_plan('patching::collect_update_history',
-  #                    nodes       => $targets,
-  #                    environment => get_targets($online)[0].vars['patch_env'],
-  #                    mail_to     => get_targets($online)[0].vars['mail_to'],
-  #                    #failed      => $failed,
-  #                   )
+  run_plan('patching::update_history',
+           nodes => $targets,
+           format => 'pretty')
 
   ## Display final status
   return()
