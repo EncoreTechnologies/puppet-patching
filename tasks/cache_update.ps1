@@ -1,43 +1,51 @@
+[CmdletBinding()]
+Param(
+  # Mandatory is set to false. If Set to $True then a dialog box appears to get the missing information
+  # We will do a variable check later
+  # https://blogs.technet.microsoft.com/heyscriptingguy/2011/05/22/use-powershell-to-make-mandatory-           parameters/
+  [Parameter(Mandatory = $False)]
+  [String]$_installdir
+)
+
+Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
+
 # Restart the Windows Update service
 Restart-Service -Name wuauserv 
 
-# perform a new search for Windows Updates, this forces a refresh
-$updateSession = New-Object -ComObject 'Microsoft.Update.Session'
-$updateSearcher = $updateSession.CreateUpdateSearcher()
-# https://docs.microsoft.com/en-us/windows/win32/api/wuapicommon/ne-wuapicommon-serverselection
-#
-# typedef enum tagServerSelection {
-#   ssDefault,       # 0
-#   ssManagedServer, # 1
-#   ssWindowsUpdate, # 2
-#   ssOthers         # 3
-# } ServerSelection;
-#
-# search for updates that you see in the Windows Update application
-$updateSearcher.ServerSelection = 2
-# https://docs.microsoft.com/en-us/windows/desktop/api/wuapi/nf-wuapi-iupdatesearcher-search
-# search for updates that aren't installed yet
-$searchCriteria = 'IsInstalled=0'
-$searchResult = $updateSearcher.Search($searchCriteria)
-
-# interpret the result code and have us exit with an error if any of the patches error
-$result = @{"result" = ""}
-switch ($searchResult.ResultCode)
-{
-  0 { $result["result"] = "Not Started" }
-  1 { $result["result"] = "In Progress" }
-  2 { $result["result"] = "Succeeded" }
-  3 { $result["result"] = "Succeeded With Errors" }
-  4 {
-    $result["result"] = "Failed"
-    $exitStatus = 2
+# search all windows update servers
+$cacheResultHash = @{"servers" = @()}
+$searchResultHash = Search-WindowsUpdateResults
+foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
+  $value = $searchResultHash[$serverSelection]
+  $searchResult = $value['result']
+  
+  # interpret the result code and have us exit with an error if any of the patches error
+  $result = @{
+    'name' = $value['name'];
+    'server_selection' = $serverSelection;
+    'result_code' = $searchResult.ResultCode;
   }
-  5 {
-    $result["result"] = "Aborted"
-    $exitStatus = 2
+  switch ($searchResult.ResultCode)
+  {
+    0 { $result['result'] = 'Not Started'; break }
+    1 { $result['result'] = 'In Progress'; break }
+    2 { $result['result'] = 'Succeeded'; break }
+    3 { $result['result'] = 'Succeeded With Errors'; break }
+    4 {
+      $result['result'] = 'Failed'
+      $exitStatus = 2
+      break
+    }
+    5 {
+      $result['result'] = 'Aborted'
+      $exitStatus = 2
+      break
+    }
+    default { $result['result'] = 'Unknown'; break }
   }
-  default { $result["result"] = "Unknown" }
+  
+  $cacheResultHash['servers'] += $result
 }
 
-ConvertTo-Json -Depth 100 $result
+ConvertTo-Json -Depth 100 $cacheResultHash
 exit $exitStatus
