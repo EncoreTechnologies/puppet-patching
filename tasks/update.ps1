@@ -205,7 +205,7 @@ function Update-Windows([String]$_installdir) {
   # The script block above returns the command output as JSON, however PowerShell returns
   # the output as an array of lines, so we need to concat these strings into one big blob
   # so we can parse the JSON back into an object.
-  $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block -KeepLogFile $true
+  $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block
   $result_json_str = $update_results.CommandOutput -join "`r`n"
   # note $result_obj is a "custom object", not a hashtable
   $result_hash = ConvertFrom-Json $result_json_str | Convert-PSObjectToHashtable
