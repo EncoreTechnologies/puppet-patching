@@ -135,7 +135,7 @@ function Invoke-CommandAsLocal {
     else {
       Remove-Item -Path $log_file_name -Force | Out-Null
     }
-   # Remove-Item -Path $script_file_name -Force | Out-Null
+    Remove-Item -Path $script_file_name -Force | Out-Null
     # Close Schedule Service connection
     [System.Runtime.Interopservices.Marshal]::ReleaseComObject($scheduler_service) | Out-Null
   }
