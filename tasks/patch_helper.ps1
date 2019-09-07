@@ -8,6 +8,10 @@ Param(
   [String]$_task
 )
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 If (-not $script) {
   If ($_task -eq 'patching::pre_patch') {
     $script = 'C:\ProgramData\PuppetLabs\patching\pre_patch.ps1'

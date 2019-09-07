@@ -8,6 +8,10 @@ Param(
   [String]$_installdir
 )
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 # TODO read results from file
 
 # ConvertTo-Json -Depth 100 $result

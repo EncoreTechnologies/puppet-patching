@@ -9,7 +9,16 @@ Param(
 
 Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 $script_block = {
+  
+  Set-StrictMode -Version Latest
+  $ErrorActionPreference = 'Stop'
+  $ProgressPreference = 'SilentlyContinue'
+  
   function Test-PendingReboot
   {
     $systemInformation = New-Object -ComObject 'Microsoft.Update.SystemInfo'

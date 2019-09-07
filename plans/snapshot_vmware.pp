@@ -24,21 +24,21 @@ plan patching::snapshot_vmware (
   Boolean $vsphere_insecure     = get_targets($nodes)[0].vars['vsphere_insecure'],
   String $snapshot_description  = '',
   Boolean $snapshot_memory      = false,
-  Boolean $snapshot_quiesce     = false,
+  Boolean $snapshot_quiesce     = true,
 ) {
   # Create array of node names
-  $vm_names = get_targets($nodes).map |$n| { $n.name }
+  $vm_names = get_targets($nodes).map |$n| { $n.uri }
 
   # Display status message
   if $action == 'create' {
     out::message("Creating VM snapshot '${snapshot_name}' for:")
-    get_targets($nodes).each |$i| {
-      out::message(" + ${i.name}")
+    $vm_names.each |$n| {
+      out::message(" + ${n}")
     }
   } else {
     out::message("Deleting VM snapshot '${snapshot_name}' for:")
-    get_targets($nodes).each |$i| {
-      out::message(" - ${i.name}")
+    $vm_names.each |$n| {
+      out::message(" - ${n}")
     }
   }
 

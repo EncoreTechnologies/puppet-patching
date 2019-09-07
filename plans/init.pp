@@ -86,26 +86,27 @@ plan patching (
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required',
-               nodes => $update_ok_targets,
-               reboot => $reboot,
-               message => $reboot_message)
-    }
-
-    ## Remove VM snapshots
-    if $snapshot_delete and $snapshot_plan and $snapshot_plan != '' {
-      run_plan($snapshot_plan,
                nodes  => $update_ok_targets,
-               action => 'delete')
-    }
+               reboot  => $reboot,
+               message => $reboot_message)
 
+      ## Remove VM snapshots
+      if $snapshot_delete and $snapshot_plan and $snapshot_plan != '' {
+        run_plan($snapshot_plan,
+                 nodes  => $update_ok_targets,
+                 action => 'delete')
+      }
+    }
+    # else {
+    #   # TODO should we break here?
+    # }
   }
 
   ## Collect summary report
   run_plan('patching::update_history',
-           nodes => $targets,
+           nodes  => $targets,
            format => 'pretty')
 
   ## Display final status
   return()
-
 }
