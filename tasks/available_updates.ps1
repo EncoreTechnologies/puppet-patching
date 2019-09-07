@@ -9,18 +9,20 @@ Param(
 
 Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 function AvailableUpdates-Windows() {
-  $updateList = Search-WindowsUpdate
+  $exit_code = 0
+  $updateSession = Create-WindowsUpdateSession
+  $updateList = Search-WindowsUpdate -session $updateSession
   $availableUpdateList = @()
 
   # for each update, collect information about it
   foreach ($update in $updateList) {
-    $updateId = $update.Identity.UpdateID
-    if ($updatesById.ContainsKey($updateId)) {
-      continue;
-    }
-    $updatesById[$updateId] = $update
-    
+    #Write-Host "update = $update"
+    $updateId = $update.Identity.UpdateID    
     $kbIds = @()
     foreach ($kb in $update.KBArticleIDs) {
       $kbIds += $kb
@@ -30,7 +32,6 @@ function AvailableUpdates-Windows() {
       'id' = $updateId;
       'version' = $update.Identity.RevisionNumber;
       'kb_ids' = $kbIds;
-      'server_selection' = $serverSelection;
       'provider' = 'windows';
     }
   }
@@ -38,14 +39,21 @@ function AvailableUpdates-Windows() {
 }
 
 function AvailableUpdates-Chocolatey([bool]$choco_required) {
+  $exit_code = 0
   $updateList = @()
   if (-not (Test-CommandExists 'choco')) {
     if ($choco_required) {
       Write-Error "Unable to find required command: choco"
       exit 2
     } else {
-      # chocolatey wasn't required, simply return an empty list
-      return $updateList
+      Write-Error "Unable to find required command: choco"
+      exit 2
+      # # TODO make a chocolatey required parameter
+      # # chocolatey wasn't required, simply return an empty list
+      # return @{
+      #   'result' = @($updateList);
+      #   'exit_code' = $exit_code;
+      # }
     }
   }
 
@@ -70,7 +78,6 @@ function AvailableUpdates-Chocolatey([bool]$choco_required) {
       'provider' = 'chocolatey';
     }
   }
-  
   return @{
     'result' = @($updateList | Sort-Object);
     'exit_code' = $exit_code;
@@ -83,10 +90,10 @@ if ($provider -eq '') {
 
 $exit_code = 0
 if ($provider -eq 'windows') {
-  $result = @{"updates" = (AvailableUpdates-Windows)}
+  $result = @{"updates" = @(AvailableUpdates-Windows)}
 } elseif ($provider -eq 'chocolatey') {
-  $result_chocolatey = @{"updates" = @(AvailableUpdates-Chocolatey($True))}
-  $result = @($result_chocolatey['result'])
+  $result_chocolatey = AvailableUpdates-Chocolatey($True)
+  $result = @{"updates" = @($result_chocolatey['result'])}
   $exit_code = $result_chocolatey['exit_code']
 } elseif ($provider -eq 'all') {
   $updates_windows = @(AvailableUpdates-Windows)

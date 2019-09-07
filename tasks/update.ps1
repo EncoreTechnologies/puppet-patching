@@ -15,29 +15,39 @@ Param(
 
 Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 function Update-Windows([String]$_installdir) {
   $script_block = {
+    Set-StrictMode -Version Latest
+    $ErrorActionPreference = 'Stop'
+    $ProgressPreference = 'SilentlyContinue'
+    
     ####################
     # Note: this is copied from TaskUtils.ps1 because i can't figure out how to pass
     # $_installdir into this scriptblock so we can import TaskUtils.ps1
+
+    # Creates a new Windows Update API session
+    # https://docs.microsoft.com/en-us/windows/win32/api/wuapi/nn-wuapi-iupdatesession
+    function Create-WindowsUpdateSession {
+      $session = New-Object -ComObject 'Microsoft.Update.Session'
+      $session.ClientApplicationID = 'windows-update-installer'
+      return $session
+    }
     
     # Searches Windows Update API for all available updates and returns them in a list
     # This performs a search across all possible Server Selection options. 
     # This returns a list of IUpdateResults, the caller is responsible for 
     # interpreting those results.
-    function Search-WindowsUpdateResults {
-      param (
-        [String]$criteria ='IsInstalled=0'
-      )
+    function Search-WindowsUpdateResults (
+      $session,
+      [String]$criteria ='IsInstalled=0'
+    ) {
       # criteria above, searches for updates that aren't installed yet 
       # https://docs.microsoft.com/en-us/windows/desktop/api/wuapi/nf-wuapi-iupdatesearcher-search
-    
-      $updateSession = New-Object -ComObject 'Microsoft.Update.Session'
-      $updateSession.ClientApplicationID = 'windows-update-installer'
-    
-      $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
-      $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
-      $updateSearcher = $updateSession.CreateUpdateSearcher()
+      $updateSearcher = $session.CreateUpdateSearcher()
       
       # https://docs.microsoft.com/en-us/windows/win32/api/wuapicommon/ne-wuapicommon-serverselection
       #
@@ -70,13 +80,13 @@ function Update-Windows([String]$_installdir) {
     # Searches Windows Update API for all available updates and returns them in a list
     # This performs a search across all possible Server Selection options. 
     # This returns a de-duplicated list of IUpdate objects found across all update servers.
-    function Search-WindowsUpdate {
-      param (
-        [String]$criteria ='IsInstalled=0'
-      )
+    function Search-WindowsUpdate (
+      $session,
+      [String]$criteria ='IsInstalled=0'
+    ) {
       $updateList = @()
       $updatesById = @{}
-      $searchResultHash = Search-WindowsUpdateResults -criteria $criteria
+      $searchResultHash = Search-WindowsUpdateResults -session $session -criteria $criteria
       foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
         $value = $searchResultHash[$serverSelection]
         $searchResult = $value['result']
@@ -90,23 +100,21 @@ function Update-Windows([String]$_installdir) {
             continue;
           }
           $updatesById[$updateId] = $update
-          $updateList += $upate
+          $updateList += $update
         }
       }
       return @($updateList)
     }
     
     $exitStatus = 0
-    Set-StrictMode -Version Latest
-    $ErrorActionPreference = 'Stop'
-    $ProgressPreference = 'SilentlyContinue'
     
     try {
       $windowsOsVersion = [System.Environment]::OSVersion.Version
-      $updateList = Search-WindowsUpdate
+      $updateSession = Create-WindowsUpdateSession
+      $updateList = Search-WindowsUpdate -session $updateSession
       $patchingResultList = @()
-      $updatesToDownload = @()
-      $updatesToInstall = @()
+      $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
+      $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
 
       # for each update, accept the EULA, add it to our list to download
       foreach ($update in $updateList) {
@@ -115,10 +123,10 @@ function Update-Windows([String]$_installdir) {
         $update.AcceptEula() | Out-Null
       
         if (!$update.IsDownloaded) {
-          $updatesToDownload.Add($update) | Out-Null
+          $updatesToDownload.Add($update) # need to use .Add() here because it's a special type
         }
 
-        $updatesToInstall.Add($update) | Out-Null
+        $updatesToInstall.Add($update)  # need to use .Add() here because it's a special type
       
         $kbIds = @()
         foreach ($kb in $update.KBArticleIDs) {
@@ -129,7 +137,6 @@ function Update-Windows([String]$_installdir) {
           'id' = $updateId;
           'version' = $update.Identity.RevisionNumber;
           'kb_ids' = $kbIds;
-          'server_selection' = $serverSelection;
           'provider' = 'windows';
         }
       }
@@ -159,7 +166,7 @@ function Update-Windows([String]$_installdir) {
         # or even an array of results... we have to ask the result object for indexes
         # to determine the results of each patch based on the index in our input array... sorry
         for ($i = 0; $i -lt $updatesToInstall.Count; ++$i) {
-          $update = $updatesToInstall[$i]
+          $update = $updatesToInstall.Item($i)  # need to use .Item() here because it's a special type
           $patchingResult = $patchingResultList[$i]
           $updateInstallationResult = $installationResult.GetUpdateResult($i)
           $patchingResult['result_code'] = $updateInstallationResult.ResultCode
@@ -195,8 +202,8 @@ function Update-Windows([String]$_installdir) {
                                   'installed' = @();}
     }
     Catch {
-      Write-Output "******** ERROR in script block ********"
-      Write-Output $_
+      $exception_str = $_ | Out-String
+      ConvertTo-Json -Depth 100 @{'exception' = $exception_str;}
       exit 99
     }
     exit $exitStatus
@@ -205,12 +212,33 @@ function Update-Windows([String]$_installdir) {
   # The script block above returns the command output as JSON, however PowerShell returns
   # the output as an array of lines, so we need to concat these strings into one big blob
   # so we can parse the JSON back into an object.
-  $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block
-  $result_json_str = $update_results.CommandOutput -join "`r`n"
-  # note $result_obj is a "custom object", not a hashtable
-  $result_hash = ConvertFrom-Json $result_json_str | Convert-PSObjectToHashtable
+  $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block -KeepLogFile $true
+  # only get CommandOutput if it is not null, otherwise grab the ErrorMessage which is set
+  # when an exception occurs in the Invoke-CommandAsLocal function's code
+  if ($update_results.CommandOutput -ne $null) {
+    $result_str = $update_results.CommandOutput -join "`r`n"
+  }
+  else {
+    $result_str = $update_results.ErrorMessage -join "`r`n"
+  }
+
+  # if we succeeded, we expect JSON, if there is an error then it might be something else
+  if ($update_results.ExitCode -eq 0) {
+    # try parsing the output as JSON, if that fails then just return the raw string
+    try {
+      # ConvertFrom-Json returns a "custom object", not a hashtable so we have to
+      # convert it to a hashtable
+      $result = ConvertFrom-Json $result_str | Convert-PSObjectToHashtable
+    }
+    catch {
+      $result = $result_str
+    }
+  }
+  else {
+    $result = $result_str
+  }
   return @{
-    'result' = $result_hash;
+    'result' = $result;
     'exit_code' = $update_results.ExitCode;
   }
 }
@@ -224,8 +252,11 @@ function Update-Chocolatey([bool]$choco_required) {
     if ($choco_required) {
       throw "Unable to find required command: choco"
     } else {
-      # chocolatey wasn't required, simply return an empty list
-      return $updateList
+      Write-Error "Unable to find required command: choco"
+      exit 2
+      # # TODO make a chocolatey required parameter
+      # # chocolatey wasn't required, simply return an empty list
+      # return $updateList
     }
   }
 

@@ -9,12 +9,19 @@ Param(
 
 Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 # Restart the Windows Update service
 Restart-Service -Name wuauserv 
 
+$exitStatus = 0
+
 # search all windows update servers
 $cacheResultHash = @{"servers" = @()}
-$searchResultHash = Search-WindowsUpdateResults
+$updateSession = Create-WindowsUpdateSession
+$searchResultHash = Search-WindowsUpdateResults -session $updateSession
 foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
   $value = $searchResultHash[$serverSelection]
   $searchResult = $value['result']

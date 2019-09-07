@@ -12,15 +12,12 @@
 #  $test = Invoke-CommandAsLocal -ScriptBlock $script_block
 #  $test.CommandOutput
 #  $test.ExitCode
-function Invoke-CommandAsLocal {
-  param (
-    [parameter(Mandatory=$true)]
-    [ValidateNotNullOrEmpty()]$ScriptBlock,
-    [String]$ExecutionTimeLimit = "PT3H",
-    [Boolean]$KeepLogFile = $false,
-    [String]$_installdir = ''
-  )
-
+function Invoke-CommandAsLocal ([parameter(Mandatory=$true)]
+                                [ValidateNotNullOrEmpty()]$ScriptBlock,
+                                [String]$ExecutionTimeLimit = "PT3H",
+                                [Boolean]$KeepLogFile = $false,
+                                [String]$_installdir = '')
+{
   # Build new object to return to user
   $return_object = New-Object -TypeName psobject
 
@@ -117,10 +114,12 @@ function Invoke-CommandAsLocal {
     $exit_code = $task.LastTaskResult
     
     $return_object | Add-Member -MemberType NoteProperty -Name CommandOutput -Value $output
+    $return_object | Add-Member -MemberType NoteProperty -Name ErrorMessage -Value $null
     $return_object | Add-Member -MemberType NoteProperty -Name ExitCode -Value $exit_code
   }
   Catch {
     $ErrorMessage = $_.Exception.Message
+    $return_object | Add-Member -MemberType NoteProperty -Name CommandOutput -Value $null
     $return_object | Add-Member -MemberType NoteProperty -Name ErrorMessage -Value $ErrorMessage
     $return_object | Add-Member -MemberType NoteProperty -Name ExitCode -Value 1
   }
@@ -164,12 +163,9 @@ function Test-CommandExists([String]$command) {
 
 # inspired by 
 # https://stackoverflow.com/questions/22002748/hashtables-from-convertfrom-json-have-different-type-from-powershells-built-in-h
-function Convert-PSObjectToHashtable {
-  param (
-    [Parameter(ValueFromPipeline)]
-    $InputObject
-  )
-
+function Convert-PSObjectToHashtable ([Parameter(ValueFromPipeline)]
+                                      $InputObject)
+{
   process
   {
     if ($null -eq $InputObject) {
@@ -214,23 +210,25 @@ function Convert-PSObjectToHashtable {
 
 ################################################################################
 
+# Creates a new Windows Update API session
+# https://docs.microsoft.com/en-us/windows/win32/api/wuapi/nn-wuapi-iupdatesession
+function Create-WindowsUpdateSession {
+  $session = New-Object -ComObject 'Microsoft.Update.Session'
+  $session.ClientApplicationID = 'windows-update-installer'
+  return $session
+}
+
 # Searches Windows Update API for all available updates and returns them in a list
 # This performs a search across all possible Server Selection options. 
 # This returns a list of IUpdateResults, the caller is responsible for 
 # interpreting those results.
-function Search-WindowsUpdateResults {
-  param (
-    [String]$criteria ='IsInstalled=0'
-  )
+function Search-WindowsUpdateResults (
+  $session,
+  [String]$criteria ='IsInstalled=0'
+) {
   # criteria above, searches for updates that aren't installed yet 
   # https://docs.microsoft.com/en-us/windows/desktop/api/wuapi/nf-wuapi-iupdatesearcher-search
-
-  $updateSession = New-Object -ComObject 'Microsoft.Update.Session'
-  $updateSession.ClientApplicationID = 'windows-update-installer'
-
-  $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
-  $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
-  $updateSearcher = $updateSession.CreateUpdateSearcher()
+  $updateSearcher = $session.CreateUpdateSearcher()
   
   # https://docs.microsoft.com/en-us/windows/win32/api/wuapicommon/ne-wuapicommon-serverselection
   #
@@ -263,13 +261,13 @@ function Search-WindowsUpdateResults {
 # Searches Windows Update API for all available updates and returns them in a list
 # This performs a search across all possible Server Selection options. 
 # This returns a de-duplicated list of IUpdate objects found across all update servers.
-function Search-WindowsUpdate {
-  param (
-    [String]$criteria ='IsInstalled=0'
-  )
+function Search-WindowsUpdate (
+  $session,
+  [String]$criteria ='IsInstalled=0'
+) {
   $updateList = @()
   $updatesById = @{}
-  $searchResultHash = Search-WindowsUpdateResults -criteria $criteria
+  $searchResultHash = Search-WindowsUpdateResults -session $session -criteria $criteria
   foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
     $value = $searchResultHash[$serverSelection]
     $searchResult = $value['result']
@@ -283,7 +281,7 @@ function Search-WindowsUpdate {
         continue;
       }
       $updatesById[$updateId] = $update
-      $updateList += $upate
+      $updateList += $update
     }
   }
   return @($updateList)
