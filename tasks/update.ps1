@@ -252,11 +252,16 @@ function Update-Chocolatey([bool]$choco_required) {
     if ($choco_required) {
       throw "Unable to find required command: choco"
     } else {
-      Write-Error "Unable to find required command: choco"
-      exit 2
-      # # TODO make a chocolatey required parameter
-      # # chocolatey wasn't required, simply return an empty list
-      # return $updateList
+      # Write-Error "Unable to find required command: choco"
+      # exit 2
+      # TODO make a chocolatey required parameter
+
+      # chocolatey wasn't required, simply return an empty result
+      return @{
+        'result' = @{'upgraded' = @();
+                     'installed' = @()};
+        'exit_code' = $exit_code;
+      }
     }
   }
 
