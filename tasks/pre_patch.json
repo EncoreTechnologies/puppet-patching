@@ -1,5 +1,6 @@
 {
   "description": "Run pre-patching script on target host(s), only if it exists. If the patching script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a pre-patching script).",
+  "supports_noop": true,
   "implementations": [
     {"name": "patch_helper.sh", "requirements": ["shell"]},
     {"name": "patch_helper.ps1", "requirements": ["powershell"]}

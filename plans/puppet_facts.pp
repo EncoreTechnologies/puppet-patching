@@ -4,7 +4,9 @@
 # This is inspired by: https://github.com/puppetlabs/puppetlabs-facts/blob/master/plans/init.pp
 # Except instead of just running `facter` it runs `puppet facts` to set additional
 # facts that are only present when in the context of puppet.
-plan patching::puppet_facts(TargetSpec $nodes) {
+plan patching::puppet_facts(
+  TargetSpec $nodes
+) {
   $result_set = run_task('patching::puppet_facts', $nodes)
   # puppet facts returns a structure like:
   #   name: mynodename.domain.tld

@@ -2,12 +2,15 @@
 plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,
-  String[1]        $log_file       = '/var/log/patching.log',
-  Optional[String] $snapshot_plan  = 'patching::snapshot_vmware',
+  Optional[String[1]] $log_file     = get_targets($nodes)[0].vars['patching_log_file'],
+  Optional[String] $snapshot_plan   = 'patching::snapshot_vmware',
+  # TODO pull these snapshot flags from vars?
   Boolean          $snapshot_create = true,
   Boolean          $snapshot_delete = true,
+  # TODO pull reboot on a per-group basis from var
   Boolean          $reboot          = true,
   String           $reboot_message  = 'NOTICE: This system is currently being updated.',
+  Boolean          $noop            = false,
 ) {
   # TODO content promotion
 
@@ -17,7 +20,7 @@ plan patching (
 
   ## Filter offline nodes
   $check_puppet_result = run_plan('patching::check_puppet',
-                                  nodes => $nodes,
+                                  nodes                => $nodes,
                                   filter_offline_nodes => $filter_offline_nodes)
   # use all targets, both with and without puppet
   $targets = $check_puppet_result['all']
@@ -36,12 +39,14 @@ plan patching (
     # do normal patching
 
     ## Update patching cache (yum update, apt-get update, etc)
-    run_task('patching::cache_update', $ordered_nodes)
+    run_task('patching::cache_update', $ordered_nodes,
+             _noop => $noop)
 
     ## Check for updates on hosts
     $available_results = run_plan('patching::available_updates',
                                   nodes  => $ordered_nodes,
-                                  format => "pretty")
+                                  format => "pretty",
+                                  noop   => $noop)
     $update_targets = $available_results['has_updates']
     if $update_targets.empty {
       next()
@@ -51,17 +56,21 @@ plan patching (
     if $snapshot_create and  $snapshot_plan and $snapshot_plan != ''{
       run_plan($snapshot_plan,
                nodes  => $update_targets,
-               action => 'create')
+               action => 'create',
+               noop   => $noop)
     }
 
     ## Run pre-patching script.
     # TODO custom pre patch task/script/plan/etc
-    run_plan('patching::pre_patch', nodes => $update_targets)
+    run_plan('patching::pre_patch',
+             nodes => $update_targets,
+             noop  => $noop)
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
                               log_file      => $log_file,
-                              _catch_errors => true)
+                              _catch_errors => true,
+                              _noop         => $noop)
 
     ## Collect list of successful updates
     $update_ok_targets = $update_result.ok_set.targets
@@ -82,19 +91,22 @@ plan patching (
       ## Run post-patching script.
       # TODO custom pre patch task/script/plan/etc
       run_plan('patching::post_patch',
-               nodes => $update_ok_targets)
+               nodes => $update_ok_targets,
+               noop  => $noop)
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required',
-               nodes  => $update_ok_targets,
+               nodes   => $update_ok_targets,
                reboot  => $reboot,
-               message => $reboot_message)
+               message => $reboot_message,
+               noop    => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete and $snapshot_plan and $snapshot_plan != '' {
         run_plan($snapshot_plan,
                  nodes  => $update_ok_targets,
-                 action => 'delete')
+                 action => 'delete',
+                 noop   => $noop)
       }
     }
     # else {

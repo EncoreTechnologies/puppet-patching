@@ -4,8 +4,14 @@ Param(
   # We will do a variable check later
   # https://blogs.technet.microsoft.com/heyscriptingguy/2011/05/22/use-powershell-to-make-mandatory-           parameters/
   [Parameter(Mandatory = $False)]
-  [String]$_installdir
+  [String]$_installdir,
+  [Boolean]$_noop = $false,
 )
+
+if ($_noop) {
+  Write-Output '{"message": "noop - cache was not updated"}'
+  exit 0
+}
 
 Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 

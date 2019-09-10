@@ -15,8 +15,14 @@ if [[ -z "$PT_script" || "$PT_script" == "null" ]]; then
 fi
 
 if [[ -x "$PT_script" ]]; then
-  "$PT_script"
-  exit $?
+  if [[ -n "$PT__noop" && "$PT__noop" == "true" ]]; then
+    echo "{\"message\": \"noop - would have executed script: ${PT_script}\"}"
+    exit 0
+  else
+    echo "{\"script\": \"${PT_script}\"}"
+    "$PT_script"
+    exit $?
+  fi
 else
   echo "WARNING: Script doesn't exist or isn't executable: ${PT_script}"
   exit 0

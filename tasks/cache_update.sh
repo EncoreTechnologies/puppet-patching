@@ -3,6 +3,11 @@
 # Run our OS tests, exports OS_TEST_DEB and OS_TEST_RH
 source "${PT__installdir}/patching/files/bash/os_test.sh"
 
+if [[ -n "$PT__noop" && "$PT__noop" == "true" ]]; then
+  echo '{"message": "noop - cache was not updated"}'
+  exit 0
+fi
+
 ################################################################################
 if [[ -n "$OS_TEST_RH" ]]; then
   # update yum cache

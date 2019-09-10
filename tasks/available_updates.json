@@ -1,5 +1,6 @@
 {
   "description": "Collects information about available updates on a target system",
+  "supports_noop": true,
   "implementations": [
     {
       "name": "available_updates.sh",
