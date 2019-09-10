@@ -8,57 +8,59 @@ Param(
   [Boolean]$_noop = $false
 )
 
-if ($_noop) {
-  Write-Output '{"message": "noop - cache was not updated"}'
-  exit 0
-}
+# if ($_noop) {
+#   Write-Output '{"message": "noop - cache was not updated"}'
+#   exit 0
+# }
 
-Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
+# Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-$ProgressPreference = 'SilentlyContinue'
+# Set-StrictMode -Version Latest
+# $ErrorActionPreference = 'Stop'
+# $ProgressPreference = 'SilentlyContinue'
 
-# Restart the Windows Update service
-Restart-Service -Name wuauserv 
+# # Restart the Windows Update service
+# Restart-Service -Name wuauserv 
 
-$exitStatus = 0
+# $exitStatus = 0
 
-# search all windows update servers
-$cacheResultHash = @{"servers" = @()}
-$updateSession = Create-WindowsUpdateSession
-$searchResultHash = Search-WindowsUpdateResults -session $updateSession
-foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
-  $value = $searchResultHash[$serverSelection]
-  $searchResult = $value['result']
+# # search all windows update servers
+# $cacheResultHash = @{"servers" = @()}
+# $updateSession = Create-WindowsUpdateSession
+# $searchResultHash = Search-WindowsUpdateResults -session $updateSession
+# foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
+#   $value = $searchResultHash[$serverSelection]
+#   $searchResult = $value['result']
   
-  # interpret the result code and have us exit with an error if any of the patches error
-  $result = @{
-    'name' = $value['name'];
-    'server_selection' = $serverSelection;
-    'result_code' = $searchResult.ResultCode;
-  }
-  switch ($searchResult.ResultCode)
-  {
-    0 { $result['result'] = 'Not Started'; break }
-    1 { $result['result'] = 'In Progress'; break }
-    2 { $result['result'] = 'Succeeded'; break }
-    3 { $result['result'] = 'Succeeded With Errors'; break }
-    4 {
-      $result['result'] = 'Failed'
-      $exitStatus = 2
-      break
-    }
-    5 {
-      $result['result'] = 'Aborted'
-      $exitStatus = 2
-      break
-    }
-    default { $result['result'] = 'Unknown'; break }
-  }
+#   # interpret the result code and have us exit with an error if any of the patches error
+#   $result = @{
+#     'name' = $value['name'];
+#     'server_selection' = $serverSelection;
+#     'result_code' = $searchResult.ResultCode;
+#   }
+#   switch ($searchResult.ResultCode)
+#   {
+#     0 { $result['result'] = 'Not Started'; break }
+#     1 { $result['result'] = 'In Progress'; break }
+#     2 { $result['result'] = 'Succeeded'; break }
+#     3 { $result['result'] = 'Succeeded With Errors'; break }
+#     4 {
+#       $result['result'] = 'Failed'
+#       $exitStatus = 2
+#       break
+#     }
+#     5 {
+#       $result['result'] = 'Aborted'
+#       $exitStatus = 2
+#       break
+#     }
+#     default { $result['result'] = 'Unknown'; break }
+#   }
   
-  $cacheResultHash['servers'] += $result
-}
+#   $cacheResultHash['servers'] += $result
+# }
 
-ConvertTo-Json -Depth 100 $cacheResultHash
-exit $exitStatus
+# ConvertTo-Json -Depth 100 $cacheResultHash
+# exit $exitStatus
+
+exit 0
