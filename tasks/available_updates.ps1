@@ -46,14 +46,14 @@ function AvailableUpdates-Chocolatey([bool]$choco_required) {
       Write-Error "Unable to find required command: choco"
       exit 2
     } else {
-      Write-Error "Unable to find required command: choco"
-      exit 2
-      # # TODO make a chocolatey required parameter
-      # # chocolatey wasn't required, simply return an empty list
-      # return @{
-      #   'result' = @($updateList);
-      #   'exit_code' = $exit_code;
-      # }
+      # Write-Error "Unable to find required command: choco"
+      # exit 2
+      # TODO make a chocolatey required parameter
+      # chocolatey wasn't required, simply return an empty list
+      return @{
+        'result' = @($updateList);
+        'exit_code' = $exit_code;
+      }
     }
   }
 

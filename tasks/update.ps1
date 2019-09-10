@@ -247,6 +247,7 @@ function Update-Windows([String]$_installdir) {
 
 function Update-Chocolatey([bool]$choco_required) {
   $updateList = @()
+  $exit_code = 0
   # todo put this into a function
   if (-not (Test-CommandExists 'choco')) {
     if ($choco_required) {
@@ -269,44 +270,52 @@ function Update-Chocolatey([bool]$choco_required) {
   # TODO support only updating specific packages
   $output = iex "& choco upgrade all --yes --limit-output --no-progress --ignore-unfound"
   $exit_code = $LastExitCode
-  # Write-Host "chocolatey output: $output"
-  # Write-Host "chocolatey exit code: $exit_code"
-  # TODO write output to log file
-  # TODO on failure, capture output
-  # TODO handle unfound packages more gracefully
-  
-  # output is in the format:
-  # package name|current version|available version|pinned?
-  $package_versions = @{}
-  $package_success = @()
-  for ($i=0; $i -lt $output.Count; $i++) {
-    $line = $output[$i]
-    if ($line -match "(.*?)\|(.*?)\|(.*?)\|(.*)") {
-      $name = $Matches.1
-      $version_old = $Matches.2
-      $version_new = $Matches.3
-      $pinned = $Matches.4
-      
-      $package_versions[$name] =  @{
-        'name' = $name;
-        'version' = $version_new;
-        'version_old' = $version_old;
-        'pinned' = $pinned;
-        'provider' = 'chocolatey';
+  if ($exit_code -eq 0) {
+    # Write-Host "chocolatey output: $output"
+    # Write-Host "chocolatey exit code: $exit_code"
+    # TODO write output to log file
+    # TODO on failure, capture output
+    # TODO handle unfound packages more gracefully
+    
+    # output is in the format:
+    # package name|current version|available version|pinned?
+    $package_versions = @{}
+    $package_success = @()
+    for ($i=0; $i -lt $output.Count; $i++) {
+      $line = $output[$i]
+      if ($line -match "(.*?)\|(.*?)\|(.*?)\|(.*)") {
+        $name = $Matches.1
+        $version_old = $Matches.2
+        $version_new = $Matches.3
+        $pinned = $Matches.4
+        
+        $package_versions[$name] =  @{
+          'name' = $name;
+          'version' = $version_new;
+          'version_old' = $version_old;
+          'pinned' = $pinned;
+          'provider' = 'chocolatey';
+        }
+      }
+      if ($line -match " The upgrade of (.*) was successful\.") {
+        $name = $Matches.1
+        if ($package_versions.ContainsKey($name)) {
+          $package_success += $package_versions[$name]
+        }
       }
     }
-    if ($line -match " The upgrade of (.*) was successful\.") {
-      $name = $Matches.1
-      if ($package_versions.ContainsKey($name)) {
-        $package_success += $package_versions[$name]
-      }
+    
+    return @{
+      'result' = @{'upgraded' = @($package_success);
+                   'installed' = @()};
+      'exit_code' = $exit_code;
     }
   }
-  
-  return @{
-    'result' = @{'upgraded' = @($package_success);
-                 'installed' = @()};
-    'exit_code' = $exit_code;
+  else {
+    return @{
+      'result' = $output;
+      'exit_code' = $exit_code;
+    }
   }
 }
 
@@ -335,10 +344,10 @@ if ($provider -eq 'windows') {
   $exit_code_windows = $data_windows['exit_code']
   if ($exit_code_windows -eq 0) {
     $result['upgraded'] += @($result_windows['upgraded'])
-    $result['installed'] = @($result_windows['installed'])
+    $result['installed'] += @($result_windows['installed'])
   }
   else {
-    $result['error_windows'] = "Updating windows provider failed!"
+    $result['error_windows'] = $result_windows
     $exit_code = $exit_code_windows
   }
 
@@ -348,10 +357,10 @@ if ($provider -eq 'windows') {
   $exit_code_chocolatey = $data_chocolatey['exit_code']
   if ($exit_code_chocolatey -eq 0) {
     $result['upgraded'] += @($result_chocolatey['upgraded'])
-    $result['installed'] = @($result_chocolatey['installed'])
+    $result['installed'] += @($result_chocolatey['installed'])
   }
   else {
-    $result['error_chocolatey'] =  "Updating chocolatey provider failed!"
+    $result['error_chocolatey'] = $result_chocolatey
     $exit_code = $exit_code_chocolatey
   }
 } else {
