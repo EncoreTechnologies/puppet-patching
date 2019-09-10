@@ -6,7 +6,7 @@ plan patching::check_puppet (
   $targets = get_targets($nodes)
   ## This will check all nodes to verify online by checking their Puppet agent version
   $targets_version = run_task('puppet_agent::version', $targets,
-                            _catch_errors => $filter_offline_nodes)
+                              _catch_errors => $filter_offline_nodes)
   # if we're filtering out offline nodes, then only accept the ok_set from the task above
   if $filter_offline_nodes {
     $targets_filtered = $targets_version.ok_set
@@ -22,11 +22,13 @@ plan patching::check_puppet (
   if !$targets_with_puppet.empty() {
     # run `puppet facts` on targets with Puppet because it returns a more complete
     # set of facts than just running `facter`
-    run_plan('patching::puppet_facts', nodes => $targets_with_puppet)
+    run_plan('patching::puppet_facts',
+             nodes => $targets_with_puppet)
   }
   if !$targets_no_puppet.empty() {
     # run `facter` if it's available otherwise get basic facts
-    run_plan('facts', nodes => $targets_no_puppet)
+    run_plan('facts',
+             nodes => $targets_no_puppet)
   }
 
   return({

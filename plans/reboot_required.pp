@@ -3,6 +3,7 @@ plan patching::reboot_required (
   TargetSpec $nodes,
   Boolean $reboot = false,
   String $message = 'NOTICE: This system is currently being updated.',
+  Boolean $noop   = false,
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
 
@@ -19,7 +20,8 @@ plan patching::reboot_required (
   }
 
   ## Reboot the hosts that require it
-  if $reboot and !$reboot_required.empty() {
+  ## skip if we're in noop mode (the reboot plan doesn't support $noop)
+  if $reboot and !$reboot_required.empty() and !$noop {
     run_plan('reboot',
              nodes             => $reboot_required,
              reconnect_timeout => 300,

@@ -25,6 +25,7 @@ plan patching::snapshot_vmware (
   String $snapshot_description  = '',
   Boolean $snapshot_memory      = false,
   Boolean $snapshot_quiesce     = true,
+  Boolean $noop                 = false,
 ) {
   # Create array of node names
   $vm_names = get_targets($nodes).map |$n| { $n.uri }
@@ -42,15 +43,17 @@ plan patching::snapshot_vmware (
     }
   }
 
-  return patching::snapshot_vmware($vm_names,
-                                   $snapshot_name,
-                                   $vsphere_host,
-                                   $vsphere_username,
-                                   $vsphere_password,
-                                   $vsphere_datacenter,
-                                   $vsphere_insecure,
-                                   $snapshot_description,
-                                   $snapshot_memory,
-                                   $snapshot_quiesce,
-                                   $action)
+  if !$noop {
+    return patching::snapshot_vmware($vm_names,
+                                     $snapshot_name,
+                                     $vsphere_host,
+                                     $vsphere_username,
+                                     $vsphere_password,
+                                     $vsphere_datacenter,
+                                     $vsphere_insecure,
+                                     $snapshot_description,
+                                     $snapshot_memory,
+                                     $snapshot_quiesce,
+                                     $action)
+  }
 }
