@@ -5,7 +5,7 @@ Param(
   # https://blogs.technet.microsoft.com/heyscriptingguy/2011/05/22/use-powershell-to-make-mandatory-           parameters/
   [Parameter(Mandatory = $False)]
   [String]$_installdir,
-  [Boolean]$_noop = $false,
+  [Boolean]$_noop = $false
 )
 
 if ($_noop) {
