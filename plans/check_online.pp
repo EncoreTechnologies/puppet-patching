@@ -15,6 +15,7 @@ plan patching::check_online (
     out::message('###################################')
     out::message('List of targets that failed to connect')
     $sorted_errors.each |$res| {
+      $name = $res.target.name
       out::message("- ${name}")
     }
     out::message('###################################')
