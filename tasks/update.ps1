@@ -320,14 +320,19 @@ if ($provider -eq 'windows') {
   $result = $data['result']
   $exit_code = $data['exit_code']
 } elseif ($provider -eq 'all') {
-  $result = @{}
+  $result = @{'upgraded' = @();
+              'installed' = @();}
   $exit_code = 0
 
   # Windows Update
   $data_windows = Update-Windows -_installdir $_installdir
   $result_windows = $data_windows['result']
   $exit_code_windows = $data_windows['exit_code']
-  if ($exit_code_windows -ne 0) {
+  if ($exit_code_windows -eq 0) {
+    $result['upgraded'] += @($result_windows['upgraded'])
+    $result['installed'] = @($result_windows['installed'])
+  }
+  else {
     $result['error_windows'] = "Updating windows provider failed!"
     $exit_code = $exit_code_windows
   }
@@ -336,14 +341,14 @@ if ($provider -eq 'windows') {
   $data_chocolatey = Update-Chocolatey $False
   $result_chocolatey = $data_chocolatey['result']
   $exit_code_chocolatey = $data_chocolatey['exit_code']
-  if ($exit_code_chocolatey -ne 0) {
+  if ($exit_code_chocolatey -eq 0) {
+    $result['upgraded'] += @($result_chocolatey['upgraded'])
+    $result['installed'] = @($result_chocolatey['installed'])
+  }
+  else {
     $result['error_chocolatey'] =  "Updating chocolatey provider failed!"
     $exit_code = $exit_code_chocolatey
   }
-
-  # combine results
-  $result['upgraded'] = @($result_windows['upgraded']) + @($result_chocolatey['upgraded'])
-  $result['installed'] = @($result_windows['installed']) + @($result_chocolatey['installed'])
 } else {
   Write-Error "Unknown provider! Expected 'windows', 'chocolatey', 'all'. Got: $provider"
   exit 100
