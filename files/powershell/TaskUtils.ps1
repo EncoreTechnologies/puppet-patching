@@ -240,7 +240,8 @@ function Search-WindowsUpdateResults (
   # } ServerSelection;
   #
   # search all servers
-  $serverSelectionList = @(0, 1, 2)
+  #$serverSelectionList = @(0, 1, 2)
+  $serverSelectionList = @(0)
   $resultHash = @{}
   foreach ($serverSelection in $serverSelectionList) {
     $updateSearcher.ServerSelection = $serverSelection
@@ -281,7 +282,8 @@ function Search-WindowsUpdate (
         continue;
       }
       $updatesById[$updateId] = $update
-      $updateList += $update
+      $updateList += @{'update' = $update;
+                       'server_selection' = $serverSelection}
     }
   }
   return @($updateList)

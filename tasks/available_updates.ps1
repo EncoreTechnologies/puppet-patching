@@ -20,7 +20,9 @@ function AvailableUpdates-Windows() {
   $availableUpdateList = @()
 
   # for each update, collect information about it
-  foreach ($update in $updateList) {
+  foreach ($updateAndServer in $updateList) {
+    $serverSelection = $updateAndServer['server_selection']
+    $update = $updateAndServer['update']
     #Write-Host "update = $update"
     $updateId = $update.Identity.UpdateID    
     $kbIds = @()
@@ -32,6 +34,7 @@ function AvailableUpdates-Windows() {
       'id' = $updateId;
       'version' = $update.Identity.RevisionNumber;
       'kb_ids' = $kbIds;
+      'server_selection' = $serverSelection;
       'provider' = 'windows';
     }
   }
