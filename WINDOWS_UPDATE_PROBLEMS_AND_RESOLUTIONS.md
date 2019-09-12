@@ -13,4 +13,9 @@
         - could be bad DNS on the NIC
         - could be bad firewall policy on the host
         - could be bad firewall policy on the network
+- hresult: 0x8024000E
+  possibilities:
+    - problem: windows update cache is corrupt
+      solutions:
+        - clean the windows update cache: bolt task run patching::cache_remove
       

@@ -4,7 +4,7 @@ Param(
   # We will do a variable check later
   # https://blogs.technet.microsoft.com/heyscriptingguy/2011/05/22/use-powershell-to-make-mandatory-           parameters/
   [Parameter(Mandatory = $False)]
-  [String]$name,
+  [String]$names,
   # NICK START HERE (write results to file)
   # TODO write results to file
   [String]$result_file,
@@ -59,7 +59,8 @@ function Update-Windows([String]$_installdir) {
       # } ServerSelection;
       #
       # search all servers
-      $serverSelectionList = @(0, 1, 2)
+      #$serverSelectionList = @(0, 1, 2)
+      $serverSelectionList = @(0)
       $resultHash = @{}
       foreach ($serverSelection in $serverSelectionList) {
         $updateSearcher.ServerSelection = $serverSelection
@@ -100,7 +101,8 @@ function Update-Windows([String]$_installdir) {
             continue;
           }
           $updatesById[$updateId] = $update
-          $updateList += $update
+          $updateList += @{'update' = $update;
+                           'server_selection' = $serverSelection}
         }
       }
       return @($updateList)
@@ -117,16 +119,18 @@ function Update-Windows([String]$_installdir) {
       $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
 
       # for each update, accept the EULA, add it to our list to download
-      foreach ($update in $updateList) {
+      foreach ($updateAndServer in $updateList) {
+        $serverSelection = $updateAndServer['server_selection']
+        $update = $updateAndServer['update']
         $updateId = $update.Identity.UpdateID
         $updateDate = $update.LastDeploymentChangeTime.ToString('yyyy-MM-dd')
         $update.AcceptEula() | Out-Null
       
         if (!$update.IsDownloaded) {
-          $updatesToDownload.Add($update) # need to use .Add() here because it's a special type
+          $updatesToDownload.Add($update) | Out-Null # need to use .Add() here because it's a special type
         }
 
-        $updatesToInstall.Add($update)  # need to use .Add() here because it's a special type
+        $updatesToInstall.Add($update) | Out-Null # need to use .Add() here because it's a special type
       
         $kbIds = @()
         foreach ($kb in $update.KBArticleIDs) {
@@ -137,6 +141,7 @@ function Update-Windows([String]$_installdir) {
           'id' = $updateId;
           'version' = $update.Identity.RevisionNumber;
           'kb_ids' = $kbIds;
+          'server_selection' = $serverSelection;
           'provider' = 'windows';
         }
       }
