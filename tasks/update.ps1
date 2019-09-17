@@ -21,95 +21,16 @@ $ProgressPreference = 'SilentlyContinue'
 
 function Update-Windows([String]$_installdir) {
   $script_block = {
+    param (
+      [string]$_installdir = 'Nothing passed in'
+    )
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = 'SilentlyContinue'
-    
-    ####################
-    # Note: this is copied from TaskUtils.ps1 because i can't figure out how to pass
-    # $_installdir into this scriptblock so we can import TaskUtils.ps1
 
-    # Creates a new Windows Update API session
-    # https://docs.microsoft.com/en-us/windows/win32/api/wuapi/nn-wuapi-iupdatesession
-    function Create-WindowsUpdateSession {
-      $session = New-Object -ComObject 'Microsoft.Update.Session'
-      $session.ClientApplicationID = 'windows-update-installer'
-      return $session
-    }
-    
-    # Searches Windows Update API for all available updates and returns them in a list
-    # This performs a search across all possible Server Selection options. 
-    # This returns a list of IUpdateResults, the caller is responsible for 
-    # interpreting those results.
-    function Search-WindowsUpdateResults (
-      $session,
-      [String]$criteria ='IsInstalled=0'
-    ) {
-      # criteria above, searches for updates that aren't installed yet 
-      # https://docs.microsoft.com/en-us/windows/desktop/api/wuapi/nf-wuapi-iupdatesearcher-search
-      $updateSearcher = $session.CreateUpdateSearcher()
-      
-      # https://docs.microsoft.com/en-us/windows/win32/api/wuapicommon/ne-wuapicommon-serverselection
-      #
-      # typedef enum tagServerSelection {
-      #   ssDefault,       # 0
-      #   ssManagedServer, # 1
-      #   ssWindowsUpdate, # 2
-      #   ssOthers         # 3
-      # } ServerSelection;
-      #
-      # search all servers
-      #$serverSelectionList = @(0, 1, 2)
-      $serverSelectionList = @(0)
-      $resultHash = @{}
-      foreach ($serverSelection in $serverSelectionList) {
-        $updateSearcher.ServerSelection = $serverSelection
-        $searchResult = $updateSearcher.Search($criteria)
-        $value = @{ 'result' = $searchResult; }
-        switch ($serverSelection)
-        {
-          0 { $value['name'] = 'Default'; break }
-          1 { $value['name'] = 'ManagedServer'; break }
-          2 { $value['name'] = 'WindowsUpdate'; break }
-          default { $value['name'] = 'Other'; break }
-        }
-        $resultHash[$serverSelection] = $value
-      }
-      return $resultHash
-    }
-    
-    # Searches Windows Update API for all available updates and returns them in a list
-    # This performs a search across all possible Server Selection options. 
-    # This returns a de-duplicated list of IUpdate objects found across all update servers.
-    function Search-WindowsUpdate (
-      $session,
-      [String]$criteria ='IsInstalled=0'
-    ) {
-      $updateList = @()
-      $updatesById = @{}
-      $searchResultHash = Search-WindowsUpdateResults -session $session -criteria $criteria
-      foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
-        $value = $searchResultHash[$serverSelection]
-        $searchResult = $value['result']
-        foreach ($update in $searchResult.Updates) {
-          $updateId = $update.Identity.UpdateID
-          
-          # keep a list of de-duplicated updates, based on update ID
-          # we need to do this since we're searching multiple servers and the same
-          # update may be available from >1 source
-          if ($updatesById.ContainsKey($updateId)) {
-            continue;
-          }
-          $updatesById[$updateId] = $update
-          $updateList += @{'update' = $update;
-                           'server_selection' = $serverSelection}
-        }
-      }
-      return @($updateList)
-    }
-    
+    Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
+        
     $exitStatus = 0
-    
     try {
       $windowsOsVersion = [System.Environment]::OSVersion.Version
       $updateSession = Create-WindowsUpdateSession
@@ -217,7 +138,8 @@ function Update-Windows([String]$_installdir) {
   # The script block above returns the command output as JSON, however PowerShell returns
   # the output as an array of lines, so we need to concat these strings into one big blob
   # so we can parse the JSON back into an object.
-  $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block -KeepLogFile $true
+  $script_args = "-_installdir $_installdir"
+  $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block -ScriptArgs $script_args -KeepLogFile $true
   # only get CommandOutput if it is not null, otherwise grab the ErrorMessage which is set
   # when an exception occurs in the Invoke-CommandAsLocal function's code
   if ($update_results.CommandOutput -ne $null) {

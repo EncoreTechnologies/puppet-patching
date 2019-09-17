@@ -14,6 +14,7 @@
 #  $test.ExitCode
 function Invoke-CommandAsLocal ([parameter(Mandatory=$true)]
                                 [ValidateNotNullOrEmpty()]$ScriptBlock,
+                                [String]$ScriptArgs = '',
                                 [String]$ExecutionTimeLimit = "PT3H",
                                 [Boolean]$KeepLogFile = $false,
                                 [String]$_installdir = '')
@@ -74,7 +75,7 @@ function Invoke-CommandAsLocal ([parameter(Mandatory=$true)]
 <Actions Context="Author">
   <Exec>
     <Command>C:\WINDOWS\system32\WindowsPowerShell\v1.0\powershell.exe</Command>
-    <Arguments>$script_file_name *> $log_file_name</Arguments>
+    <Arguments>-Command &amp;{ $script_file_name $ScriptArgs *> $log_file_name }</Arguments>
   </Exec>
 </Actions>
 </Task>
@@ -127,7 +128,7 @@ function Invoke-CommandAsLocal ([parameter(Mandatory=$true)]
     # Clean up all items created for this function
     # https://docs.microsoft.com/en-us/windows/desktop/api/taskschd/nf-taskschd-itaskfolder-deletetask
     # Parameters Positions [0]task name [1]additional flags
-    # $schduled_tasks_root.DeleteTask($task_name, $null) | Out-Null
+    $schduled_tasks_root.DeleteTask($task_name, $null) | Out-Null
     if ($KeepLogFile)  {
       $return_object | Add-Member -MemberType NoteProperty -Name LogFile -Value $log_file_name
     }
