@@ -1,7 +1,7 @@
 plan patching::pre_patch (
   TargetSpec $nodes,
-  Optional[String[1]] $script_linux   = get_targets($nodes)[0].vars['patching_linux_pre_script'],
-  Optional[String[1]] $script_windows = get_targets($nodes)[0].vars['patching_windows_pre_script'],
+  Optional[String[1]] $script_linux   = get_targets($nodes)[0].vars['patching_linux_pre_patch_script'],
+  Optional[String[1]] $script_windows = get_targets($nodes)[0].vars['patching_windows_pre_patch_script'],
   Boolean             $noop          = false,
 ) {
   out::message("pre_patch - noop = ${noop}")

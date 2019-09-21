@@ -1,17 +1,18 @@
 # Bolt plan to update hosts (linux and windows together)
 plan patching (
   TargetSpec       $nodes,
-  Boolean          $filter_offline_nodes = false,
-  Optional[String[1]] $log_file     = get_targets($nodes)[0].vars['patching_log_file'],
-  Optional[String] $snapshot_plan   = 'patching::snapshot_vmware',
-  # TODO pull these snapshot flags from vars?
-  Boolean          $snapshot_create = true,
-  Boolean          $snapshot_delete = true,
-  # TODO pull reboot on a per-group basis from var
-  Boolean          $reboot          = true,
-  String           $reboot_message  = 'NOTICE: This system is currently being updated.',
+  Boolean          $filter_offline_nodes = pick(patching::vars()['patching_filter_offline_nodes'], false),
+  String[1]        $log_file        = pick(patching::vars()['patching_log_file'], '/var/log/patching.log'),
+  String           $pre_patch_plan  = pick(patching::vars()['patching_pre_patch_plan'], 'patching::pre_patch'),
+  String           $post_patch_plan = pick(patching::vars()['patching_post_patch_plan'], 'patching::post_patch'),
+  Boolean          $reboot          = pick(patching::vars()['patching_reboot'], true),
+  String           $reboot_message  = pick(patching::vars()['patching_reboot_message'], 'NOTICE: This system is currently being updated.'),
+  Optional[String] $snapshot_plan   = pick(patching::vars()['patching_snapshot_plan'], 'patching::snapshot_vmware'),
+  Boolean          $snapshot_create = pick(patching::vars()['patching_snapshot_create'], true),
+  Boolean          $snapshot_delete = pick(patching::vars()['patching_snapshot_delete'], true),
   Boolean          $noop            = false,
 ) {
+
   # TODO content promotion
 
   # TODO pre patching plan/task/etc
@@ -36,6 +37,18 @@ plan patching (
       fail_plan("Nodes not assigned the var: 'patching_order'")
     }
 
+    # override configurable parameters on a per-group basis
+    # if there is no customization for this group, it defaults to the global setting
+    # set at the plan level above
+    $group_vars = $ordered_nodes[0].vars
+    $reboot_group = pick($group_vars['patching_reboot'], $reboot)
+    $reboot_message_group = pick($group_vars['patching_reboot_message'], $reboot_message)
+    $pre_patch_plan_group = pick($group_vars['patching_pre_patch_plan'], $pre_patch_plan)
+    $post_patch_plan_group = pick($group_vars['patching_post_patch_plan'], $post_patch_plan)
+    $snapshot_plan_group = pick($group_vars['patching_snapshot_plan'], $snapshot_plan)
+    $snapshot_create_group = pick($group_vars['patching_snapshot_create'], $snapshot_create)
+    $snapshot_delete_group = pick($group_vars['patching_snapshot_delete'], $snapshot_delete)
+
     # do normal patching
 
     ## Update patching cache (yum update, apt-get update, etc)
@@ -53,16 +66,15 @@ plan patching (
     }
 
     ## Create VM snapshots
-    if $snapshot_create and  $snapshot_plan and $snapshot_plan != ''{
-      run_plan($snapshot_plan,
+    if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != ''{
+      run_plan($snapshot_plan_group,
                nodes  => $update_targets,
                action => 'create',
                noop   => $noop)
     }
 
     ## Run pre-patching script.
-    # TODO custom pre patch task/script/plan/etc
-    run_plan('patching::pre_patch',
+    run_plan($pre_patch_plan_group,
              nodes => $update_targets,
              noop  => $noop)
 
@@ -89,21 +101,20 @@ plan patching (
 
     if !$update_ok_targets.empty {
       ## Run post-patching script.
-      # TODO custom pre patch task/script/plan/etc
-      run_plan('patching::post_patch',
+      run_plan($post_patch_plan_group,
                nodes => $update_ok_targets,
                noop  => $noop)
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required',
                nodes   => $update_ok_targets,
-               reboot  => $reboot,
-               message => $reboot_message,
+               reboot  => $reboot_group,
+               message => $reboot_message_group,
                noop    => $noop)
 
       ## Remove VM snapshots
-      if $snapshot_delete and $snapshot_plan and $snapshot_plan != '' {
-        run_plan($snapshot_plan,
+      if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != '' {
+        run_plan($snapshot_plan_group,
                  nodes  => $update_ok_targets,
                  action => 'delete',
                  noop   => $noop)
