@@ -8,7 +8,7 @@
   "parameters": {
     "script": {
       "type": "Optional[String[1]]",
-      "description": "Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /etc/puppetlabs/patching/post_patch.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/post_patch.ps1."
+      "description": "Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/post_patch.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/post_patch.ps1."
     }
   }
 }

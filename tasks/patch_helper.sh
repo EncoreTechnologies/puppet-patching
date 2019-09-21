@@ -5,9 +5,9 @@
 if [[ -z "$PT_script" || "$PT_script" == "null" ]]; then
   # set our default script, if one wasn't passed in, based on the calling task
   if [[ "$PT__task" == "patching::pre_patch" ]]; then
-    PT_script='/etc/puppetlabs/patching/pre_patch.sh'
+    PT_script='/opt/patching/bin/pre_patch.sh'
   elif [[ "$PT__task" == "patching::post_patch" ]]; then
-    PT_script='/etc/puppetlabs/patching/post_patch.sh'
+    PT_script='/opt/patching/bin/post_patch.sh'
   else 
     echo "ERROR - 'script' wasn't specified and we were called with an unknown task: ${PT__task}" >&2
     exit 2
