@@ -241,21 +241,27 @@ function Search-WindowsUpdateResults (
   # } ServerSelection;
   #
   # search all servers
-  #$serverSelectionList = @(0, 1, 2)
-  $serverSelectionList = @(0)
+  $serverSelectionList = @(0, 1, 2)
   $resultHash = @{}
   foreach ($serverSelection in $serverSelectionList) {
-    $updateSearcher.ServerSelection = $serverSelection
-    $searchResult = $updateSearcher.Search($criteria)
-    $value = @{ 'result' = $searchResult; }
-    switch ($serverSelection)
-    {
-      0 { $value['name'] = 'Default'; break }
-      1 { $value['name'] = 'ManagedServer'; break }
-      2 { $value['name'] = 'WindowsUpdate'; break }
-      default { $value['name'] = 'Other'; break }
+    # try/catch is used because sometimes certain servers fail to get updates and it throws
+    # this way we can get updates from all available servers without causing the whole script
+    # to fail
+    try {
+      $updateSearcher.ServerSelection = $serverSelection
+      $searchResult = $updateSearcher.Search($criteria)
+      $value = @{ 'result' = $searchResult; }
+      switch ($serverSelection)
+      {
+        0 { $value['name'] = 'Default'; break }
+        1 { $value['name'] = 'ManagedServer'; break }
+        2 { $value['name'] = 'WindowsUpdate'; break }
+        default { $value['name'] = 'Other'; break }
+      }
+      $resultHash[$serverSelection] = $value
+    } catch {
+      # error occurred with this particular server selection
     }
-    $resultHash[$serverSelection] = $value
   }
   return $resultHash
 }
