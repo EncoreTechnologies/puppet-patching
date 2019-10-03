@@ -7,7 +7,7 @@ plan patching::pre_patch (
   $targets = run_plan('patching::get_targets', nodes => $nodes)
   $group_vars = $targets[0].vars
   $_script_linux = pick($group_vars['patching_pre_patch_script_linux'], $script_linux)
-  $_script_windows = pick($group_var['patching_pre_patch_script_windows']s, $script_windows)
+  $_script_windows = pick($group_var['patching_pre_patch_script_windows'], $script_windows)
 
   return run_plan('patching::patch_helper',
                   nodes          => $targets,
