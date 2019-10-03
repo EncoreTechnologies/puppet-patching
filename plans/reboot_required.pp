@@ -8,7 +8,7 @@ plan patching::reboot_required (
   $targets = run_plan('patching::get_targets', nodes => $nodes)
   $group_vars = $targets[0].vars
   $_reboot = pick($group_vars['patching_reboot'], $reboot)
-  $_reboot_message = pick($group_vars['patching_reboot_message'], $reboot_message)
+  $_message = pick($group_vars['patching_reboot_message'], $message)
 
   ## Check if reboot required.
   $reboot_results = run_task('patching::reboot_required', $targets)
