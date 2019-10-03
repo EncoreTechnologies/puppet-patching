@@ -3,14 +3,45 @@
 
 #### Table of Contents
 
-1. [Description](#description)
-2. [Setup - The basics of getting started with patching](#setup)
-    * [What patching affects](#what-patching-affects)
-    * [Setup requirements](#setup-requirements)
-    * [Beginning with patching](#beginning-with-patching)
-3. [Usage - Configuration options and additional functionality](#usage)
-4. [Limitations - OS compatibility, etc.](#limitations)
-5. [Development - Guide for contributing to the module](#development)
+- [Description](#description)
+- [Setup](#setup)
+  - [Setup Requirements](#setup-requirements)
+  - [Getting started](#getting-started)
+- [Architecture](#architecture)
+- [Design](#design)
+- [Patching Workflow](#patching-workflow)
+- [Usage](#usage)
+  - [Check for available updates](#check-for-available-updates)
+  - [Create snapshots](#create-snapshots)
+  - [Perform pre-patching checks and actions](#perform-pre-patching-checks-and-actions)
+  - [Run a the full patching workflow end-to-end](#run-a-the-full-patching-workflow-end-to-end)
+- [Configuration Options](#configuration-options)
+  - [patching_order](#patching_order)
+  - [patching_reboot](#patching_reboot)
+  - [patching_reboot_message](#patching_reboot_message)
+  - [patching_pre_patch_plan](#patching_pre_patch_plan)
+  - [patching_pre_patch_script_linux](#patching_pre_patch_script_linux)
+  - [patching_pre_patch_script_windows](#patching_pre_patch_script_windows)
+  - [patching_post_patch_plan](#patching_post_patch_plan)
+  - [patching_post_patch_script_linux](#patching_post_patch_script_linux)
+  - [patching_post_patch_script_windows](#patching_post_patch_script_windows)
+  - [patching_snapshot_plan](#patching_snapshot_plan)
+  - [patching_snapshot_create](#patching_snapshot_create)
+  - [patching_snapshot_delete](#patching_snapshot_delete)
+  - [patching_vm_name_property](#patching_vm_name_property)
+  - [patching_snapshot_name](#patching_snapshot_name)
+  - [patching_snapshot_description](#patching_snapshot_description)
+  - [patching_snapshot_memory](#patching_snapshot_memory)
+  - [patching_snapshot_quiesce](#patching_snapshot_quiesce)
+  - [vsphere_host](#vsphere_host)
+  - [vsphere_username](#vsphere_username)
+  - [vsphere_password](#vsphere_password)
+  - [vsphere_insecure](#vsphere_insecure)
+  - [vsphere_datacenter](#vsphere_datacenter)
+- [TODO: Reference (start here)](#todo-reference-start-here)
+- [Limitations](#limitations)
+- [Development](#development)
+- [Release Notes/Contributors/Etc. **Optional**](#release-notescontributorsetc-optional)
 
 ## Description
 
@@ -602,6 +633,14 @@ In the Limitations section, list any incompatibilities, known issues, or other w
 ## Development
 
 In the Development section, tell other users the ground rules for contributing to your project and how they should submit their work.
+
+Generate table of contents for this document:
+https://github.com/thlorenz/doctoc
+
+``` yaml
+npm install -g doctoc
+doctoc README.md
+```
 
 ## Release Notes/Contributors/Etc. **Optional**
 
