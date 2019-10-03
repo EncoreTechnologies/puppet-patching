@@ -1,22 +1,17 @@
 # Bolt plan to update hosts (linux and windows together)
 plan patching (
   TargetSpec       $nodes,
-  Boolean          $filter_offline_nodes = pick(patching::vars()['patching_filter_offline_nodes'], false),
-  String[1]        $log_file        = pick(patching::vars()['patching_log_file'], '/var/log/patching.log'),
-  String           $pre_patch_plan  = pick(patching::vars()['patching_pre_patch_plan'], 'patching::pre_patch'),
-  String           $post_patch_plan = pick(patching::vars()['patching_post_patch_plan'], 'patching::post_patch'),
-  Boolean          $reboot          = pick(patching::vars()['patching_reboot'], true),
-  String           $reboot_message  = pick(patching::vars()['patching_reboot_message'], 'NOTICE: This system is currently being updated.'),
-  Optional[String] $snapshot_plan   = pick(patching::vars()['patching_snapshot_plan'], 'patching::snapshot_vmware'),
-  Boolean          $snapshot_create = pick(patching::vars()['patching_snapshot_create'], true),
-  Boolean          $snapshot_delete = pick(patching::vars()['patching_snapshot_delete'], true),
-  Boolean          $noop            = false,
+  Boolean          $filter_offline_nodes = false,
+  String           $pre_patch_plan   = 'patching::pre_patch',
+  String           $post_patch_plan  = 'patching::post_patch',
+  Boolean          $reboot           = true,
+  String           $reboot_message   = 'NOTICE: This system is currently being updated.',
+  Optional[String] $snapshot_plan    = 'patching::snapshot_vmware',
+  Boolean          $snapshot_create  = true,
+  Boolean          $snapshot_delete  = true,
+  Boolean          $noop             = false,
 ) {
-
   # TODO content promotion
-
-  # TODO pre patching plan/task/etc
-
   # TODO monitoring disable plan
 
   ## Filter offline nodes
@@ -80,9 +75,8 @@ plan patching (
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
-                              log_file      => $log_file,
-                              _catch_errors => true,
-                              _noop         => $noop)
+                              _catch_errors  => true,
+                              _noop          => $noop)
 
     ## Collect list of successful updates
     $update_ok_targets = $update_result.ok_set.targets
