@@ -4,7 +4,7 @@ plan patching::update_history (
   Optional[ResultSet] $history = undef,
   String           $environment = 'default',
   String           $report_file = 'patching_report.csv',
-  String           $mail_from = 'svc_encore@encore.tech',
+  Optional[String] $mail_from = undef,
   Optional[String] $mail_to = undef,
   # TODO CSV and JSON outputs
   Enum["none", "pretty", "csv"] $format = "pretty",

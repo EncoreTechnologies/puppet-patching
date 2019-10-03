@@ -1,14 +1,18 @@
 plan patching::pre_patch (
   TargetSpec $nodes,
-  Optional[String[1]] $script_linux   = get_targets($nodes)[0].vars['patching_linux_pre_patch_script'],
-  Optional[String[1]] $script_windows = get_targets($nodes)[0].vars['patching_windows_pre_patch_script'],
-  Boolean             $noop          = false,
+  String[1] $script_linux   = '/opt/patching/bin/pre_patch.sh',
+  String[1] $script_windows = 'C:\ProgramData\PuppetLabs\patching\pre_patch.ps1',
+  Boolean   $noop           = false,
 ) {
-  out::message("pre_patch - noop = ${noop}")
+  $targets = run_plan('patching::get_targets', nodes => $nodes)
+  $group_vars = $targets[0].vars
+  $_script_linux = pick($group_vars['patching_pre_patch_script_linux'], $script_linux)
+  $_script_windows = pick($group_var['patching_pre_patch_script_windows']s, $script_windows)
+
   return run_plan('patching::patch_helper',
-                  nodes          => $nodes,
+                  nodes          => $targets,
                   task           => 'patching::pre_patch',
-                  script_linux   => $script_linux,
-                  script_windows => $script_windows,
+                  script_linux   => $_script_linux,
+                  script_windows => $_script_windows,
                   noop           => $noop)
 }
