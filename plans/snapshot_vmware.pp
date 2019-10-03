@@ -28,50 +28,51 @@ plan patching::snapshot_vmware (
   Boolean $snapshot_quiesce     = true,
   Boolean $noop                 = false,
 ) {
-  $targets = run_plan('patching::get_targets', nodes => $nodes)
+  # $targets = run_plan('patching::get_targets', nodes => $nodes)
+  $targets = get_targets($nodes)
   $group_vars = $targets[0].vars
   $_vm_name_property = pick($group_vars['patching_vm_name_property'], $vm_name_property)
   $_snapshot_name = pick($group_vars['patching_snapshot_name'], $snapshot_name)
-  $_snapshot_description = pick($group_vars['patching_snapshot_description'], $snapshot_description)
+  $_snapshot_description = pick_default($group_vars['patching_snapshot_description'], $snapshot_description)
   $_snapshot_memory = pick($group_vars['patching_snapshot_memory'], $snapshot_memory)
   $_snapshot_quiesce = pick($group_vars['patching_snapshot_quiesce'], $snapshot_quiesce)
 
-  # Create array of node names
-  $vm_names = $targets.map |$n| {
-    case $_vm_name_property {
-      'name': {
-        $n.name
-      }
-      'uri': {
-        $n.uri
-      }
-    }
-  }
+  # # Create array of node names
+  # $vm_names = $targets.map |$n| {
+  #   case $_vm_name_property {
+  #     'name': {
+  #       $n.name
+  #     }
+  #     'uri': {
+  #       $n.uri
+  #     }
+  #   }
+  # }
 
-  # Display status message
-  if $action == 'create' {
-    out::message("Creating VM snapshot '${snapshot_name}' for:")
-    $vm_names.each |$n| {
-      out::message(" + ${n}")
-    }
-  } else {
-    out::message("Deleting VM snapshot '${snapshot_name}' for:")
-    $vm_names.each |$n| {
-      out::message(" - ${n}")
-    }
-  }
+  # # Display status message
+  # if $action == 'create' {
+  #   out::message("Creating VM snapshot '${snapshot_name}' for:")
+  #   $vm_names.each |$n| {
+  #     out::message(" + ${n}")
+  #   }
+  # } else {
+  #   out::message("Deleting VM snapshot '${snapshot_name}' for:")
+  #   $vm_names.each |$n| {
+  #     out::message(" - ${n}")
+  #   }
+  # }
 
-  if !$noop {
-    return patching::snapshot_vmware($vm_names,
-                                     $_snapshot_name,
-                                     $vsphere_host,
-                                     $vsphere_username,
-                                     $vsphere_password,
-                                     $vsphere_datacenter,
-                                     $vsphere_insecure,
-                                     $_snapshot_description,
-                                     $_snapshot_memory,
-                                     $_snapshot_quiesce,
-                                     $action)
-  }
+  # if !$noop {
+  #   return patching::snapshot_vmware($vm_names,
+  #                                    $_snapshot_name,
+  #                                    $vsphere_host,
+  #                                    $vsphere_username,
+  #                                    $vsphere_password,
+  #                                    $vsphere_datacenter,
+  #                                    $vsphere_insecure,
+  #                                    $_snapshot_description,
+  #                                    $_snapshot_memory,
+  #                                    $_snapshot_quiesce,
+  #                                    $action)
+  # }
 }
