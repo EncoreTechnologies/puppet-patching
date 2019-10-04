@@ -41,7 +41,7 @@ plan patching::reboot_required (
         }
         else {
           $nodes_reboot_attempted = []
-          $reboot_results = ResultSet()
+          $reboot_results = ResultSet([])
         }
       }
       'always': {
@@ -54,7 +54,7 @@ plan patching::reboot_required (
       }
       'never': {
         $nodes_reboot_attempted = []
-        $reboot_resultset = ResultSet()
+        $reboot_resultset = ResultSet([])
       }
     }
   }
