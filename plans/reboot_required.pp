@@ -47,11 +47,11 @@ plan patching::reboot_required (
       }
       'always': {
         $nodes_reboot_attempted = $nodes
-        $reboot_resulltset = run_plan('reboot',
-                                      nodes             => $nodes,
-                                      reconnect_timeout => 300,
-                                      message           => $_message,
-                                      _catch_errors     => true)
+        $reboot_resultset = run_plan('reboot',
+                                     nodes             => $nodes,
+                                     reconnect_timeout => 300,
+                                     message           => $_message,
+                                     _catch_errors     => true)
       }
       'never': {
         $nodes_reboot_attempted = []
