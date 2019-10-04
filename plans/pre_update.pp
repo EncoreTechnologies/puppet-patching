@@ -9,7 +9,7 @@ plan patching::pre_update (
   $_script_linux = pick($group_vars['patching_pre_update_script_linux'], $script_linux)
   $_script_windows = pick($group_vars['patching_pre_update_script_windows'], $script_windows)
 
-  return run_plan('patching::patch_helper',
+  return run_plan('patching::pre_post_update',
                   nodes          => $targets,
                   task           => 'patching::pre_update',
                   script_linux   => $_script_linux,

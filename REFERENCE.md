@@ -28,7 +28,7 @@
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
 * [`patching::get_targets`](#patchingget_targets): Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
-* [`patching::post_update`](#patchingpost_update): 
+* [`patching::post_update`](#patchingpost_update): Executes a custom post-update script on each node.
 * [`patching::pre_post_update`](#patchingpre_post_update): 
 * [`patching::pre_update`](#patchingpre_update): 
 * [`patching::puppet_facts`](#patchingpuppet_facts): Plan the runs 'puppet facts' on the target nodes and sets them as facts on the Target objects.  This is inspired by: https://github.com/puppe
@@ -658,7 +658,67 @@ Set of targets to created ordered groups of.
 
 ### patching::post_update
 
-The patching::post_update class.
+Often in patching it is necessary to run custom commands before/after updates are
+applied to a host. This plan allows for that customization to occur.
+
+By default it executes a Shell script on Linux and a PowerShell script on Windows hosts.
+The default script paths are:
+  - Linux: `/opt/patching/bin/post_update.sh`
+  - Windows: `C:\ProgramData\patching\bin\post_update.ps1`
+
+One can customize the script paths by overriding them on the CLI, or when calling the plan
+using the `script_linux` and `script_windows` parameters.
+
+The script paths can also be customzied in the inventory configuration `vars`:
+Example:
+
+``` yaml
+vars:
+  patching_post_update_script_linux: /usr/local/bin/mysweetpatchingscript.sh
+
+groups:
+  # these nodes will use the pre patching script defined in the vars above
+  - name: regular_nodes
+    targets:
+      - tomcat01.domain.tld
+
+  # these nodes will use the customized patching script set for this group
+  - name: sql_nodes
+    vars:
+      patching_post_update_script_linux: /bin/sqlpatching.sh
+    targets:
+      - sql01.domain.tld
+```
+
+#### Examples
+
+##### CLI - Basic usage
+
+```puppet
+bolt plan run patching::post_update --nodes all_hosts
+```
+
+##### CLI - Custom scripts
+
+```puppet
+bolt plan run patching::post_update --nodes all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
+```
+
+##### Plan - Basic usage
+
+```puppet
+run_plan('patching::post_update',
+         nodes => $all_hosts)
+```
+
+##### Plan - Custom scripts
+
+```puppet
+run_plan('patching::post_update',
+         nodes          => $all_hosts,
+         script_linux   => '/my/sweet/script.sh',
+         script_windows => 'C:\my\sweet\script.ps1')
+```
 
 #### Parameters
 
@@ -668,13 +728,13 @@ The following parameters are available in the `patching::post_update` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `script_linux`
 
 Data type: `String[1]`
 
-
+Path to the script that will be executed on Linux nodes.
 
 Default value: '/opt/patching/bin/post_update.sh'
 
@@ -682,7 +742,7 @@ Default value: '/opt/patching/bin/post_update.sh'
 
 Data type: `String[1]`
 
-
+Path to the script that will be executed on Windows nodes.
 
 Default value: 'C:\ProgramData\patching\bin\post_update.ps1'
 
@@ -690,7 +750,7 @@ Default value: 'C:\ProgramData\patching\bin\post_update.ps1'
 
 Data type: `Boolean`
 
-
+Flag to enable noop mode for the underlying plans and tasks.
 
 Default value: `false`
 
