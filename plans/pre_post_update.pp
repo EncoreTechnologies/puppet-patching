@@ -1,12 +1,12 @@
 # @summary
-plan patching::patch_helper (
+plan patching::pre_post_update (
   TargetSpec $nodes,
   String[1] $task,
   Optional[String[1]] $script_linux   = undef,
   Optional[String[1]] $script_windows = undef,
   Boolean             $noop           = false,
 ) {
-  out::message("patch_helper - noop = ${noop}")
+  out::message("pre_post_update - noop = ${noop}")
   $targets = run_plan('patching::get_targets',
                       nodes => $nodes)
 

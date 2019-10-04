@@ -13,10 +13,10 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 If (-not $script) {
-  If ($_task -eq 'patching::pre_patch') {
-    $script = 'C:\ProgramData\PuppetLabs\patching\pre_patch.ps1'
-  } elseif ($_task -eq 'patching::post_patch') {
-    $script = 'C:\ProgramData\PuppetLabs\patching\post_patch.ps1'
+  If ($_task -eq 'patching::pre_update') {
+    $script = 'C:\ProgramData\patching\bin\pre_update.ps1'
+  } elseif ($_task -eq 'patching::post_update') {
+    $script = 'C:\ProgramData\patching\bin\post_update.ps1'
   } else {
     Write-Error "ERROR - 'script' wasn't specified and we were called with an unknown task: $_task"
     exit 2
