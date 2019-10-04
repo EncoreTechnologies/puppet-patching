@@ -5,7 +5,7 @@
 
 - [Overview](#overview)
 - [patching_order](#patching_order)
-- [patching_reboot](#patching_reboot)
+- [patching_reboot_strategy](#patching_reboot_strategy)
 - [patching_reboot_message](#patching_reboot_message)
 - [patching_pre_patch_plan](#patching_pre_patch_plan)
 - [patching_pre_patch_script_linux](#patching_pre_patch_script_linux)
@@ -33,13 +33,13 @@ This module allows many aspects of its runtime to be customized using configurat
 in the inventory file. 
 
 Example: Let's say we want to prevent some nodes from rebooting during patching.
-This can be customized with the `patching_reboot` variable in inventory:
+This can be customized with the `patching_reboot_strategy` variable in inventory:
 
 ``` yaml
 groups:
   - name: no_reboot_nodes
     vars:
-      patching_reboot: false
+      patching_reboot_strategy: 'never'
     targets:
       - abc123.domain.tld
       - def4556.domain.tld
@@ -78,17 +78,31 @@ groups:
 ```
 
 
-### patching_reboot
+### patching_reboot_strategy
 
 ``` yaml
-type: Boolean
-default: true
+type: Enum
+values:
+ - 'only_required'
+ - 'never'
+ - 'always'
+default: 'only_required'
 ```
 
-Toggle for allowing nodes to reboot during patching. 
-`patching_reboot: true` means that nodes are allowed to reboot during patching, but only if
-reboot is required as signaled by the OS.
-`patching_reboot: false` means that the node will not reboot, even if it's required.
+Determines the way we handle reboots on nodes during the patching process.
+
+* `'only_required'`[default]  This value performs a "smart" check,
+  asking the target OS if it thinks it needs a reboot. A lot of times this does
+  a good job (usually Linux hosts). There are some instances however where it
+  doesn't return accurate results every time, so there are other options below.
+* `'never'` Allows you to completely disable rebooting of a host. This might be used
+  if you're patching in one window and allowed reboots in another. Another potential
+  use case is that you're patching a critical asset that should not be rebooted
+  except only under specific circumstances.
+* `'always'` This value will reboot the targets no matter what. We often see this
+  used in Windows environments where the OS doesn't always report back good data
+  about if a reboot is required or not. Also, on Windows many updates don't run
+  through their post-install process until a reboot is performed.
 
 
 ### patching_reboot_message
@@ -97,8 +111,6 @@ reboot is required as signaled by the OS.
 type: String
 default: 'NOTICE: This system is currently being updated.'
 ```
-
-Type: String`
 
 Message to display on any nodes that are rebooted during patching.
 

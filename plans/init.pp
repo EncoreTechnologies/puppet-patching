@@ -4,7 +4,7 @@ plan patching (
   Boolean          $filter_offline_nodes = false,
   String           $pre_patch_plan   = 'patching::pre_patch',
   String           $post_patch_plan  = 'patching::post_patch',
-  Boolean          $reboot           = true,
+  Enum['only_required', 'never', 'always'] $reboot_strategy = 'only_required',
   String           $reboot_message   = 'NOTICE: This system is currently being updated.',
   Optional[String] $snapshot_plan    = 'patching::snapshot_vmware',
   Boolean          $snapshot_create  = true,
@@ -36,7 +36,7 @@ plan patching (
     # if there is no customization for this group, it defaults to the global setting
     # set at the plan level above
     $group_vars = $ordered_nodes[0].vars
-    $reboot_group = pick($group_vars['patching_reboot'], $reboot)
+    $reboot_strategy_group = pick($group_vars['patching_reboot_strategy'], $reboot_strategy)
     $reboot_message_group = pick($group_vars['patching_reboot_message'], $reboot_message)
     $pre_patch_plan_group = pick($group_vars['patching_pre_patch_plan'], $pre_patch_plan)
     $post_patch_plan_group = pick($group_vars['patching_post_patch_plan'], $post_patch_plan)
@@ -101,10 +101,10 @@ plan patching (
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required',
-                nodes   => $update_ok_targets,
-                reboot  => $reboot_group,
-                message => $reboot_message_group,
-                noop    => $noop)
+                nodes    => $update_ok_targets,
+                strategy => $reboot_strategy_group,
+                message  => $reboot_message_group,
+                noop     => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != '' {

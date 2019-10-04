@@ -1,13 +1,17 @@
-# Bolt plan to check if targets need reboot and have patch_reboot flag set.
+# Bolt plan to check if targets need reboot
+# Targets will be rebooted based on the $strategy
+#  - 'only_required' only reboots hosts that require it based on info reported from the OS
+#  - 'never' never reboots the hosts
+#  - 'always' will reboot the host no matter what
 plan patching::reboot_required (
   TargetSpec $nodes,
-  Boolean $reboot = false,
+  Enum['only_required', 'never', 'always'] $strategy = 'only_required',
   String $message = 'NOTICE: This system is currently being updated.',
   Boolean $noop   = false,
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
   $group_vars = $targets[0].vars
-  $_reboot = pick($group_vars['patching_reboot'], $reboot)
+  $_strategy = pick($group_vars['patching_reboot_strategy'], $strategy)
   $_message = pick($group_vars['patching_reboot_message'], $message)
 
   ## Check if reboot required.
@@ -24,17 +28,42 @@ plan patching::reboot_required (
 
   ## Reboot the hosts that require it
   ## skip if we're in noop mode (the reboot plan doesn't support $noop)
-  if $_reboot and !$nodes_reboot_required.empty() and !$noop {
-    run_plan('reboot',
-              nodes             => $nodes_reboot_required,
-              reconnect_timeout => 300,
-              message           => $_message,
-              _catch_errors     => true)
+  if !$noop {
+    case $_strategy {
+      'only_required': {
+        if !$nodes_reboot_required.empty() {
+          $nodes_reboot_attempted = $nodes_reboot_required
+          $reboot_resultset = run_plan('reboot',
+                                       nodes             => $nodes_reboot_required,
+                                       reconnect_timeout => 300,
+                                       message           => $_message,
+                                       _catch_errors     => true)
+        }
+        else {
+          $nodes_reboot_attempted = []
+          $reboot_results = ResultSet()
+        }
+      }
+      'always': {
+        $nodes_reboot_attempted = $nodes
+        $reboot_resulltset = run_plan('reboot',
+                                      nodes             => $nodes,
+                                      reconnect_timeout => 300,
+                                      message           => $_message,
+                                      _catch_errors     => true)
+      }
+      'never': {
+        $nodes_reboot_attempted = []
+        $reboot_resultset = ResultSet()
+      }
+    }
   }
 
   # return our results
   return({
     'required'     => $nodes_reboot_required,
     'not_required' => $nodes_reboot_not_required,
+    'attempted'    => $nodes_reboot_attempted,
+    'resultset'    => $reboot_resultset,
   })
 }

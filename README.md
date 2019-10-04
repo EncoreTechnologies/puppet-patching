@@ -35,12 +35,14 @@ have `bolt` installed.
 
 ### Setup Requirements
 
-Module makes heavy use of [bolt](https://puppet.com/docs/bolt/latest/bolt.html), you'll need to isntall it to get started.
+Module makes heavy use of [bolt](https://puppet.com/docs/bolt/latest/bolt.html), 
+you'll need to install it to get started. Install instructions are
+[here](https://puppet.com/docs/bolt/latest/bolt_installing.html).
 
-### Getting started
+### Quick Start
 
 ``` shell
-cat <<EOF >> ~/.puppetlabs/bolt/Puppetfile
+cat << EOF >> ~/.puppetlabs/bolt/Puppetfile
 mod 'puppetlabs/stdlib'
 mod 'encore/patching'
 EOF
@@ -167,13 +169,13 @@ in the inventory file.
 For details on all of the available configuration options, see [REFERENCE_CONFIGURATION.md](REFERENCE_CONFIGURATION.md)
 
 Example: Let's say we want to prevent some nodes from rebooting during patching.
-This can be customized with the `patching_reboot` variable in inventory:
+This can be customized with the `patching_reboot_strategy` variable in inventory:
 
 ``` yaml
 groups:
   - name: no_reboot_nodes
     vars:
-      patching_reboot: false
+      patching_reboot_strategy: 'never'
     targets:
       - abc123.domain.tld
       - def4556.domain.tld
@@ -185,19 +187,18 @@ See [REFERENCE.md](REFERENCE.md)
 
 ## Limitations
 
-In the Limitations section, list any incompatibilities, known issues, or other warnings.
+This module has been tested on the following operating systems:
 
-## Development
-
-In the Development section, tell other users the ground rules for contributing to your project and how they should submit their work.
-
-Generate table of contents for this document:
-https://github.com/thlorenz/doctoc
-
-``` yaml
-npm install -g doctoc
-doctoc README.md
-```
+* Windows
+  * 2008
+  * 2012
+  * 2016
+* RHEL
+  * 6
+  * 7
+* Ubuntu
+  * 16.04
+  * 18.04
 
 ## Contributors
 
