@@ -18,6 +18,7 @@ plan patching::reboot_required (
   $reboot_results = run_task('patching::reboot_required', $targets)
 
   # print out pretty message
+  out::message("Reboot strategy: ${_strategy}")
   out::message("Host reboot required status: ('+' reboot required; '-' reboot NOT required)")
   $nodes_reboot_required = $reboot_results.filter_set|$res| { $res['reboot_required'] }.targets
   $nodes_reboot_not_required = $reboot_results.filter_set|$res| { !$res['reboot_required'] }.targets
@@ -41,7 +42,7 @@ plan patching::reboot_required (
         }
         else {
           $nodes_reboot_attempted = []
-          $reboot_results = ResultSet([])
+          $reboot_resultset = ResultSet([])
         }
       }
       'always': {
@@ -57,6 +58,9 @@ plan patching::reboot_required (
         $reboot_resultset = ResultSet([])
       }
     }
+  }
+  else {
+    out::message("Noop specified, skipping all reboots.")
   }
 
   # return our results
