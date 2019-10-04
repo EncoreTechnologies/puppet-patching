@@ -1,3 +1,4 @@
+# @summary
 plan patching::patch_helper (
   TargetSpec $nodes,
   String[1] $task,

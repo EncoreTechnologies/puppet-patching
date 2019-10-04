@@ -77,6 +77,9 @@ groups:
       - sql02.domain.tld
 ```
 
+For more information see the [`patching::ordered_groups`](plans/patching_ordered_groups.pp) plan
+documentation.
+
 
 ### patching_reboot_strategy
 

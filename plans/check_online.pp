@@ -1,4 +1,35 @@
-# Checks each node to see if Puppet is installed, if it is then gather Facts
+# @summary Checks each node to see they're online.
+#
+# Online checks are done querying for the node's Puppet version using the
+# <code>puppet_agent::version</code> task.
+# This plan is designed to be used ad-hoc as a quick health check of your inventory.
+# It is the intention of this plan to be used as "first pass" when onboarding new nodes
+# into a Bolt rotation.
+# One would build their inventory file of all nodes from their trusted data sources.
+# Then take the inventory files and run this plan against them to isolate problem nodes
+# and remediate them.
+# Once this plan runs successfuly on your inventory, you know that Bolt can connect
+# and can begin the patching proces.
+#
+# There are no results returned by this plan, instead data is pretty-printed to the screen in
+# two lists:
+#
+#   1. List of targets that failed to connect. This list is a YAML list where each line
+#      is the name of a Target that failed to connect.
+#      The intention here is that you can use this YAML list to modify your inventory
+#      and remove these problem hosts from your groups.
+#   2. Details for each failed target. This provides details about the error that
+#      occured when connecting. Failures can occur for many reasons, host being offline
+#      host not listening on the right port, firewall blocking, invalid credentials, etc.
+#      The idea here is to give the end-user a easily digestible summary so that action
+#      can be taken to remediate these hosts.
+#
+# @param [TargetSpec] nodes
+#   Set of targets to run against.
+#
+# @example CLI - Basic usage
+#   bolt plan run patching::check_online
+#
 plan patching::check_online (
   TargetSpec $nodes,
 ) {
