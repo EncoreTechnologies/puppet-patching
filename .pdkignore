@@ -40,4 +40,3 @@
 /.yardopts
 /spec/
 /.vscode/
-/bolt/r10k_deploy/
