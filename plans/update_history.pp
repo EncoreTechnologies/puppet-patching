@@ -7,7 +7,7 @@ plan patching::update_history (
   Optional[String] $mail_from = undef,
   Optional[String] $mail_to = undef,
   # TODO CSV and JSON outputs
-  Enum["none", "pretty", "csv"] $format = "pretty",
+  Enum['none', 'pretty', 'csv'] $format = 'pretty',
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
 

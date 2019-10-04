@@ -23,12 +23,12 @@ plan patching::check_puppet (
     # run `puppet facts` on targets with Puppet because it returns a more complete
     # set of facts than just running `facter`
     run_plan('patching::puppet_facts',
-             nodes => $targets_with_puppet)
+              nodes => $targets_with_puppet)
   }
   if !$targets_no_puppet.empty() {
     # run `facter` if it's available otherwise get basic facts
     run_plan('facts',
-             nodes => $targets_no_puppet)
+              nodes => $targets_no_puppet)
   }
 
   return({

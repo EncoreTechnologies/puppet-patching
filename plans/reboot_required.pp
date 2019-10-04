@@ -26,10 +26,10 @@ plan patching::reboot_required (
   ## skip if we're in noop mode (the reboot plan doesn't support $noop)
   if $_reboot and !$nodes_reboot_required.empty() and !$noop {
     run_plan('reboot',
-             nodes             => $nodes_reboot_required,
-             reconnect_timeout => 300,
-             message           => $_message,
-             _catch_errors     => true)
+              nodes             => $nodes_reboot_required,
+              reconnect_timeout => 300,
+              message           => $_message,
+              _catch_errors     => true)
   }
 
   # return our results
