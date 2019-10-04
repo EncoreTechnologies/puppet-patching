@@ -1,6 +1,8 @@
 
 # patching
 
+[![Build Status](https://travis-ci.org/EncoreTechnologies/puppet-patching.svg?branch=master)](https://travis-ci.org/EncoreTechnologies/puppet-patching)
+
 #### Table of Contents
 
 - [Description](#description)
