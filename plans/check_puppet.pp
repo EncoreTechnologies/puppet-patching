@@ -1,4 +1,56 @@
-# Checks each node to see if Puppet is installed, if it is then gather Facts
+# @summary Checks each node to see if Puppet is installed, then gather Facts on all nodes.
+#
+# Executes the <code>puppet_agent::version</code> task to check if Puppet is installed
+# on all of the nodes. Once finished, the result is split into two groups:
+#
+#  1. Nodes with puppet
+#  2. Nodes with no puppet
+#
+# The nodes with puppet are queried for facts using the <code>patching::puppet_facts</code> plan.
+# Nodes without puppet are queried for facts using the simpler <code>facts</code> plan.
+#
+# This plan is designed to be the first plan executed in a patching workflow.
+# It can be used to stop the patching process if any hosts are offline by setting
+# <code>filter_offline_nodes=false</code> (default). It can also be used
+# to patch any hosts that are currently available and ignoring any offline nodes
+# by setting <code>filter_offline_nodes=true</code>.
+#
+# @param [TargetSpec] nodes
+#   Set of targets to run against.
+# @param [Boolean] filter_offline_nodes
+#   Flag to determine if offline nodes should be filtered out of the list of targets
+#   returned by this plan. If true, when running the <code>puppet_agent::version</code>
+#   check, any nodes that return an error will be filtered out and ignored.
+#   Those targets will not be returned in any of the data structures in the result of
+#   this plan. If false, then any nodes that are offline will cause this plan to error
+#   immediately when performing the online check. This will result in a halt of the
+#   patching process.
+#
+# @return [Struct[{has_puppet => Array[TargetSpec],
+#                  no_puppet => Array[TargetSpec],
+#                  all => Array[TargetSpec]}]]
+#
+# @example CLI - Basic usage (error if any nodes are offline)
+#   bolt plan run patching::check_puppet --nodes linux_hosts
+#
+# @example CLI - Filter offline nodes (only return online nodes)
+#   bolt plan run patching::check_puppet --nodes linux_hosts filter_offline_nodes=true
+#
+# @example Plan - Basic usage (error if any nodes are offline)
+#   $results = run_plan('patching::check_puppet',
+#                       nodes => $linux_hosts)
+#   $targets_has_puppet = $results['has_puppet']
+#   $targets_no_puppet = $results['no_puppet']
+#   $targets_all = $results['all']
+#
+# @example Plan - Filter offline nodes (only return online nodes)
+#   $results = run_plan('patching::check_puppet',
+#                       nodes                => $linux_hosts,
+#                       filter_offline_nodes => true)
+#   $targets_online_has_puppet = $results['has_puppet']
+#   $targets_online_no_puppet = $results['no_puppet']
+#   $targets_online = $results['all']
+#
 plan patching::check_puppet (
   TargetSpec $nodes,
   Boolean $filter_offline_nodes = false,

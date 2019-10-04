@@ -23,16 +23,16 @@
 **Plans**
 
 * [`patching`](#patching): Bolt plan to update hosts (linux and windows together)
-* [`patching::available_updates`](#patchingavailable_updates): 
-* [`patching::check_online`](#patchingcheck_online): Checks each node to see if Puppet is installed, if it is then gather Facts
-* [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, if it is then gather Facts
-* [`patching::get_targets`](#patchingget_targets): 
-* [`patching::ordered_groups`](#patchingordered_groups): 
+* [`patching::available_updates`](#patchingavailable_updates): Checks all nodes for available updates reported by their Operating System.
+* [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
+* [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
+* [`patching::get_targets`](#patchingget_targets): Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
+* [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
 * [`patching::patch_helper`](#patchingpatch_helper): 
 * [`patching::post_patch`](#patchingpost_patch): 
 * [`patching::pre_patch`](#patchingpre_patch): 
 * [`patching::puppet_facts`](#patchingpuppet_facts): Plan the runs 'puppet facts' on the target nodes and sets them as facts on the Target objects.  This is inspired by: https://github.com/puppe
-* [`patching::reboot_required`](#patchingreboot_required): Bolt plan to check if targets need reboot and have patch_reboot flag set.
+* [`patching::reboot_required`](#patchingreboot_required): Bolt plan to check if targets need reboot Targets will be rebooted based on the $strategy  - 'only_required' only reboots hosts that require 
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshot on supplied nodes.  NOTE1: rbvmomi gem must be installed on the localhost for this plan to function.        /o
 * [`patching::update_history`](#patchingupdate_history): Bolt plan to collect update history from hosts
 
@@ -284,13 +284,13 @@ Data type: `String`
 
 Default value: 'patching::post_patch'
 
-##### `reboot`
+##### `reboot_strategy`
 
-Data type: `Boolean`
+Data type: `Enum['only_required', 'never', 'always']`
 
 
 
-Default value: `true`
+Default value: 'only_required'
 
 ##### `reboot_message`
 
@@ -334,7 +334,46 @@ Default value: `false`
 
 ### patching::available_updates
 
-The patching::available_updates class.
+This uses the <code>patching::available_updates</code> task to query each Target's
+Operating System for available updates. The results from the OS are parsed and formatted
+into easy to consume JSON data, such that further code can be written against the
+output.
+
+ - RHEL: This ultimately performs a <code>yum check-update</code>.
+ - Ubuntu: This ultimately performs a <code>apt upgrade --simulate</code>.
+ - Windows:
+   - Windows Update API: Queries the WUA for updates. This is the standard update mechanism
+     for Windows.
+   - Chocolatey: If installed, runs <code>choco outdated</code>. If not installed, Chocolatey is ignored.
+
+#### Examples
+
+##### CLI - Basic Usage
+
+```puppet
+bolt plan run patching::available_updates --nodes linux_hosts
+```
+
+##### CLI - Get available update information in CSV format for creating reports
+
+```puppet
+bolt plan run patching::available_updates --nodes linux_hosts format=csv
+```
+
+##### Plan - Basic Usage
+
+```puppet
+run_plan('patching::available_updates',
+         nodes => $linux_hosts)
+```
+
+##### Plan - Get available update information in CSV format for creating reports
+
+```puppet
+run_plan('patching::available_updates',
+         nodes  => $linux_hosts,
+         format => 'csv')
+```
 
 #### Parameters
 
@@ -344,27 +383,63 @@ The following parameters are available in the `patching::available_updates` plan
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `format`
 
-Data type: `Enum["none", "pretty", "csv"]`
+Data type: `Enum['none', 'pretty', 'csv']`
 
+Output format for printing user-friendly information during the plan run.
+This also determines the format of the information returned from this plan.
 
+  - 'none' : Prints no data to the screen. Returns the raw ResultSet from the patching::available_updates task
+  - 'pretty' : Prints the data out in a easy to consume format, one line per host, showing the number of available updates per host. Returns a Hash containing two keys: 'has_updates' - an array of TargetSpec that have updates available, 'no_updates' - an array of hosts that have no updates available.
+  - 'csv' : Prints and returns CSV formatted data, one row for each update of each host.
 
-Default value: "pretty"
+Default value: 'pretty'
 
 ##### `noop`
 
 Data type: `Boolean`
 
-
+Run this plan in noop mode, meaning no changes will be made to end systems.
+In this case, noop mode has no effect.
 
 Default value: `false`
 
 ### patching::check_online
 
-Checks each node to see if Puppet is installed, if it is then gather Facts
+Online checks are done querying for the node's Puppet version using the
+<code>puppet_agent::version</code> task.
+This plan is designed to be used ad-hoc as a quick health check of your inventory.
+It is the intention of this plan to be used as "first pass" when onboarding new nodes
+into a Bolt rotation.
+One would build their inventory file of all nodes from their trusted data sources.
+Then take the inventory files and run this plan against them to isolate problem nodes
+and remediate them.
+Once this plan runs successfuly on your inventory, you know that Bolt can connect
+and can begin the patching proces.
+
+There are no results returned by this plan, instead data is pretty-printed to the screen in
+two lists:
+
+  1. List of targets that failed to connect. This list is a YAML list where each line
+     is the name of a Target that failed to connect.
+     The intention here is that you can use this YAML list to modify your inventory
+     and remove these problem hosts from your groups.
+  2. Details for each failed target. This provides details about the error that
+     occured when connecting. Failures can occur for many reasons, host being offline
+     host not listening on the right port, firewall blocking, invalid credentials, etc.
+     The idea here is to give the end-user a easily digestible summary so that action
+     can be taken to remediate these hosts.
+
+#### Examples
+
+##### CLI - Basic usage
+
+```puppet
+bolt plan run patching::check_online
+```
 
 #### Parameters
 
@@ -374,11 +449,59 @@ The following parameters are available in the `patching::check_online` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ### patching::check_puppet
 
-Checks each node to see if Puppet is installed, if it is then gather Facts
+Executes the <code>puppet_agent::version</code> task to check if Puppet is installed
+on all of the nodes. Once finished, the result is split into two groups:
+
+ 1. Nodes with puppet
+ 2. Nodes with no puppet
+
+The nodes with puppet are queried for facts using the <code>patching::puppet_facts</code> plan.
+Nodes without puppet are queried for facts using the simpler <code>facts</code> plan.
+
+This plan is designed to be the first plan executed in a patching workflow.
+It can be used to stop the patching process if any hosts are offline by setting
+<code>filter_offline_nodes=false</code> (default). It can also be used
+to patch any hosts that are currently available and ignoring any offline nodes
+by setting <code>filter_offline_nodes=true</code>.
+
+#### Examples
+
+##### CLI - Basic usage (error if any nodes are offline)
+
+```puppet
+bolt plan run patching::check_puppet --nodes linux_hosts
+```
+
+##### CLI - Filter offline nodes (only return online nodes)
+
+```puppet
+bolt plan run patching::check_puppet --nodes linux_hosts filter_offline_nodes=true
+```
+
+##### Plan - Basic usage (error if any nodes are offline)
+
+```puppet
+$results = run_plan('patching::check_puppet',
+                    nodes => $linux_hosts)
+$targets_has_puppet = $results['has_puppet']
+$targets_no_puppet = $results['no_puppet']
+$targets_all = $results['all']
+```
+
+##### Plan - Filter offline nodes (only return online nodes)
+
+```puppet
+$results = run_plan('patching::check_puppet',
+                    nodes                => $linux_hosts,
+                    filter_offline_nodes => true)
+$targets_online_has_puppet = $results['has_puppet']
+$targets_online_no_puppet = $results['no_puppet']
+$targets_online = $results['all']
+```
 
 #### Parameters
 
@@ -388,19 +511,47 @@ The following parameters are available in the `patching::check_puppet` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `filter_offline_nodes`
 
 Data type: `Boolean`
 
-
+Flag to determine if offline nodes should be filtered out of the list of targets
+returned by this plan. If true, when running the <code>puppet_agent::version</code>
+check, any nodes that return an error will be filtered out and ignored.
+Those targets will not be returned in any of the data structures in the result of
+this plan. If false, then any nodes that are offline will cause this plan to error
+immediately when performing the online check. This will result in a halt of the
+patching process.
 
 Default value: `false`
 
 ### patching::get_targets
 
-The patching::get_targets class.
+A very common requirement when running individual plans from the commandline is that
+each plan would need to perform the following steps:
+ - Convert the TargetSpec from a string into an Array[Target] using <code>get_targets($nodes)</code>
+ - Check for nodes that are online (calls plan <code>patching::check_puppet</code>
+ - Gather facts about the nodes
+
+This plan combines all of that into one so that it can be reused in all of the other
+plans within this module. It also adds some smart checking so that, if multiple plans
+invoke each other, each of which call this plan. The online check and facts gathering
+only hapens once.
+
+#### Examples
+
+##### Plan - Basic usage
+
+```puppet
+plan mymodule::myplan (
+  TargetSpec $nodes
+) {
+  $targets = run_plan('patching::get_targets', nodes => $ndoes)
+  # do normal stuff with your $targets
+}
+```
 
 #### Parameters
 
@@ -410,11 +561,90 @@ The following parameters are available in the `patching::get_targets` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ### patching::ordered_groups
 
-The patching::ordered_groups class.
+When patching hosts it is common that you don't want to patch them all at the same time,
+for obvious reasons. To facilitate this we devised the concept of a "patching order".
+Patching order is a mechanism to allow nodes to be organized into groups and
+then sorted so that a custom order can be defined for your specific usecase.
+
+The way one assigns a patching order to a target or group is using <code>vars</code>
+in the Bolt inventory file.
+
+Example:
+
+```yaml
+---
+groups:
+  - name: primary_nodes
+    vars:
+      patching_order: 1
+    targets:
+      - sql01.domain.tld
+
+  - name: backup_nodes
+    vars:
+      patching_order: 2
+    targets:
+      - sql02.domain.tld
+```
+
+When the <code>patching_order</code> is defined at the group level, it is inherited
+by all nodes within that group.
+
+The reason this plan exists is that there is no concept of a "group" in the bolt
+runtime, so we need to artificially recreate them using our <code>patching_order</code>
+vars paradigm.
+
+An added benefit to this paradigm is that you may have grouped your nodes logically
+on a different dimension, say by application. If it's OK that multiple applications be
+patched at the same time, we can assign the same patching order to multiple groups
+in the inventory. Then, when run through this plan, they will be aggregated together
+into one large group of nodes that will all be patched concurrently.
+
+Example, app_xxx and app_zzz both can be patched at the same time, but app_yyy needs to go
+later in the process:
+
+```yaml
+---
+groups:
+  - name: app_xxx
+    vars:
+      patching_order: 1
+    targets:
+      - xxx
+
+  - name: app_yyy
+    vars:
+      patching_order: 2
+    targets:
+      - yyy
+
+  - name: app_zzz
+    vars:
+      patching_order: 1
+    targets:
+      - zzz
+```
+
+ This is returned as an Array, because an Array has a defined order when
+ you iterate over it using <code>.each</code>. Ordering is important in patching
+ so we wanted this to be very concrete.
+
+#### Examples
+
+##### Basic usage
+
+```puppet
+$ordered_groups = run_plan('patching::ordered_groups', nodes => $targets)
+$ordered_groups.each |$group_hash| {
+  $group_order = $group_hash['order']
+  $group_nodes = $group_hash['nodes']
+  # run your patching process for the group
+}
+```
 
 #### Parameters
 
@@ -424,7 +654,7 @@ The following parameters are available in the `patching::ordered_groups` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to created ordered groups of.
 
 ### patching::patch_helper
 
@@ -567,7 +797,11 @@ Data type: `TargetSpec`
 
 ### patching::reboot_required
 
-Bolt plan to check if targets need reboot and have patch_reboot flag set.
+Bolt plan to check if targets need reboot
+Targets will be rebooted based on the $strategy
+ - 'only_required' only reboots hosts that require it based on info reported from the OS
+ - 'never' never reboots the hosts
+ - 'always' will reboot the host no matter what
 
 #### Parameters
 
@@ -579,13 +813,13 @@ Data type: `TargetSpec`
 
 
 
-##### `reboot`
+##### `strategy`
 
-Data type: `Boolean`
+Data type: `Enum['only_required', 'never', 'always']`
 
 
 
-Default value: `false`
+Default value: 'only_required'
 
 ##### `message`
 
@@ -780,9 +1014,9 @@ Default value: `undef`
 
 ##### `format`
 
-Data type: `Enum["none", "pretty", "csv"]`
+Data type: `Enum['none', 'pretty', 'csv']`
 
 
 
-Default value: "pretty"
+Default value: 'pretty'
 

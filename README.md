@@ -147,7 +147,10 @@ By default this executes the following scripts (nodes where the script doesn't e
 
 ### Run a the full patching workflow end-to-end
 
-This executes the following for each group:
+Organize the inventory into groups:
+* `patching::ordered_groups`
+
+Then, for each group:
 * `patching::cache_updates`
 * `patching::available_updates`
 * `patching::snapshot_vmware action='create'`
