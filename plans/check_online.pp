@@ -30,6 +30,6 @@ plan patching::check_online (
     fail_plan('Unable to connect to the targets above!')
   }
   else {
-    out::message("All nodes succeeded!")
+    out::message('All nodes succeeded!')
   }
 }

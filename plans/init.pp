@@ -48,12 +48,12 @@ plan patching (
 
     ## Update patching cache (yum update, apt-get update, etc)
     run_task('patching::cache_update', $ordered_nodes,
-             _noop => $noop)
+              _noop => $noop)
 
     ## Check for updates on hosts
     $available_results = run_plan('patching::available_updates',
                                   nodes  => $ordered_nodes,
-                                  format => "pretty",
+                                  format => 'pretty',
                                   noop   => $noop)
     $update_targets = $available_results['has_updates']
     if $update_targets.empty {
@@ -63,15 +63,15 @@ plan patching (
     ## Create VM snapshots
     if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != ''{
       run_plan($snapshot_plan_group,
-               nodes  => $update_targets,
-               action => 'create',
-               noop   => $noop)
+                nodes  => $update_targets,
+                action => 'create',
+                noop   => $noop)
     }
 
     ## Run pre-patching script.
     run_plan($pre_patch_plan_group,
-             nodes => $update_targets,
-             noop  => $noop)
+              nodes => $update_targets,
+              noop  => $noop)
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
@@ -96,22 +96,22 @@ plan patching (
     if !$update_ok_targets.empty {
       ## Run post-patching script.
       run_plan($post_patch_plan_group,
-               nodes => $update_ok_targets,
-               noop  => $noop)
+                nodes => $update_ok_targets,
+                noop  => $noop)
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required',
-               nodes   => $update_ok_targets,
-               reboot  => $reboot_group,
-               message => $reboot_message_group,
-               noop    => $noop)
+                nodes   => $update_ok_targets,
+                reboot  => $reboot_group,
+                message => $reboot_message_group,
+                noop    => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != '' {
         run_plan($snapshot_plan_group,
-                 nodes  => $update_ok_targets,
-                 action => 'delete',
-                 noop   => $noop)
+                  nodes  => $update_ok_targets,
+                  action => 'delete',
+                  noop   => $noop)
       }
     }
     # else {
@@ -121,8 +121,8 @@ plan patching (
 
   ## Collect summary report
   run_plan('patching::update_history',
-           nodes  => $targets,
-           format => 'pretty')
+            nodes  => $targets,
+            format => 'pretty')
 
   ## Display final status
   return()
