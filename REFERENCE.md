@@ -13,8 +13,8 @@
 * [`cache_remove`](#cache_remove): Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows thi
 * [`cache_update`](#cache_update): Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this m
 * [`history`](#history): Reads the update history from the JSON 'result_file'.
-* [`post_patch`](#post_patch): Run post-patching script on target host(s), only if it exists. If the patching script doesn't exist or isn't executable, then this task succe
-* [`pre_patch`](#pre_patch): Run pre-patching script on target host(s), only if it exists. If the patching script doesn't exist or isn't executable, then this task succee
+* [`post_update`](#post_update): Run post-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this a
+* [`pre_update`](#pre_update): Run pre-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this al
 * [`puppet_facts`](#puppet_facts): Gather system facts using 'puppet facts'. Puppet agent MUST be installed for this to work.
 * [`reboot_required`](#reboot_required): Checks if a reboot is pending
 * [`update`](#update): Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windo
@@ -28,9 +28,9 @@
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
 * [`patching::get_targets`](#patchingget_targets): Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
-* [`patching::patch_helper`](#patchingpatch_helper): 
-* [`patching::post_patch`](#patchingpost_patch): 
-* [`patching::pre_patch`](#patchingpre_patch): 
+* [`patching::post_update`](#patchingpost_update): 
+* [`patching::pre_post_update`](#patchingpre_post_update): 
+* [`patching::pre_update`](#patchingpre_update): 
 * [`patching::puppet_facts`](#patchingpuppet_facts): Plan the runs 'puppet facts' on the target nodes and sets them as facts on the Target objects.  This is inspired by: https://github.com/puppe
 * [`patching::reboot_required`](#patchingreboot_required): Bolt plan to check if targets need reboot Targets will be rebooted based on the $strategy  - 'only_required' only reboots hosts that require 
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshot on supplied nodes.  NOTE1: rbvmomi gem must be installed on the localhost for this plan to function.        /o
@@ -158,23 +158,9 @@ Data type: `Optional[String[1]]`
 
 Log file for patching results. This file will contain the JSON output that is returned from these tasks. This is data that was written by patching::update. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
 
-### post_patch
+### post_update
 
-Run post-patching script on target host(s), only if it exists. If the patching script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a post-patching script).
-
-**Supports noop?** true
-
-#### Parameters
-
-##### `script`
-
-Data type: `Optional[String[1]]`
-
-Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/post_patch.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/post_patch.ps1.
-
-### pre_patch
-
-Run pre-patching script on target host(s), only if it exists. If the patching script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a pre-patching script).
+Run post-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a post-update script).
 
 **Supports noop?** true
 
@@ -184,7 +170,21 @@ Run pre-patching script on target host(s), only if it exists. If the patching sc
 
 Data type: `Optional[String[1]]`
 
-Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/pre_patch.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/pre_patch.ps1.
+Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/post_update.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/post_update.ps1.
+
+### pre_update
+
+Run pre-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a pre-update script).
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `script`
+
+Data type: `Optional[String[1]]`
+
+Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/pre_update.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/pre_update.ps1.
 
 ### puppet_facts
 
@@ -268,21 +268,21 @@ Data type: `Boolean`
 
 Default value: `false`
 
-##### `pre_patch_plan`
+##### `pre_update_plan`
 
 Data type: `String`
 
 
 
-Default value: 'patching::pre_patch'
+Default value: 'patching::pre_update'
 
-##### `post_patch_plan`
+##### `post_update_plan`
 
 Data type: `String`
 
 
 
-Default value: 'patching::post_patch'
+Default value: 'patching::post_update'
 
 ##### `reboot_strategy`
 
@@ -656,13 +656,51 @@ Data type: `TargetSpec`
 
 Set of targets to created ordered groups of.
 
-### patching::patch_helper
+### patching::post_update
 
-The patching::patch_helper class.
+The patching::post_update class.
 
 #### Parameters
 
-The following parameters are available in the `patching::patch_helper` plan.
+The following parameters are available in the `patching::post_update` plan.
+
+##### `nodes`
+
+Data type: `TargetSpec`
+
+
+
+##### `script_linux`
+
+Data type: `String[1]`
+
+
+
+Default value: '/opt/patching/bin/post_update.sh'
+
+##### `script_windows`
+
+Data type: `String[1]`
+
+
+
+Default value: 'C:\ProgramData\patching\bin\post_update.ps1'
+
+##### `noop`
+
+Data type: `Boolean`
+
+
+
+Default value: `false`
+
+### patching::pre_post_update
+
+The patching::pre_post_update class.
+
+#### Parameters
+
+The following parameters are available in the `patching::pre_post_update` plan.
 
 ##### `nodes`
 
@@ -700,13 +738,13 @@ Data type: `Boolean`
 
 Default value: `false`
 
-### patching::post_patch
+### patching::pre_update
 
-The patching::post_patch class.
+The patching::pre_update class.
 
 #### Parameters
 
-The following parameters are available in the `patching::post_patch` plan.
+The following parameters are available in the `patching::pre_update` plan.
 
 ##### `nodes`
 
@@ -720,7 +758,7 @@ Data type: `String[1]`
 
 
 
-Default value: '/opt/patching/bin/post_patch.sh'
+Default value: '/opt/patching/bin/pre_update.sh'
 
 ##### `script_windows`
 
@@ -728,45 +766,7 @@ Data type: `String[1]`
 
 
 
-Default value: 'C:\ProgramData\PuppetLabs\patching\post_patch.ps1'
-
-##### `noop`
-
-Data type: `Boolean`
-
-
-
-Default value: `false`
-
-### patching::pre_patch
-
-The patching::pre_patch class.
-
-#### Parameters
-
-The following parameters are available in the `patching::pre_patch` plan.
-
-##### `nodes`
-
-Data type: `TargetSpec`
-
-
-
-##### `script_linux`
-
-Data type: `String[1]`
-
-
-
-Default value: '/opt/patching/bin/pre_patch.sh'
-
-##### `script_windows`
-
-Data type: `String[1]`
-
-
-
-Default value: 'C:\ProgramData\PuppetLabs\patching\pre_patch.ps1'
+Default value: 'C:\ProgramData\patching\bin\pre_update.ps1'
 
 ##### `noop`
 

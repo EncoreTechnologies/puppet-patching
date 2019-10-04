@@ -132,17 +132,17 @@ bolt plan run patching::snapshot_vmware --nodes group_a action='create' vsphere_
 This plan is designed to perform custom service checks and shutdown actions before 
 applying patches to a node.
 If you have custom actions that need to be perform prior to patching, place them in the
-`pre_patch` scripts and this plan will execute them. 
+`pre_update` scripts and this plan will execute them. 
 Best practice is to define and distribute these scripts as part of your normal Puppet code
 as part of othe role for that node.
 
 ``` shell
-bolt plan run patching::pre_patch --nodes group_a
+bolt plan run patching::pre_update --nodes group_a
 ```
 
 By default this executes the following scripts (nodes where the script doesn't exist are ignored):
-* Linux = `/opt/patching/bin/pre_patch.sh`
-* Windows = `C:\ProgramData\PuppetLabs\patching\pre_patch.ps1`
+* Linux = `/opt/patching/bin/pre_update.sh`
+* Windows = `C:\ProgramData\patching\pre_update.ps1`
  
 
 ### Run a the full patching workflow end-to-end
@@ -154,9 +154,9 @@ Then, for each group:
 * `patching::cache_updates`
 * `patching::available_updates`
 * `patching::snapshot_vmware action='create'`
-* `patching::pre_patch`
+* `patching::pre_update`
 * `patching::update`
-* `patching::post_patch`
+* `patching::post_update`
 * `patching::reboot_required`
 * `patching::snapshot_vmware action='delete'`
 

@@ -1,0 +1,15 @@
+{
+  "description": "Run pre-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a pre-update script).",
+  "supports_noop": true,
+  "implementations": [
+    {"name": "pre_post_update.sh", "requirements": ["shell"]},
+    {"name": "pre_post_update.ps1", "requirements": ["powershell"]}
+  ],
+  "parameters": {
+    "script": {
+      "type": "Optional[String[1]]",
+      "description": "Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/pre_update.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/pre_update.ps1."
+    }
+  }
+}
+

@@ -7,12 +7,12 @@
 - [patching_order](#patching_order)
 - [patching_reboot_strategy](#patching_reboot_strategy)
 - [patching_reboot_message](#patching_reboot_message)
-- [patching_pre_patch_plan](#patching_pre_patch_plan)
-- [patching_pre_patch_script_linux](#patching_pre_patch_script_linux)
-- [patching_pre_patch_script_windows](#patching_pre_patch_script_windows)
-- [patching_post_patch_plan](#patching_post_patch_plan)
-- [patching_post_patch_script_linux](#patching_post_patch_script_linux)
-- [patching_post_patch_script_windows](#patching_post_patch_script_windows)
+- [patching_pre_update_plan](#patching_pre_update_plan)
+- [patching_pre_update_script_linux](#patching_pre_update_script_linux)
+- [patching_pre_update_script_windows](#patching_pre_update_script_windows)
+- [patching_post_update_plan](#patching_post_update_plan)
+- [patching_post_update_script_linux](#patching_post_update_script_linux)
+- [patching_post_update_script_windows](#patching_post_update_script_windows)
 - [patching_snapshot_plan](#patching_snapshot_plan)
 - [patching_snapshot_create](#patching_snapshot_create)
 - [patching_snapshot_delete](#patching_snapshot_delete)
@@ -117,14 +117,14 @@ default: 'NOTICE: This system is currently being updated.'
 
 Message to display on any nodes that are rebooted during patching.
 
-### patching_pre_patch_plan
+### patching_pre_update_plan
 
 ```yaml
 type: String
-default: 'patching::pre_patch'
+default: 'patching::pre_update'
 ```
 
-Name of the plan to use for the `pre_patch` phase of patching.
+Name of the plan to use for the `pre_update` phase of patching.
 If you would like to use a custom plan for patching all of your nodes (say you don't like our default approach). 
 Or, maybe there is just a specific group of nodes you would like to perform a custom
 plan for just those nodes before executing the updates on the host, then this is for you!
@@ -133,7 +133,7 @@ Example:
 
 ``` yaml
 vars:
-  patching_pre_patch_plan: mymodule::custom_pre_patching
+  patching_pre_update_plan: mymodule::custom_pre_update
 
 groups:
   # these nodes will use the pre patching plan defined in the vars above
@@ -146,19 +146,19 @@ groups:
   # these nodes will use the customized patching plan set for this group
   - name: sql_nodes
     vars:
-      patching_pre_patch_plan: mymodule::database_pre_patching
+      patching_pre_update_plan: mymodule::database_pre_update
     targets:
       - sql01.domain.tld
 ```
 
-### patching_pre_patch_script_linux
+### patching_pre_update_script_linux
 
 ``` yaml
 type: String
-default: '/opt/patching/bin/pre_patch.sh'
+default: '/opt/patching/bin/pre_update.sh'
 ```
 
-If you're using our default plan for pre patching (`patching::pre_patch`), then
+If you're using our default plan for pre patching (`patching::pre_update`), then
 this is a way to customize what script is executed within that plan.
 
 This allows for a smaller "hammer" when it comes to customization. Say you don't mind
@@ -169,7 +169,7 @@ Example:
 
 ``` yaml
 vars:
-  patching_pre_patch_script_linux: /usr/local/bin/mysweetpatchingscript.sh
+  patching_pre_update_script_linux: /usr/local/bin/mysweetpatchingscript.sh
 
 groups:
   # these nodes will use the pre patching script defined in the vars above
@@ -180,26 +180,26 @@ groups:
   # these nodes will use the customized patching script set for this group
   - name: sql_nodes
     vars:
-      patching_pre_patch_script_linux: /bin/sqlpatching.sh
+      patching_pre_update_script_linux: /bin/sqlpatching.sh
     targets:
       - sql01.domain.tld
 ```
 
-### patching_pre_patch_script_windows
+### patching_pre_update_script_windows
 
 ``` yaml
 type: String
-default: 'C:\ProgramData\patching\bin\pre_patch.ps1'
+default: 'C:\ProgramData\patching\bin\pre_update.ps1'
 ```
 
-Same as our `patching_pre_patch_script_linux` above, execpt the path to the script
+Same as our `patching_pre_update_script_linux` above, execpt the path to the script
 to customize on Windows hosts.
 
 Example:
 
 ``` yaml
 vars:
-  patching_pre_patch_script_windows: C:\awesome\patch_script.ps1
+  patching_pre_update_script_windows: C:\awesome\patch_script.ps1
 
 groups:
   # these nodes will use the pre patching script defined in the vars above
@@ -210,37 +210,37 @@ groups:
   # these nodes will use the customized patching script set for this group
   - name: sql_nodes
     vars:
-      patching_pre_patch_script_windows: C:\MSSQL\stop_services.ps1
+      patching_pre_update_script_windows: C:\MSSQL\stop_services.ps1
     targets:
       - sql01.domain.tld
 ```
 
-### patching_post_patch_plan
+### patching_post_update_plan
 
 ```yaml
 type: String
-default: 'patching::post_patch'
+default: 'patching::post_update'
 ```
 
-Same as `patching_pre_patch_plan` except executed after patches have been applied.
+Same as `patching_pre_update_plan` except executed after patches have been applied.
 
-### patching_post_patch_script_linux
+### patching_post_update_script_linux
 
 ``` yaml
 type: String
-default: '/opt/patching/bin/post_patch.sh'
+default: '/opt/patching/bin/post_update.sh'
 ```
 
-Same as `patching_pre_patch_script_linux` except executed after patches have been applied on Linux hosts.
+Same as `patching_pre_update_script_linux` except executed after patches have been applied on Linux hosts.
 
-### patching_post_patch_script_windows
+### patching_post_update_script_windows
 
 ``` yaml
 type: String
-default: 'C:\ProgramData\PuppetLabs\patching\post_patch.ps1'
+default: 'C:\ProgramData\patching\post_update.ps1'
 ```
 
-Same as `patching_pre_patch_script_windows` except executed after patches have been applied on Windows hosts.
+Same as `patching_pre_update_script_windows` except executed after patches have been applied on Windows hosts.
 
 
 ### patching_snapshot_plan

@@ -2,8 +2,8 @@
 plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,
-  String           $pre_patch_plan   = 'patching::pre_patch',
-  String           $post_patch_plan  = 'patching::post_patch',
+  String           $pre_update_plan   = 'patching::pre_update',
+  String           $post_update_plan  = 'patching::post_update',
   Enum['only_required', 'never', 'always'] $reboot_strategy = 'only_required',
   String           $reboot_message   = 'NOTICE: This system is currently being updated.',
   Optional[String] $snapshot_plan    = 'patching::snapshot_vmware',
@@ -38,8 +38,8 @@ plan patching (
     $group_vars = $ordered_nodes[0].vars
     $reboot_strategy_group = pick($group_vars['patching_reboot_strategy'], $reboot_strategy)
     $reboot_message_group = pick($group_vars['patching_reboot_message'], $reboot_message)
-    $pre_patch_plan_group = pick($group_vars['patching_pre_patch_plan'], $pre_patch_plan)
-    $post_patch_plan_group = pick($group_vars['patching_post_patch_plan'], $post_patch_plan)
+    $pre_update_plan_group = pick($group_vars['patching_pre_update_plan'], $pre_update_plan)
+    $post_update_plan_group = pick($group_vars['patching_post_update_plan'], $post_update_plan)
     $snapshot_plan_group = pick($group_vars['patching_snapshot_plan'], $snapshot_plan)
     $snapshot_create_group = pick($group_vars['patching_snapshot_create'], $snapshot_create)
     $snapshot_delete_group = pick($group_vars['patching_snapshot_delete'], $snapshot_delete)
@@ -69,7 +69,7 @@ plan patching (
     }
 
     ## Run pre-patching script.
-    run_plan($pre_patch_plan_group,
+    run_plan($pre_update_plan_group,
               nodes => $update_targets,
               noop  => $noop)
 
@@ -95,7 +95,7 @@ plan patching (
 
     if !$update_ok_targets.empty {
       ## Run post-patching script.
-      run_plan($post_patch_plan_group,
+      run_plan($post_update_plan_group,
                 nodes => $update_ok_targets,
                 noop  => $noop)
 
