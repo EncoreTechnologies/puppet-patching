@@ -35,10 +35,10 @@ plan patching::reboot_required (
         if !$nodes_reboot_required.empty() {
           $nodes_reboot_attempted = $nodes_reboot_required
           $reboot_resultset = run_plan('reboot',
-                                       nodes             => $nodes_reboot_required,
-                                       reconnect_timeout => 300,
-                                       message           => $_message,
-                                       _catch_errors     => true)
+                                        nodes             => $nodes_reboot_required,
+                                        reconnect_timeout => 300,
+                                        message           => $_message,
+                                        _catch_errors     => true)
         }
         else {
           $nodes_reboot_attempted = []
@@ -48,19 +48,22 @@ plan patching::reboot_required (
       'always': {
         $nodes_reboot_attempted = $nodes
         $reboot_resultset = run_plan('reboot',
-                                     nodes             => $nodes,
-                                     reconnect_timeout => 300,
-                                     message           => $_message,
-                                     _catch_errors     => true)
+                                      nodes             => $nodes,
+                                      reconnect_timeout => 300,
+                                      message           => $_message,
+                                      _catch_errors     => true)
       }
       'never': {
         $nodes_reboot_attempted = []
         $reboot_resultset = ResultSet([])
       }
+      default: {
+        fail_plan("Invalid strategy: ${_strategy}")
+      }
     }
   }
   else {
-    out::message("Noop specified, skipping all reboots.")
+    out::message('Noop specified, skipping all reboots.')
   }
 
   # return our results
