@@ -1,4 +1,3 @@
-# Bolt plan to update hosts (linux and windows together)
 plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,

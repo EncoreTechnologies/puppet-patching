@@ -1,17 +1,64 @@
-# Creates or deletes VM snapshot on supplied nodes.
+# @summary Creates or deletes VM snapshots on nodes in VMware.
 #
-# NOTE1: rbvmomi gem must be installed on the localhost for this plan to function.
-#        /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
+# Communicates to the vSphere API from the local Bolt control node using
+# the [rbvmomi](https://github.com/vmware/rbvmomi) Ruby gem.
 #
-# NOTE2: rbvmomi requires the following packages:
-#        - zlib-devel
-#        - libxslt-devel
-#        - patch
-#        - gcc
+# To install the rbvmomi gem on the bolt control node:
+# ```shell
+#   /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
+# ```
 #
-# NOTE3: This plan will attempt to collect vsphere parameters from the inventory
-#        file for the vsphere host name, username, password and datacenter based
-#        on the variables for the first node specified in TargetSpec.
+# TODO config variables
+#
+# @param [TargetSpec] nodes
+#   Set of targets to run against.
+#
+# @param [Enum['create', 'delete']] action
+#   What action to perform on the snapshots:
+#
+#     - `create` creates a new snapshot
+#     - 'delete' deletes snapshots by matching the `snapshot_name` passed in.
+#
+# @param [Enum['name', 'uri']] vm_name_property
+#   Determines what property on the Target object will be used as the VM name when
+#   mapping the Target to a VM in vSphere.
+#
+#    - `uri` : use the `uri` property on the Target. This is preferred because
+#       If you specify a list of Targets in the inventory file, the value shown in that
+#       list is set as the `uri` and not the `name`, in this case `name` will be `undef`.
+#    - `name` : use the `name` property on the Target, this is not preferred because
+#       `name` is usually a short name or nickname.
+#
+# @param [String[1]] vsphere_host
+#   Hostname of the vSphere server that we're going to use to create snapshots via the API.
+#
+# @param [String[1]] vsphere_username
+#   Username to use when authenticating with the vSphere API.
+#
+# @param [String[1]] vsphere_password
+#   Password to use when authenticating with the vSphere API.
+#
+# @param [String[1]] vsphere_datacenter
+#   Name of the vSphere datacenter to search for VMs under.
+#
+# @param [Boolean] vsphere_insecure
+#   Flag to enable insecure HTTPS connections by disabling SSL server certificate verification.
+#
+# @param [String[1]] snapshot_name
+#   Name of the snapshot
+#
+# @param [String] snapshot_description
+#   Description of the snapshot
+#
+# @param [Boolean] snapshot_memory
+#   Capture the VMs memory in the snapshot
+#
+# @param [Boolean] snapshot_quiesce
+#   Quiesce/flush the filesystem when snapshotting the VM. This requires VMware tools be installed
+#   in the guest OS to work properly.
+#
+# @param [Boolean] noop
+#   Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
 #
 plan patching::snapshot_vmware (
   TargetSpec $nodes,

@@ -1,11 +1,36 @@
-# Bolt plan to collect update history from hosts
+# @summary Collect update history from the results JSON file on the targets
+#
+# When executing the `patching::update` task, the data that is returned to Bolt
+# is also written into a "results" file. This plan reads the last JSON document
+# from that results file, then formats the results in various ways.
+#
+# This is useful for gather patching report data on a fleet of servers.
+#
+# If you're using this in a larger workflow and you've run `patching::update` inline.
+# You can pass the ResultSet from that task into the `history` parameter of this
+# plan and we will skip retrieving the history from the targets and simply use
+# that data.
+#
+# @param [TargetSpec] nodes
+#   Set of targets to run against.
+#
+# @param [Optional[ResultSet]] history
+#   Optional ResultSet from the `patching::update` or `patching::update_history` tasks
+#   that contains update result data to be formatted.
+#
+# @param [Optional[String]] report_file
+#   Optional filename to save the formatted repot into.
+#   If `undef` is passed, then no report file will be written.
+#
+# @param [Enum['none', 'pretty', 'csv']] format
+#   The method of formatting to use for the data.
+#
+# @return [String] Data string formatting in the method requested
+#
 plan patching::update_history (
-  TargetSpec       $nodes,
-  Optional[ResultSet] $history = undef,
-  String           $environment = 'default',
-  String           $report_file = 'patching_report.csv',
-  Optional[String] $mail_from = undef,
-  Optional[String] $mail_to = undef,
+  TargetSpec          $nodes,
+  Optional[ResultSet] $history     = undef,
+  Optional[String]    $report_file = 'patching_report.csv',
   # TODO CSV and JSON outputs
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
 ) {
@@ -13,22 +38,22 @@ plan patching::update_history (
 
   ## Collect update history
   if $history {
-    $real_history = $history
+    $_history = $history
   }
   else {
-    $real_history = run_task('patching::update_history', $targets)
+    $_history = run_task('patching::update_history', $targets)
   }
 
   ## Format the report
   case $format {
     'none': {
-      return($real_history)
+      return($_history)
     }
     'pretty': {
       $row_format = '%-30s | %-8s | %-8s'
       $header = sprintf($row_format, 'host', 'upgraded', 'installed')
       $divider = '-----------------------------------------------------'
-      $output = $real_history.map|$hist| {
+      $output = $_history.map|$hist| {
         $num_upgraded = $hist['upgraded'].size
         $num_installed = $hist['installed'].size
         $row_format = '%-30s | %-8s | %-8s'
@@ -40,8 +65,8 @@ plan patching::update_history (
       $report = join([$header, $divider] + $output + [''], "\n")
     }
     'csv': {
-      $header = 'host,action,name,version (linux only),kb (windows only)\n'
-      $report = $available_results.reduce($csv_header) |$res_memo, $res| {
+      $csv_header = "host,action,name,version (linux only),kb (windows only)\n"
+      $report = $_history.reduce($csv_header) |$res_memo, $res| {
         $hostname = $res.target.host
         $num_updates = $res['upgraded'].length
         $host_updates = $res['upgraded'].reduce('') |$up_memo, $up| {
@@ -76,16 +101,6 @@ plan patching::update_history (
   ## Write report to file
   if $report_file {
     file::write($report_file, $report)
-  }
-
-  ## Email report if mail_to supplied.
-  if $mail_to {
-    run_task('patching::mailx', 'localhost',
-      subject => "Update Summary Report for [${environment}]",
-      to      => $mail_to,
-      from    => $mail_from,
-      body    => $final_report,
-    )
   }
   return($report)
 }

@@ -12,8 +12,20 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-# TODO read results from file
+$pattern_matches = Select-String -Path $result_file -Pattern "^{$"
+if ($pattern_matches) {
+  # get the LAST matching line number of { , the start of a JSON document
+  $last_line = $pattern_matches[-1].LineNumber
 
-# ConvertTo-Json -Depth 100 $result
-$exit_code = 0
-exit $exit_code
+  # find the total number of lines in the file
+  $measure = Get-Content -Path $result_file | Measure-Object -Line
+
+  # compute how many lines we need to read off the tail of the file
+  # based on total lines - last line we found it + 1
+  $num_tail_lines = 1 + $measure.Lines - $last_line
+  
+  # read the last N lines from the file (starting at our match)
+  $data = Get-Content -Path $result_file -Tail $num_tail_lines;
+  
+  Write-Output $data
+}
