@@ -211,6 +211,15 @@ function Convert-PSObjectToHashtable ([Parameter(ValueFromPipeline)]
 
 ################################################################################
 
+function Log-Timestamp(
+  [string]$Path,
+  [string]$Value
+) {
+  Add-Content -Path $Path -Value "[$(Get-Date -Format 'o')] $Value"
+}
+
+################################################################################
+
 # Creates a new Windows Update API session
 # https://docs.microsoft.com/en-us/windows/win32/api/wuapi/nn-wuapi-iupdatesession
 function Create-WindowsUpdateSession {
@@ -250,6 +259,38 @@ function Search-WindowsUpdateResults (
     try {
       $updateSearcher.ServerSelection = $serverSelection
       $searchResult = $updateSearcher.Search($criteria)
+
+      # interpret the result code and have us exit with an error if the search errored
+      # https://docs.microsoft.com/en-us/windows/win32/api/wuapi/ne-wuapi-operationresultcode
+      switch ($searchResult.ResultCode)
+      {
+        0 { # not started
+          break
+        }
+        1 { # in progress
+          break
+        }
+        2 { # succeeded
+          break
+        }
+        3 {
+          throw "Search result for server selection $serverSelection succeeded with errors"
+          break
+        }
+        4 {
+          throw "Search result for server selection $serverSelection failed!"
+          break
+        }
+        5 {
+          throw "Search result for server selection $serverSelection aborted!"
+          break
+        }
+        default {  
+          throw "Search result for server selection $serverSelection is unknown: $($searchResult.ResultCode)"
+          break
+        }
+      }
+      
       $value = @{ 'result' = $searchResult; }
       switch ($serverSelection)
       {
@@ -295,3 +336,4 @@ function Search-WindowsUpdate (
   }
   return @($updateList)
 }
+

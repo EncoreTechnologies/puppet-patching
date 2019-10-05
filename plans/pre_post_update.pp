@@ -1,4 +1,24 @@
-# @summary
+# @summary Common entry point for executing the pre/post update custom scripts
+#
+# @see patching::pre_update
+# @see patching::post_update
+#
+# @param [TargetSpec] nodes
+#   Set of targets to run against.
+#
+# @param [String[1]] task
+#   Name of the pre/post update task to execute.
+#
+# @param [Optional[String[1]]] script_linux
+#   Path to the script that will be executed on Linux nodes.
+#
+# @param [Optional[String[1]]] script_windows
+#   Path to the script that will be executed on Windows nodes.
+#
+# @param [Boolean] noop
+#   Flag to enable noop mode for the underlying plans and tasks.
+#
+# @return [ResultSet] Returns the ResultSet from the execution of `task`.
 plan patching::pre_post_update (
   TargetSpec $nodes,
   String[1] $task,

@@ -19,9 +19,16 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-function Update-Windows([String]$_installdir) {
+function Update-Windows(
+  [String]$log_file,
+  [String]$_installdir
+) {
+  Log-Timestamp -Path $log_file -Value "========================================="
+  Log-Timestamp -Path $log_file -Value "= Starting Update-Windows"
+
   $script_block = {
     param (
+      [string]$log_file,
       [string]$_installdir = 'Nothing passed in'
     )
     Set-StrictMode -Version Latest
@@ -29,96 +36,125 @@ function Update-Windows([String]$_installdir) {
     $ProgressPreference = 'SilentlyContinue'
 
     Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
-        
+
     $exitStatus = 0
     try {
+      Log-Timestamp -Path $log_file -Value "========================================="
+      Log-Timestamp -Path $log_file -Value "= Starting Update-Windows in scheduled task"
       $windowsOsVersion = [System.Environment]::OSVersion.Version
       $updateSession = Create-WindowsUpdateSession
-      $updateList = Search-WindowsUpdate -session $updateSession
+      Log-Timestamp -Path $log_file -Value "Starting search for updates..."
+      $searchResultHash = Search-WindowsUpdateResults -session $updateSession
+      Log-Timestamp -Path $log_file -Value "Finished search for updates..."
+      
       $patchingResultList = @()
-      $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
-      $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
 
-      # for each update, accept the EULA, add it to our list to download
-      foreach ($updateAndServer in $updateList) {
-        $serverSelection = $updateAndServer['server_selection']
-        $update = $updateAndServer['update']
-        $updateId = $update.Identity.UpdateID
-        $updateDate = $update.LastDeploymentChangeTime.ToString('yyyy-MM-dd')
-        $update.AcceptEula() | Out-Null
-      
-        if (!$update.IsDownloaded) {
-          $updatesToDownload.Add($update) | Out-Null # need to use .Add() here because it's a special type
-        }
+      # iterate over each serverSelection independently
+      # if we try to batch the downloads + installs for multiple server selections
+      # into one udpate set, then we get random errors like:
+      # Exception calling "Download" with "0" argument(s)
+      # Exception calling "Install" with "0" argument(s)
+      foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
+        Log-Timestamp -Path $log_file -Value "==============="
+        Log-Timestamp -Path $log_file -Value "= Starting server selection: $serverSelection"
+        $value = $searchResultHash[$serverSelection]
+        $searchResult = $value['result']
+        Log-Timestamp -Path $log_file -Value "Number of updates returned from search: $($searchResult.Updates.Count)"
+        
+        $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
+        $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
+        
+        # for each update, accept the EULA, add it to our list to download
+        foreach ($update in $searchResult.Updates) {
+          $updateId = $update.Identity.UpdateID
+          $updateDate = $update.LastDeploymentChangeTime.ToString('yyyy-MM-dd')
+          $update.AcceptEula() | Out-Null
 
-        $updatesToInstall.Add($update) | Out-Null # need to use .Add() here because it's a special type
-      
-        $kbIds = @()
-        foreach ($kb in $update.KBArticleIDs) {
-          $kbIds += $kb
-        }
-        $patchingResultList += @{
-          'name' = $update.Title;
-          'id' = $updateId;
-          'version' = $update.Identity.RevisionNumber;
-          'kb_ids' = $kbIds;
-          'server_selection' = $serverSelection;
-          'provider' = 'windows';
-        }
-      }
+          if (!$update.IsDownloaded) {
+            $updatesToDownload.Add($update) | Out-Null # need to use .Add() here because it's a special type
+          }
 
-      if ($updatesToDownload.Count) {
-        $updateDownloader = $updateSession.CreateUpdateDownloader()
+          $updatesToInstall.Add($update) | Out-Null # need to use .Add() here because it's a special type
 
-        # https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_osversioninfoexa#remarks
-        # if Windows 8 / Windows Server 2012 or newer
-        if (($windowsOsVersion.Major -gt 6) -or ($windowsOsVersion.Major -eq 6 -and $windowsOsVersion.Minor -gt 1)) {
-          $updateDownloader.Priority = 4 # 1 (dpLow), 2 (dpNormal), 3 (dpHigh), 4 (dpExtraHigh).
-        } else {
-          # Windows 7 / Windows Server 2008
-          # Highest prioirty is 3
-          $updateDownloader.Priority = 3 # 1 (dpLow), 2 (dpNormal), 3 (dpHigh).
-        }
-        $updateDownloader.Updates = $updatesToDownload
-        $downloadResult = $updateDownloader.Download()
-      }
-
-      if ($updatesToInstall.Count) {
-        $updateInstaller = $updateSession.CreateUpdateInstaller()
-        $updateInstaller.Updates = $updatesToInstall
-        $installationResult = $updateInstaller.Install()
-
-        # Windows update interface doesn't just return us usable statuses
-        # or even an array of results... we have to ask the result object for indexes
-        # to determine the results of each patch based on the index in our input array... sorry
-        for ($i = 0; $i -lt $updatesToInstall.Count; ++$i) {
-          $update = $updatesToInstall.Item($i)  # need to use .Item() here because it's a special type
-          $patchingResult = $patchingResultList[$i]
-          $updateInstallationResult = $installationResult.GetUpdateResult($i)
-          $patchingResult['result_code'] = $updateInstallationResult.ResultCode
-          $patchingResult['reboot_required'] = $updateInstallationResult.RebootRequired
-      
-          # interpret the result code and have us exit with an error if any of the patches error
-          # https://docs.microsoft.com/en-us/windows/win32/api/wuapi/ne-wuapi-operationresultcode
-          switch ($patchingResult['result_code'])
-          {
-            0 { $patchingResult["result"] = "not_started"; break }
-            1 { $patchingResult["result"] = "in_progress"; break }
-            2 { $patchingResult["result"] = "succeeded"; break }
-            3 { $patchingResult["result"] = "succeeded_with_errors"; break }
-            4 {
-              $patchingResult["result"] = "_failed"
-              $exitStatus = 2
-              break
-            }
-            5 {
-              $patchingResult["result"] = "aborted"
-              $exitStatus = 2;
-              break
-            }
-            default { $patchingResult["result"] = "unknown"; break }
+          $kbIds = @()
+          foreach ($kb in $update.KBArticleIDs) {
+            $kbIds += $kb
+          }
+          $patchingResultList += @{
+            'name' = $update.Title;
+            'id' = $updateId;
+            'version' = $update.Identity.RevisionNumber;
+            'kb_ids' = $kbIds;
+            'server_selection' = $serverSelection;
+            'provider' = 'windows';
           }
         }
+
+        Log-Timestamp -Path $log_file -Value "Number of updates to install: $($updatesToInstall.Count)"
+        Log-Timestamp -Path $log_file -Value "Number of updates to download: $($updatesToDownload.Count)"
+        $updatesJson = ConvertTo-Json -Depth 100 @($patchingResultList)
+        Log-Timestamp -Path $log_file -Value "Updates to be installed: $updatesJson"
+
+        if ($updatesToDownload.Count) {
+          $updateDownloader = $updateSession.CreateUpdateDownloader()
+
+          # https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_osversioninfoexa#remarks
+          # if Windows 8 / Windows Server 2012 or newer
+          if (($windowsOsVersion.Major -gt 6) -or ($windowsOsVersion.Major -eq 6 -and $windowsOsVersion.Minor -gt 1)) {
+            $updateDownloader.Priority = 4 # 1 (dpLow), 2 (dpNormal), 3 (dpHigh), 4 (dpExtraHigh).
+          } else {
+            # Windows 7 / Windows Server 2008
+            # Highest prioirty is 3
+            $updateDownloader.Priority = 3 # 1 (dpLow), 2 (dpNormal), 3 (dpHigh).
+          }
+          $updateDownloader.Updates = $updatesToDownload
+          Log-Timestamp -Path $log_file -Value "Starting to download updates..."
+          $downloadResult = $updateDownloader.Download()
+          Log-Timestamp -Path $log_file -Value "Finished downloading updates..."
+        }
+
+        if ($updatesToInstall.Count) {
+          $updateInstaller = $updateSession.CreateUpdateInstaller()
+          $updateInstaller.Updates = $updatesToInstall
+          Log-Timestamp -Path $log_file -Value "Starting update installs..."
+          $installationResult = $updateInstaller.Install()
+          Log-Timestamp -Path $log_file -Value "Finished update installs..."
+          Log-Timestamp -Path $log_file -Value "Parsing update results..."
+
+          # Windows update interface doesn't just return us usable statuses
+          # or even an array of results... we have to ask the result object for indexes
+          # to determine the results of each patch based on the index in our input array... sorry
+          for ($i = 0; $i -lt $updatesToInstall.Count; ++$i) {
+            $update = $updatesToInstall.Item($i)  # need to use .Item() here because it's a special type
+            $patchingResult = $patchingResultList[$i]
+            $updateInstallationResult = $installationResult.GetUpdateResult($i)
+            $patchingResult['result_code'] = $updateInstallationResult.ResultCode
+            $patchingResult['reboot_required'] = $updateInstallationResult.RebootRequired
+
+            # interpret the result code and have us exit with an error if any of the patches error
+            # https://docs.microsoft.com/en-us/windows/win32/api/wuapi/ne-wuapi-operationresultcode
+            switch ($patchingResult['result_code'])
+            {
+              0 { $patchingResult["result"] = "not_started"; break }
+              1 { $patchingResult["result"] = "in_progress"; break }
+              2 { $patchingResult["result"] = "succeeded"; break }
+              3 { $patchingResult["result"] = "succeeded_with_errors"; break }
+              4 {
+                $patchingResult["result"] = "_failed"
+                $exitStatus = 2
+                break
+              }
+              5 {
+                $patchingResult["result"] = "aborted"
+                $exitStatus = 2;
+                break
+              }
+              default { $patchingResult["result"] = "unknown"; break }
+            }
+          }
+        }
+        Log-Timestamp -Path $log_file -Value "= Finished server selection: $serverSelection"
+        Log-Timestamp -Path $log_file -Value "==============="
       }
       # Because this thing is running inside of a ScheduledTask and all of the output
       # is written to a log file and then returned back to us as a string, we need a way
@@ -129,6 +165,7 @@ function Update-Windows([String]$_installdir) {
     }
     Catch {
       $exception_str = $_ | Out-String
+      Log-Timestamp -Path $log_file -Value $exception_str
       ConvertTo-Json -Depth 100 @{'exception' = $exception_str;}
       exit 99
     }
@@ -138,7 +175,7 @@ function Update-Windows([String]$_installdir) {
   # The script block above returns the command output as JSON, however PowerShell returns
   # the output as an array of lines, so we need to concat these strings into one big blob
   # so we can parse the JSON back into an object.
-  $script_args = "-_installdir $_installdir"
+  $script_args = "-_installdir $_installdir -log_file $log_file"
   $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block -ScriptArgs $script_args -KeepLogFile $true
   # only get CommandOutput if it is not null, otherwise grab the ErrorMessage which is set
   # when an exception occurs in the Invoke-CommandAsLocal function's code
@@ -164,6 +201,9 @@ function Update-Windows([String]$_installdir) {
   else {
     $result = $result_str
   }
+  
+  Log-Timestamp -Path $log_file -Value "= Finishing Update-Windows"
+  Log-Timestamp -Path $log_file -Value "========================================="
   return @{
     'result' = $result;
     'exit_code' = $update_results.ExitCode;
@@ -172,12 +212,18 @@ function Update-Windows([String]$_installdir) {
 
 ################################################################################
 
-function Update-Chocolatey([bool]$choco_required) {
-  $updateList = @()
+function Update-Chocolatey(
+  [string]$log_file,
+  [bool]$choco_required
+) {
+  Log-Timestamp -Path $log_file -Value "========================================="
+  Log-Timestamp -Path $log_file -Value "= Starting Update-Chocolatey"
   $exit_code = 0
   # todo put this into a function
+  Log-Timestamp -Path $log_file -Value "Searching for choco command"
   if (-not (Test-CommandExists 'choco')) {
     if ($choco_required) {
+      Log-Timestamp -Path $log_file -Value "Unable to find choco command, and it IS required erroring!!!"
       throw "Unable to find required command: choco"
     } else {
       # Write-Error "Unable to find required command: choco"
@@ -185,25 +231,32 @@ function Update-Chocolatey([bool]$choco_required) {
       # TODO make a chocolatey required parameter
 
       # chocolatey wasn't required, simply return an empty result
+      Log-Timestamp -Path $log_file -Value "Unable to find choco command, but it isn't required, ignorning"
+      Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
+      Log-Timestamp -Path $log_file -Value "========================================="
       return @{
         'result' = @{'upgraded' = @();
                      'installed' = @()};
         'exit_code' = $exit_code;
       }
     }
+  } else {
+    Log-Timestamp -Path $log_file -Value "choco command exists!"
   }
 
   # Upgrade all chocolatey packages
   # TODO support only updating specific packages
+  Log-Timestamp -Path $log_file -Value "Executing: choco upgrade all --yes --limit-output --no-progress --ignore-unfound"
   $output = iex "& choco upgrade all --yes --limit-output --no-progress --ignore-unfound"
   $exit_code = $LastExitCode
+  Log-Timestamp -Path $log_file -Value ($output -join "`r`n")
   if ($exit_code -eq 0) {
     # Write-Host "chocolatey output: $output"
     # Write-Host "chocolatey exit code: $exit_code"
     # TODO write output to log file
     # TODO on failure, capture output
     # TODO handle unfound packages more gracefully
-    
+
     # output is in the format:
     # package name|current version|available version|pinned?
     $package_versions = @{}
@@ -215,7 +268,7 @@ function Update-Chocolatey([bool]$choco_required) {
         $version_old = $Matches.2
         $version_new = $Matches.3
         $pinned = $Matches.4
-        
+
         $package_versions[$name] =  @{
           'name' = $name;
           'version' = $version_new;
@@ -231,7 +284,9 @@ function Update-Chocolatey([bool]$choco_required) {
         }
       }
     }
-    
+
+    Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
+    Log-Timestamp -Path $log_file -Value "========================================="
     return @{
       'result' = @{'upgraded' = @($package_success);
                    'installed' = @()};
@@ -239,6 +294,8 @@ function Update-Chocolatey([bool]$choco_required) {
     }
   }
   else {
+    Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
+    Log-Timestamp -Path $log_file -Value "========================================="
     return @{
       'result' = $output;
       'exit_code' = $exit_code;
@@ -251,13 +308,26 @@ function Update-Chocolatey([bool]$choco_required) {
 if ($provider -eq '') {
   $provider = 'all'
 }
+if ($log_file -eq '') {
+  $log_file = 'C:\ProgramData\patching\log\patching.log'
+}
+if ($result_file -eq '') {
+  $result_file = 'C:\ProgramData\patching\log\patching.json'
+}
+# create directories for log files, if they don't exist
+New-Item -ItemType Directory -Force -Path (Split-Path -Path $log_file) | Out-Null
+New-Item -ItemType Directory -Force -Path (Split-Path -Path $result_file) | Out-Null
+
+Log-Timestamp -Path $log_file -Value "=================================================================================="
+Log-Timestamp -Path $log_file -Value "= Starting Update"
+Log-Timestamp -Path $log_file -Value "provider = $provider"
 
 if ($provider -eq 'windows') {
-  $data = Update-Windows -_installdir $_installdir
+  $data = Update-Windows -log_file $log_file -_installdir $_installdir
   $result = $data['result']
   $exit_code = $data['exit_code']
 } elseif ($provider -eq 'chocolatey') {
-  $data = Update-Chocolatey $True
+  $data = Update-Chocolatey -log_file $log_file -choco_required -$True
   $result = $data['result']
   $exit_code = $data['exit_code']
 } elseif ($provider -eq 'all') {
@@ -266,7 +336,7 @@ if ($provider -eq 'windows') {
   $exit_code = 0
 
   # Windows Update
-  $data_windows = Update-Windows -_installdir $_installdir
+  $data_windows = Update-Windows -log_file $log_file -_installdir $_installdir
   $result_windows = $data_windows['result']
   $exit_code_windows = $data_windows['exit_code']
   if ($exit_code_windows -eq 0) {
@@ -279,7 +349,7 @@ if ($provider -eq 'windows') {
   }
 
   # Chocolatey upgrade
-  $data_chocolatey = Update-Chocolatey $False
+  $data_chocolatey = Update-Chocolatey -log_file $log_file -choco_required $False
   $result_chocolatey = $data_chocolatey['result']
   $exit_code_chocolatey = $data_chocolatey['exit_code']
   if ($exit_code_chocolatey -eq 0) {
@@ -295,5 +365,16 @@ if ($provider -eq 'windows') {
   exit 100
 }
 
-ConvertTo-Json -Depth 100 $result
+# convert results to JSON
+$result_json = ConvertTo-Json -Depth 100 $result
+
+# write results to results file
+Add-Content -Path $result_file -Value $result_json
+
+# write results to stdout
+Write-Output $result_json
+
+Log-Timestamp -Path $log_file -Value "= Finished Update"
+Log-Timestamp -Path $log_file -Value "=================================================================================="
+
 exit $exit_code

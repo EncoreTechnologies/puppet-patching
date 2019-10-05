@@ -1,8 +1,36 @@
-# Bolt plan to check if targets need reboot
-# Targets will be rebooted based on the $strategy
-#  - 'only_required' only reboots hosts that require it based on info reported from the OS
-#  - 'never' never reboots the hosts
-#  - 'always' will reboot the host no matter what
+# @summary Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
+#
+# Patching in different environments comes with various unique requirements, one of those
+# is rebooting hosts. Sometimes hosts need to always be reboot, othertimes never rebooted.
+#
+# To provide this flexibility we created this function that wraps the `reboot` plan with
+# a `strategy` that is controllable as a parameter. This provides flexibilty in
+# rebooting specific nodes in certain ways (by group). Along with the power to expand
+# our strategy offerings in the future.
+#
+# @param [TargetSpec] nodes
+#   Set of targets to run against.
+# @param [Enum['only_required', 'never', 'always']] strategy
+#   Determines the reboot strategy for the run.
+#
+#    - 'only_required' only reboots hosts that require it based on info reported from the OS
+#    - 'never' never reboots the hosts
+#    - 'always' will reboot the host no matter what
+# @param [String] message
+#   Message displayed to the user prior to the system rebooting
+# @param [Boolean] noop
+#   Flag to determine if this should be a noop operation or not.
+#   If this is a noop, no hosts will ever be rebooted, however the "reboot required" information
+#   will still be queried and returned.
+#
+# @return [Struct[{'required' => Array[TargetSpec], 'not_required' => Array[TargetSpec], 'attempted' => Array[TargetSpec], 'resultset' => ResultSet}]]
+#   Hash elements:
+#
+#    - `required` : array of targets whose host OS reported a reboot is required
+#    - `not_required` : array of targets whose host OS did not report a reboot being required
+#    - `attempted` : array of targets where a reboot was attempted (potentially empty array)
+#    - `resultset` : results from the `reboot` plan for the attempted hosts (potentially an empty `ResultSet`)
+#
 plan patching::reboot_required (
   TargetSpec $nodes,
   Enum['only_required', 'never', 'always'] $strategy = 'only_required',
