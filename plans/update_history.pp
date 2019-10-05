@@ -65,7 +65,7 @@ plan patching::update_history (
       $report = join([$header, $divider] + $output + [''], "\n")
     }
     'csv': {
-      $csv_header = "host,action,name,version (linux only),kb (windows only)\n"
+      $csv_header = "host,action,name,version,kb (windows only)\n"
       $report = $_history.reduce($csv_header) |$res_memo, $res| {
         $hostname = $res.target.host
         $num_updates = $res['upgraded'].length
@@ -75,18 +75,23 @@ plan patching::update_history (
             true    => $up['version'],
             default => '',
           }
+          # if this is windows we want to print KB articles (one per line?)
           if 'kb_ids' in $up {
+            # TODO: provider?
+
             # create a new line for each KB article
             $csv_line = $up['kb_ids'].reduce('') |$kb_memo, $kb| {
-              $kb_line = "${hostname},upgraded,${name},${version},${kb}"
+              $kb_line = "${hostname},upgraded,\"${name}\",\"${version}\",\"${kb}\""
               "${kb_memo}${kb_line}\n"
             }
           }
           else {
+            # TODO version old?
+
             # create one line per update/upgrade
-            $csv_line = "${hostname},upgraded,${name},${version},"
+            $csv_line = "${hostname},upgraded,\"${name}\",\"${version}\",\n"
           }
-          "${up_memo}${csv_line}\n"
+          "${up_memo}${csv_line}"
         }
         "${res_memo}${host_updates}"
       }
