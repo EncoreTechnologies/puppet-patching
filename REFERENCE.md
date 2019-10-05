@@ -29,10 +29,10 @@
 * [`patching::get_targets`](#patchingget_targets): Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
 * [`patching::post_update`](#patchingpost_update): Executes a custom post-update script on each node.
-* [`patching::pre_post_update`](#patchingpre_post_update): 
-* [`patching::pre_update`](#patchingpre_update): 
-* [`patching::puppet_facts`](#patchingpuppet_facts): Plan the runs 'puppet facts' on the target nodes and sets them as facts on the Target objects.  This is inspired by: https://github.com/puppe
-* [`patching::reboot_required`](#patchingreboot_required): Bolt plan to check if targets need reboot Targets will be rebooted based on the $strategy  - 'only_required' only reboots hosts that require 
+* [`patching::pre_post_update`](#patchingpre_post_update): Common entry point for executing the pre/post update custom scripts
+* [`patching::pre_update`](#patchingpre_update): Executes a custom pre-update script on each node.
+* [`patching::puppet_facts`](#patchingpuppet_facts): Plan thatr runs 'puppet facts' on the nodes and sets them as facts on the Target objects.
+* [`patching::reboot_required`](#patchingreboot_required): Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshot on supplied nodes.  NOTE1: rbvmomi gem must be installed on the localhost for this plan to function.        /o
 * [`patching::update_history`](#patchingupdate_history): Bolt plan to collect update history from hosts
 
@@ -222,13 +222,13 @@ Name of the package(s) to update. If nothing is passed then all packages will be
 
 Data type: `Optional[String[1]]`
 
-Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
+Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.json
 
 ##### `log_file`
 
 Data type: `Optional[String[1]]`
 
-Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.log
+Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.log
 
 ### update_history
 
@@ -674,6 +674,7 @@ Example:
 
 ``` yaml
 vars:
+  patching_post_update_script_windows: C:\scripts\patching.ps1
   patching_post_update_script_linux: /usr/local/bin/mysweetpatchingscript.sh
 
 groups:
@@ -756,7 +757,11 @@ Default value: `false`
 
 ### patching::pre_post_update
 
-The patching::pre_post_update class.
+Common entry point for executing the pre/post update custom scripts
+
+* **See also**
+patching::pre_update
+patching::post_update
 
 #### Parameters
 
@@ -766,19 +771,19 @@ The following parameters are available in the `patching::pre_post_update` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `task`
 
 Data type: `String[1]`
 
-
+Name of the pre/post update task to execute.
 
 ##### `script_linux`
 
 Data type: `Optional[String[1]]`
 
-
+Path to the script that will be executed on Linux nodes.
 
 Default value: `undef`
 
@@ -786,7 +791,7 @@ Default value: `undef`
 
 Data type: `Optional[String[1]]`
 
-
+Path to the script that will be executed on Windows nodes.
 
 Default value: `undef`
 
@@ -794,13 +799,74 @@ Default value: `undef`
 
 Data type: `Boolean`
 
-
+Flag to enable noop mode for the underlying plans and tasks.
 
 Default value: `false`
 
 ### patching::pre_update
 
-The patching::pre_update class.
+Often in patching it is necessary to run custom commands before/after updates are
+applied to a host. This plan allows for that customization to occur.
+
+By default it executes a Shell script on Linux and a PowerShell script on Windows hosts.
+The default script paths are:
+  - Linux: `/opt/patching/bin/pre_update.sh`
+  - Windows: `C:\ProgramData\patching\bin\pre_update.ps1`
+
+One can customize the script paths by overriding them on the CLI, or when calling the plan
+using the `script_linux` and `script_windows` parameters.
+
+The script paths can also be customzied in the inventory configuration `vars`:
+Example:
+
+``` yaml
+vars:
+  patching_pre_update_script_windows: C:\scripts\patching.ps1
+  patching_pre_update_script_linux: /usr/local/bin/mysweetpatchingscript.sh
+
+groups:
+  # these nodes will use the pre patching script defined in the vars above
+  - name: regular_nodes
+    targets:
+      - tomcat01.domain.tld
+
+  # these nodes will use the customized patching script set for this group
+  - name: sql_nodes
+    vars:
+      patching_pre_update_script_linux: /bin/sqlpatching.sh
+    targets:
+      - sql01.domain.tld
+```
+
+#### Examples
+
+##### CLI - Basic usage
+
+```puppet
+bolt plan run patching::pre_update --nodes all_hosts
+```
+
+##### CLI - Custom scripts
+
+```puppet
+bolt plan run patching::pre_update --nodes all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
+```
+
+##### Plan - Basic usage
+
+```puppet
+run_plan('patching::pre_update',
+         nodes => $all_hosts)
+```
+
+##### Plan - Custom scripts
+
+```puppet
+run_plan('patching::pre_update',
+         nodes          => $all_hosts,
+         script_linux   => '/my/sweet/script.sh',
+         script_windows => 'C:\my\sweet\script.ps1')
+```
 
 #### Parameters
 
@@ -810,13 +876,13 @@ The following parameters are available in the `patching::pre_update` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `script_linux`
 
 Data type: `String[1]`
 
-
+Path to the script that will be executed on Linux nodes.
 
 Default value: '/opt/patching/bin/pre_update.sh'
 
@@ -824,7 +890,7 @@ Default value: '/opt/patching/bin/pre_update.sh'
 
 Data type: `String[1]`
 
-
+Path to the script that will be executed on Windows nodes.
 
 Default value: 'C:\ProgramData\patching\bin\pre_update.ps1'
 
@@ -832,18 +898,17 @@ Default value: 'C:\ProgramData\patching\bin\pre_update.ps1'
 
 Data type: `Boolean`
 
-
+Flag to enable noop mode for the underlying plans and tasks.
 
 Default value: `false`
 
 ### patching::puppet_facts
 
-Plan the runs 'puppet facts' on the target nodes and sets them as facts on
-the Target objects.
-
 This is inspired by: https://github.com/puppetlabs/puppetlabs-facts/blob/master/plans/init.pp
 Except instead of just running `facter` it runs `puppet facts` to set additional
 facts that are only present when in the context of puppet.
+
+Under the hood it is executeing the `patching::puppet_facts` task.
 
 #### Parameters
 
@@ -853,15 +918,17 @@ The following parameters are available in the `patching::puppet_facts` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ### patching::reboot_required
 
-Bolt plan to check if targets need reboot
-Targets will be rebooted based on the $strategy
- - 'only_required' only reboots hosts that require it based on info reported from the OS
- - 'never' never reboots the hosts
- - 'always' will reboot the host no matter what
+Patching in different environments comes with various unique requirements, one of those
+is rebooting hosts. Sometimes hosts need to always be reboot, othertimes never rebooted.
+
+To provide this flexibility we created this function that wraps the `reboot` plan with
+a `strategy` that is controllable as a parameter. This provides flexibilty in
+rebooting specific nodes in certain ways (by group). Along with the power to expand
+our strategy offerings in the future.
 
 #### Parameters
 
@@ -871,13 +938,17 @@ The following parameters are available in the `patching::reboot_required` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `strategy`
 
 Data type: `Enum['only_required', 'never', 'always']`
 
+Determines the reboot strategy for the run.
 
+ - 'only_required' only reboots hosts that require it based on info reported from the OS
+ - 'never' never reboots the hosts
+ - 'always' will reboot the host no matter what
 
 Default value: 'only_required'
 
@@ -885,7 +956,7 @@ Default value: 'only_required'
 
 Data type: `String`
 
-
+Message displayed to the user prior to the system rebooting
 
 Default value: 'NOTICE: This system is currently being updated.'
 
@@ -893,7 +964,9 @@ Default value: 'NOTICE: This system is currently being updated.'
 
 Data type: `Boolean`
 
-
+Flag to determine if this should be a noop operation or not.
+If this is a noop, no hosts will ever be rebooted, however the "reboot required" information
+will still be queried and returned.
 
 Default value: `false`
 
