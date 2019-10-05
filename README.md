@@ -205,4 +205,6 @@ This module has been tested on the following operating systems:
 
 ## Contributors
 
-* Nick Maludy (@nmaludy Encore Technologies)
+* Nick Maludy ([@nmaludy](https://github.com/nmaludy) Encore Technologies)
+* Rick Paxton (Encore Technologies)
+* Scott Strengowski (Encore Technologies)
