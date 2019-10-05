@@ -12,17 +12,23 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
+if ($result_file -eq '') {
+  $result_file = 'C:\ProgramData\patching\log\patching.json'
+}
+
 $pattern_matches = Select-String -Path $result_file -Pattern "^{$"
 if ($pattern_matches) {
   # get the LAST matching line number of { , the start of a JSON document
   $last_line = $pattern_matches[-1].LineNumber
 
   # find the total number of lines in the file
-  $measure = Get-Content -Path $result_file | Measure-Object -Line
+  $measure = Get-Content -Path $result_file | Measure-Object
+  # don't use .Lines, it doesn't account of empty lines at end of file
+  $num_lines = $measure.Count
 
   # compute how many lines we need to read off the tail of the file
-  # based on total lines - last line we found it + 1
-  $num_tail_lines = 1 + $measure.Lines - $last_line
+  # based on total lines - last line were found + 1 (includes the last_line match)
+  $num_tail_lines = 1 + $num_lines - $last_line
   
   # read the last N lines from the file (starting at our match)
   $data = Get-Content -Path $result_file -Tail $num_tail_lines;
