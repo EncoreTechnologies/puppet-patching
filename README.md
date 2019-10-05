@@ -39,6 +39,14 @@ Module makes heavy use of [bolt](https://puppet.com/docs/bolt/latest/bolt.html),
 you'll need to install it to get started. Install instructions are
 [here](https://puppet.com/docs/bolt/latest/bolt_installing.html).
 
+If you want to use the `patching::snapshot_vmware` plan/function then you'll
+need the [rbvmomi](https://github.com/vmware/rbvmomi) gem installed in the
+bolt ruby environment:
+
+``` shell
+/opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
+```
+
 ### Quick Start
 
 ``` shell
@@ -49,6 +57,9 @@ EOF
 
 bolt puppetfile install
 bolt plan run patching::available_updates --nodes group_a
+
+# install rbvmomi for VMware snapshot support
+/opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
 ```
 
 ## Architecture

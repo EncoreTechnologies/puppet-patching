@@ -1,6 +1,19 @@
 require 'rbvmomi'
 
+# Creates/deletes snapshots on VMs using the VMware vSphere API.
 Puppet::Functions.create_function(:'patching::snapshot_vmware') do
+  # @param vm_names Array of VM names to create/delete snapshots on
+  # @param snapshot_name Name of the snapshot to create/delete
+  # @param vsphere_host Hostname/IP of the vSphere server
+  # @param vsphere_username Username to use for authenticating to vSphere
+  # @param vsphere_password Password to use for authenticating to vSphere
+  # @param vsphere_datacenter Datacenter in the vSphere to use when search for VMs
+  # @param vsphere_insecure Flag to enable HTTPS without SSL verification
+  # @param snapshot_description Description of the snapshot, when creating.
+  # @param snapshot_memory Snapshot the VMs memory, when creating.
+  # @param snapshot_quiesce Quiesce/flush the VMs filesystem when creating the snapshot
+  # @param action Action to perform on the snapshot, 'create' or 'delete'
+  # @return Results from the snapshot create/delete tasks
   dispatch :snapshot_vmware do
     required_param 'Array',   :vm_names
     required_param 'String',  :snapshot_name

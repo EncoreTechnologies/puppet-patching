@@ -5,7 +5,7 @@
 
 **Functions**
 
-* [`patching::snapshot_vmware`](#patchingsnapshot_vmware): 
+* [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates/deletes snapshots on VMs using the VMware vSphere API.
 
 **Tasks**
 
@@ -22,7 +22,7 @@
 
 **Plans**
 
-* [`patching`](#patching): Bolt plan to update hosts (linux and windows together)
+* [`patching`](#patching): 
 * [`patching::available_updates`](#patchingavailable_updates): Checks all nodes for available updates reported by their Operating System.
 * [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
@@ -33,8 +33,8 @@
 * [`patching::pre_update`](#patchingpre_update): Executes a custom pre-update script on each node.
 * [`patching::puppet_facts`](#patchingpuppet_facts): Plan thatr runs 'puppet facts' on the nodes and sets them as facts on the Target objects.
 * [`patching::reboot_required`](#patchingreboot_required): Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
-* [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshot on supplied nodes.  NOTE1: rbvmomi gem must be installed on the localhost for this plan to function.        /o
-* [`patching::update_history`](#patchingupdate_history): Bolt plan to collect update history from hosts
+* [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshots on nodes in VMware.
+* [`patching::update_history`](#patchingupdate_history): Collect update history from the results JSON file on the targets
 
 ## Functions
 
@@ -42,79 +42,79 @@
 
 Type: Ruby 4.x API
 
-The patching::snapshot_vmware function.
+Creates/deletes snapshots on VMs using the VMware vSphere API.
 
 #### `patching::snapshot_vmware(Array $vm_names, String $snapshot_name, String $vsphere_host, String $vsphere_username, String $vsphere_password, String $vsphere_datacenter, Optional[Boolean] $vsphere_insecure, Optional[String] $snapshot_description, Optional[Boolean] $snapshot_memory, Optional[Boolean] $snapshot_quiesce, Optional[String] $action)`
 
-The patching::snapshot_vmware function.
+Creates/deletes snapshots on VMs using the VMware vSphere API.
 
-Returns: `Array`
+Returns: `Array` Results from the snapshot create/delete tasks
 
 ##### `vm_names`
 
 Data type: `Array`
 
-
+Array of VM names to create/delete snapshots on
 
 ##### `snapshot_name`
 
 Data type: `String`
 
-
+Name of the snapshot to create/delete
 
 ##### `vsphere_host`
 
 Data type: `String`
 
-
+Hostname/IP of the vSphere server
 
 ##### `vsphere_username`
 
 Data type: `String`
 
-
+Username to use for authenticating to vSphere
 
 ##### `vsphere_password`
 
 Data type: `String`
 
-
+Password to use for authenticating to vSphere
 
 ##### `vsphere_datacenter`
 
 Data type: `String`
 
-
+Datacenter in the vSphere to use when search for VMs
 
 ##### `vsphere_insecure`
 
 Data type: `Optional[Boolean]`
 
-
+Flag to enable HTTPS without SSL verification
 
 ##### `snapshot_description`
 
 Data type: `Optional[String]`
 
-
+Description of the snapshot, when creating.
 
 ##### `snapshot_memory`
 
 Data type: `Optional[Boolean]`
 
-
+Snapshot the VMs memory, when creating.
 
 ##### `snapshot_quiesce`
 
 Data type: `Optional[Boolean]`
 
-
+Quiesce/flush the VMs filesystem when creating the snapshot
 
 ##### `action`
 
 Data type: `Optional[String]`
 
-
+Action to perform on the snapshot, 'create' or 'delete'
 
 ## Tasks
 
@@ -248,7 +248,7 @@ Log file for patching results. This file will contain the JSON output that is re
 
 ### patching
 
-Bolt plan to update hosts (linux and windows together)
+The patching class.
 
 #### Parameters
 
@@ -972,20 +972,15 @@ Default value: `false`
 
 ### patching::snapshot_vmware
 
-Creates or deletes VM snapshot on supplied nodes.
+Communicates to the vSphere API from the local Bolt control node using
+the [rbvmomi](https://github.com/vmware/rbvmomi) Ruby gem.
 
-NOTE1: rbvmomi gem must be installed on the localhost for this plan to function.
-       /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
+To install the rbvmomi gem on the bolt control node:
+```shell
+  /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
+```
 
-NOTE2: rbvmomi requires the following packages:
-       - zlib-devel
-       - libxslt-devel
-       - patch
-       - gcc
-
-NOTE3: This plan will attempt to collect vsphere parameters from the inventory
-       file for the vsphere host name, username, password and datacenter based
-       on the variables for the first node specified in TargetSpec.
+TODO config variables
 
 #### Parameters
 
@@ -995,19 +990,29 @@ The following parameters are available in the `patching::snapshot_vmware` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `action`
 
 Data type: `Enum['create', 'delete']`
 
+What action to perform on the snapshots:
 
+  - `create` creates a new snapshot
+  - 'delete' deletes snapshots by matching the `snapshot_name` passed in.
 
 ##### `vm_name_property`
 
 Data type: `Enum['name', 'uri']`
 
+Determines what property on the Target object will be used as the VM name when
+mapping the Target to a VM in vSphere.
 
+ - `uri` : use the `uri` property on the Target. This is preferred because
+    If you specify a list of Targets in the inventory file, the value shown in that
+    list is set as the `uri` and not the `name`, in this case `name` will be `undef`.
+ - `name` : use the `name` property on the Target, this is not preferred because
+    `name` is usually a short name or nickname.
 
 Default value: 'uri'
 
@@ -1015,7 +1020,7 @@ Default value: 'uri'
 
 Data type: `String[1]`
 
-
+Hostname of the vSphere server that we're going to use to create snapshots via the API.
 
 Default value: .vars['vsphere_host']
 
@@ -1023,7 +1028,7 @@ Default value: .vars['vsphere_host']
 
 Data type: `String[1]`
 
-
+Username to use when authenticating with the vSphere API.
 
 Default value: .vars['vsphere_username']
 
@@ -1031,7 +1036,7 @@ Default value: .vars['vsphere_username']
 
 Data type: `String[1]`
 
-
+Password to use when authenticating with the vSphere API.
 
 Default value: .vars['vsphere_password']
 
@@ -1039,7 +1044,7 @@ Default value: .vars['vsphere_password']
 
 Data type: `String[1]`
 
-
+Name of the vSphere datacenter to search for VMs under.
 
 Default value: .vars['vsphere_datacenter']
 
@@ -1047,7 +1052,7 @@ Default value: .vars['vsphere_datacenter']
 
 Data type: `Boolean`
 
-
+Flag to enable insecure HTTPS connections by disabling SSL server certificate verification.
 
 Default value: .vars['vsphere_insecure']
 
@@ -1055,7 +1060,7 @@ Default value: .vars['vsphere_insecure']
 
 Data type: `String[1]`
 
-
+Name of the snapshot
 
 Default value: 'Bolt Patching Snapshot'
 
@@ -1063,7 +1068,7 @@ Default value: 'Bolt Patching Snapshot'
 
 Data type: `String`
 
-
+Description of the snapshot
 
 Default value: ''
 
@@ -1071,7 +1076,7 @@ Default value: ''
 
 Data type: `Boolean`
 
-
+Capture the VMs memory in the snapshot
 
 Default value: `false`
 
@@ -1079,7 +1084,8 @@ Default value: `false`
 
 Data type: `Boolean`
 
-
+Quiesce/flush the filesystem when snapshotting the VM. This requires VMware tools be installed
+in the guest OS to work properly.
 
 Default value: `true`
 
@@ -1087,13 +1093,22 @@ Default value: `true`
 
 Data type: `Boolean`
 
-
+Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
 
 Default value: `false`
 
 ### patching::update_history
 
-Bolt plan to collect update history from hosts
+When executing the `patching::update` task, the data that is returned to Bolt
+is also written into a "results" file. This plan reads the last JSON document
+from that results file, then formats the results in various ways.
+
+This is useful for gather patching report data on a fleet of servers.
+
+If you're using this in a larger workflow and you've run `patching::update` inline.
+You can pass the ResultSet from that task into the `history` parameter of this
+plan and we will skip retrieving the history from the targets and simply use
+that data.
 
 #### Parameters
 
@@ -1103,53 +1118,31 @@ The following parameters are available in the `patching::update_history` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `history`
 
 Data type: `Optional[ResultSet]`
 
-
+Optional ResultSet from the `patching::update` or `patching::update_history` tasks
+that contains update result data to be formatted.
 
 Default value: `undef`
-
-##### `environment`
-
-Data type: `String`
-
-
-
-Default value: 'default'
 
 ##### `report_file`
 
-Data type: `String`
+Data type: `Optional[String]`
 
-
+Optional filename to save the formatted repot into.
+If `undef` is passed, then no report file will be written.
 
 Default value: 'patching_report.csv'
-
-##### `mail_from`
-
-Data type: `Optional[String]`
-
-
-
-Default value: `undef`
-
-##### `mail_to`
-
-Data type: `Optional[String]`
-
-
-
-Default value: `undef`
 
 ##### `format`
 
 Data type: `Enum['none', 'pretty', 'csv']`
 
-
+The method of formatting to use for the data.
 
 Default value: 'pretty'
 
