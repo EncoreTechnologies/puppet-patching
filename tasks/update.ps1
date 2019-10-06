@@ -44,28 +44,44 @@ function Update-Windows(
       $windowsOsVersion = [System.Environment]::OSVersion.Version
       $updateSession = Create-WindowsUpdateSession
       Log-Timestamp -Path $log_file -Value "Starting search for updates..."
-      $searchResultHash = Search-WindowsUpdateResults -session $updateSession
+      # search for and deduped updates between server selections
+      $allUpdatesList = Search-WindowsUpdate -session $updateSession
       Log-Timestamp -Path $log_file -Value "Finished search for updates..."
+      
+      # organize updates by serverSelection
+      # we do this so we can patch each serverSelection, in bulk, one server at a time
+      $serverUpdatesHash = @{}
+      foreach ($updateAndServer in $allUpdatesList) {
+        $serverSelection = $updateAndServer['server_selection']
+        $update = $updateAndServer['update']
+        if ($serverUpdatesHash.ContainsKey($serverSelection)) {
+          $serverUpdatesHash[$serverSelection] += $update
+        } else {
+          $serverUpdatesHash[$serverSelection] = @($update)
+        }
+      }
       
       $patchingResultList = @()
 
-      # iterate over each serverSelection independently
+      # Iterate over each serverSelection independently
       # if we try to batch the downloads + installs for multiple server selections
       # into one udpate set, then we get random errors like:
       # Exception calling "Download" with "0" argument(s)
       # Exception calling "Install" with "0" argument(s)
-      foreach ($serverSelection in ($searchResultHash.keys | Sort-Object)) {
+      #
+      # Instead perform bulk updates on a serverSelection level.
+      foreach ($serverSelection in ($serverUpdatesHash.keys | Sort-Object)) {
         Log-Timestamp -Path $log_file -Value "==============="
         Log-Timestamp -Path $log_file -Value "= Starting server selection: $serverSelection"
-        $value = $searchResultHash[$serverSelection]
-        $searchResult = $value['result']
-        Log-Timestamp -Path $log_file -Value "Number of updates returned from search: $($searchResult.Updates.Count)"
+        $updatesList = $serverUpdatesHash[$serverSelection]
+        Log-Timestamp -Path $log_file -Value "Number of updates returned from search: $($updatesList.Count)"
         
         $updatesToDownload = New-Object -ComObject 'Microsoft.Update.UpdateColl'
         $updatesToInstall = New-Object -ComObject 'Microsoft.Update.UpdateColl'
+        $serverPatchingResultList = @()
         
         # for each update, accept the EULA, add it to our list to download
-        foreach ($update in $searchResult.Updates) {
+        foreach ($update in $updatesList) {
           $updateId = $update.Identity.UpdateID
           $updateDate = $update.LastDeploymentChangeTime.ToString('yyyy-MM-dd')
           $update.AcceptEula() | Out-Null
@@ -80,7 +96,7 @@ function Update-Windows(
           foreach ($kb in $update.KBArticleIDs) {
             $kbIds += $kb
           }
-          $patchingResultList += @{
+          $serverPatchingResultList += @{
             'name' = $update.Title;
             'id' = $updateId;
             'version' = $update.Identity.RevisionNumber;
@@ -92,7 +108,7 @@ function Update-Windows(
 
         Log-Timestamp -Path $log_file -Value "Number of updates to install: $($updatesToInstall.Count)"
         Log-Timestamp -Path $log_file -Value "Number of updates to download: $($updatesToDownload.Count)"
-        $updatesJson = ConvertTo-Json -Depth 100 @($patchingResultList)
+        $updatesJson = ConvertTo-Json -Depth 100 @($serverPatchingResultList)
         Log-Timestamp -Path $log_file -Value "Updates to be installed: $updatesJson"
 
         if ($updatesToDownload.Count) {
@@ -126,7 +142,7 @@ function Update-Windows(
           # to determine the results of each patch based on the index in our input array... sorry
           for ($i = 0; $i -lt $updatesToInstall.Count; ++$i) {
             $update = $updatesToInstall.Item($i)  # need to use .Item() here because it's a special type
-            $patchingResult = $patchingResultList[$i]
+            $patchingResult = $serverPatchingResultList[$i]
             $updateInstallationResult = $installationResult.GetUpdateResult($i)
             $patchingResult['result_code'] = $updateInstallationResult.ResultCode
             $patchingResult['reboot_required'] = $updateInstallationResult.RebootRequired
@@ -153,6 +169,8 @@ function Update-Windows(
             }
           }
         }
+        # add this server's results to the master list
+        $patchingResultList += @($serverPatchingResultList)
         Log-Timestamp -Path $log_file -Value "= Finished server selection: $serverSelection"
         Log-Timestamp -Path $log_file -Value "==============="
       }
@@ -161,15 +179,20 @@ function Update-Windows(
       # to pass structured data from this script block, back to the caller of Invoke-CommandAsLocal
       # to do this structured data passing we serialize the data to JSON and then parse it below
       ConvertTo-Json -Depth 100 @{'upgraded' = @($patchingResultList);
-                                  'installed' = @();}
+                                  'installed' = @();
+                                  'exit_code' = 0;
+                                 }
+      exit 0
     }
     Catch {
       $exception_str = $_ | Out-String
+      Log-Timestamp -Path $log_file -Value "********** ERROR in scheduled task ************"
       Log-Timestamp -Path $log_file -Value $exception_str
-      ConvertTo-Json -Depth 100 @{'exception' = $exception_str;}
+      ConvertTo-Json -Depth 100 @{'exception' = $exception_str;
+                                  'exit_code' = 99;
+                                 }
       exit 99
     }
-    exit $exitStatus
   }
 
   # The script block above returns the command output as JSON, however PowerShell returns
@@ -177,6 +200,7 @@ function Update-Windows(
   # so we can parse the JSON back into an object.
   $script_args = "-_installdir $_installdir -log_file $log_file"
   $update_results = Invoke-CommandAsLocal -ScriptBlock $script_block -ScriptArgs $script_args -KeepLogFile $true
+  
   # only get CommandOutput if it is not null, otherwise grab the ErrorMessage which is set
   # when an exception occurs in the Invoke-CommandAsLocal function's code
   if ($update_results.CommandOutput -ne $null) {
@@ -187,26 +211,33 @@ function Update-Windows(
   }
 
   # if we succeeded, we expect JSON, if there is an error then it might be something else
-  if ($update_results.ExitCode -eq 0) {
-    # try parsing the output as JSON, if that fails then just return the raw string
-    try {
-      # ConvertFrom-Json returns a "custom object", not a hashtable so we have to
-      # convert it to a hashtable
-      $result = ConvertFrom-Json $result_str | Convert-PSObjectToHashtable
-    }
-    catch {
-      $result = $result_str
-    }
+  # try parsing the error as JSON, if that fails then just return the raw string
+  try {
+    # ConvertFrom-Json returns a "custom object", not a hashtable so we have to
+    # convert it to a hashtable
+    $result = ConvertFrom-Json $result_str | Convert-PSObjectToHashtable
+    # FYI $update_results.ExitCode isn't 100% reliable we've found, so we
+    # pass back JSON with an 'exit_code' property just to be save.
+    # we haven't seen issues since some recent changes, but still... ugh
+    $exit_code = $result['exit_code']
   }
-  else {
+  catch {
     $result = $result_str
+    # if the scheduled task's exit code was actually bad, return the bad details
+    if ($update_results.ExitCode -ne 0) {
+      $exit_code = $update_results.ExitCode
+    }
+    else {
+      # JSON parsing failed, something went wrong, we're setting an arbitrary bad exit code
+      $exit_code = 33
+    }
   }
   
   Log-Timestamp -Path $log_file -Value "= Finishing Update-Windows"
   Log-Timestamp -Path $log_file -Value "========================================="
   return @{
     'result' = $result;
-    'exit_code' = $update_results.ExitCode;
+    'exit_code' = $exit_code
   }
 }
 
@@ -249,12 +280,9 @@ function Update-Chocolatey(
   Log-Timestamp -Path $log_file -Value "Executing: choco upgrade all --yes --limit-output --no-progress --ignore-unfound"
   $output = iex "& choco upgrade all --yes --limit-output --no-progress --ignore-unfound"
   $exit_code = $LastExitCode
+  Log-Timestamp -Path $log_file -Value "Finished: choco ugprade ...  exit_code = $exit_code"
   Log-Timestamp -Path $log_file -Value ($output -join "`r`n")
   if ($exit_code -eq 0) {
-    # Write-Host "chocolatey output: $output"
-    # Write-Host "chocolatey exit code: $exit_code"
-    # TODO write output to log file
-    # TODO on failure, capture output
     # TODO handle unfound packages more gracefully
 
     # output is in the format:

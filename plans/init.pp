@@ -1,3 +1,5 @@
+# TODO, nick start here
+# get this documented then go work on slides
 plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,

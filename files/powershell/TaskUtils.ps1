@@ -75,7 +75,7 @@ function Invoke-CommandAsLocal ([parameter(Mandatory=$true)]
 <Actions Context="Author">
   <Exec>
     <Command>C:\WINDOWS\system32\WindowsPowerShell\v1.0\powershell.exe</Command>
-    <Arguments>-Command &amp;{ $script_file_name $ScriptArgs *> $log_file_name }</Arguments>
+    <Arguments>-Command &amp;{ $script_file_name $ScriptArgs *> $log_file_name }; exit `$LASTEXITCODE</Arguments>
   </Exec>
 </Actions>
 </Task>
@@ -113,7 +113,7 @@ function Invoke-CommandAsLocal ([parameter(Mandatory=$true)]
     # Get the task exit code and any logging information
     $output = Get-Content $log_file_name
     $exit_code = $task.LastTaskResult
-    
+
     $return_object | Add-Member -MemberType NoteProperty -Name CommandOutput -Value $output
     $return_object | Add-Member -MemberType NoteProperty -Name ErrorMessage -Value $null
     $return_object | Add-Member -MemberType NoteProperty -Name ExitCode -Value $exit_code
