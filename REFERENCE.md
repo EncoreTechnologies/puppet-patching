@@ -22,7 +22,7 @@
 
 **Plans**
 
-* [`patching`](#patching): 
+* [`patching`](#patching): Our generic and semi-opinionated workflow.
 * [`patching::available_updates`](#patchingavailable_updates): Checks all nodes for available updates reported by their Operating System.
 * [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
@@ -248,7 +248,40 @@ Log file for patching results. This file will contain the JSON output that is re
 
 ### patching
 
-The patching class.
+It serves as a showcase of how all of the building blocks in this module
+can be tied together to create a full blown patching workflow.
+This is a great initial workflow to patch servers.
+We fully expect others to take this workflow as a build-block and customize
+it to meet their needs.
+
+#### Examples
+
+##### CLI - Basic usage
+
+```puppet
+bolt plan run patching --nodes linux_patching,windows_patching
+```
+
+##### CLI - Disable snapshot creation, because an old patching run failed and we have an old snapshot to rely on
+
+```puppet
+bolt plan run patching --nodes linux_patching,windows_patching snapshot_create=false
+```
+
+##### CLI - Disable snapshot deletion, because we want to wait for app teams to test.
+
+```puppet
+bolt plan run patching --nodes linux_patching,windows_patching snapshot_delete=true
+
+# sometime in the future, delete the snapshots
+bolt plan run patching::snapshot_vmare --nodes linux_patching,windows_patching action='delete'
+```
+
+##### CLI - Customize the pre/post update plans to use your own module's version
+
+```puppet
+bolt plan run patching --nodes linux_patching pre_update_plan='mymodule::pre_update' post_update_plan='mymodule::post_update'
+```
 
 #### Parameters
 
@@ -258,13 +291,19 @@ The following parameters are available in the `patching` plan.
 
 Data type: `TargetSpec`
 
-
+Set of targets to run against.
 
 ##### `filter_offline_nodes`
 
 Data type: `Boolean`
 
-
+Flag to determine if offline nodes should be filtered out of the list of targets
+returned by this plan. If true, when running the <code>puppet_agent::version</code>
+check, any nodes that return an error will be filtered out and ignored.
+Those targets will not be returned in any of the data structures in the result of
+this plan. If false, then any nodes that are offline will cause this plan to error
+immediately when performing the online check. This will result in a halt of the
+patching process.
 
 Default value: `false`
 
@@ -272,7 +311,7 @@ Default value: `false`
 
 Data type: `String`
 
-
+Name of the plan to use for executing the pre-update step of the workflow.
 
 Default value: 'patching::pre_update'
 
@@ -280,7 +319,7 @@ Default value: 'patching::pre_update'
 
 Data type: `String`
 
-
+Name of the plan to use for executing the post-update step of the workflow.
 
 Default value: 'patching::post_update'
 
@@ -288,7 +327,11 @@ Default value: 'patching::post_update'
 
 Data type: `Enum['only_required', 'never', 'always']`
 
+Determines the reboot strategy for the run.
 
+ - 'only_required' only reboots hosts that require it based on info reported from the OS
+ - 'never' never reboots the hosts
+ - 'always' will reboot the host no matter what
 
 Default value: 'only_required'
 
@@ -296,7 +339,7 @@ Default value: 'only_required'
 
 Data type: `String`
 
-
+Message displayed to the user prior to the system rebooting
 
 Default value: 'NOTICE: This system is currently being updated.'
 
@@ -304,7 +347,8 @@ Default value: 'NOTICE: This system is currently being updated.'
 
 Data type: `Optional[String]`
 
-
+Name of the plan to use for executing snaphot creation and deletion steps of the workflow
+You can also pass `''` or `undef'` as an easy way to disable both creation and deletion.
 
 Default value: 'patching::snapshot_vmware'
 
@@ -312,7 +356,12 @@ Default value: 'patching::snapshot_vmware'
 
 Data type: `Boolean`
 
-
+Flag to enable/disable creating snapshots before patching groups.
+A common usecase to disabling snapshot creation is that, say you run patching
+with `snapshot_create` enabled and something goes wrong during patching and
+the run fails. The sanpshot still exists and you want to retry patching
+but don't want to create ANOTHER snapshot on top of the one we already have.
+In this case we would pass in `snapshot_create=false` when running the second time.
 
 Default value: `true`
 
@@ -320,7 +369,11 @@ Default value: `true`
 
 Data type: `Boolean`
 
-
+Flag to enable/disable deleting snapshots after patching groups.
+A common usecase to disable snapshot deletion is that, say you want to patch your
+hosts and wait a few hours for application teams to test after you're done patching.
+In this case you can run with `snapshot_delete=false` and then a few hours later
+you can run the `patching::snapshot_vmware action=delete` sometime in the future.
 
 Default value: `true`
 
@@ -328,7 +381,7 @@ Default value: `true`
 
 Data type: `Boolean`
 
-
+Flag to enable noop mode for the underlying plans and tasks.
 
 Default value: `false`
 
