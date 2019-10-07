@@ -31,7 +31,6 @@ plan patching::pre_post_update (
                       nodes => $nodes)
 
   # split into linux vs Windows
-  # TODO: we might want to split into "RedHat" vs "Windows" vs "Debian"
   $targets_linux = $targets.filter |$t| { facts($t)['os']['family'] != 'windows' }
   $targets_windows = $targets.filter |$t| { facts($t)['os']['family'] == 'windows' }
 

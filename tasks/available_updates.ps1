@@ -38,7 +38,10 @@ function AvailableUpdates-Windows() {
       'provider' = 'windows';
     }
   }
-  return @($availableUpdateList | Sort-Object)
+  return @{
+    'result' = @($availableUpdateList | Sort-Object);
+    'exit_code' = $exit_code;
+  }
 }
 
 function AvailableUpdates-Chocolatey([bool]$choco_required) {
@@ -64,26 +67,30 @@ function AvailableUpdates-Chocolatey([bool]$choco_required) {
   # run command: choco outdated
   $output = iex "& choco outdated --limit-output --ignore-unfound"
   $exit_code = $LastExitCode
-  # Write-Host "chocolatey output: $output"
-  # Write-Host "chocolatey exit code: $exit_code"
-  # TODO on failure capture output
   # TODO handle unfound packages more gracefully
   
-  # output is in the format:
-  # package name|current version|available version|pinned?
-  foreach ($line in $output) {
-    $parts = $line.split('|')
-    $updateList += @{
-      'name' = $parts[0];
-      'version_old' = $parts[1];
-      'version' = $parts[2];
-      'pinned' = $parts[3];
-      'provider' = 'chocolatey';
+  if ($exit_code -eq 0) {
+    # output is in the format:
+    # package name|current version|available version|pinned?
+    foreach ($line in $output) {
+      $parts = $line.split('|')
+      $updateList += @{
+        'name' = $parts[0];
+        'version_old' = $parts[1];
+        'version' = $parts[2];
+        'pinned' = $parts[3];
+        'provider' = 'chocolatey';
+      }
     }
-  }
-  return @{
-    'result' = @($updateList | Sort-Object);
-    'exit_code' = $exit_code;
+    return @{
+      'result' = @($updateList | Sort-Object);
+      'exit_code' = $exit_code;
+    }
+  } else {
+    return @{
+      'result' = $output;
+      'exit_code' = $exit_code;
+    }
   }
 }
 
@@ -94,16 +101,36 @@ if ($provider -eq '') {
 $exit_code = 0
 if ($provider -eq 'windows') {
   $result = @{"updates" = @(AvailableUpdates-Windows)}
+  $exit_code = $result_chocolatey['exit_code']
 } elseif ($provider -eq 'chocolatey') {
   $result_chocolatey = AvailableUpdates-Chocolatey($True)
   $result = @{"updates" = @($result_chocolatey['result'])}
   $exit_code = $result_chocolatey['exit_code']
 } elseif ($provider -eq 'all') {
-  $updates_windows = @(AvailableUpdates-Windows)
-  $result_chocolatey = AvailableUpdates-Chocolatey($False)
-  $updates_chocolatey = @($result_chocolatey['result'])
-  $result = @{"updates" = @($updates_windows + $updates_chocolatey)}
-  $exit_code = $result_chocolatey['exit_code']
+  $result = @{"updates" = @()}
+  $exit_code = 0
+  
+  $data_windows = @(AvailableUpdates-Windows)
+  $result_windows = $data_windows['result']
+  $exit_code_windows = $data_windows['exit_code']
+  if ($exit_code_windows -eq 0) {
+    $result['updates'] += @($result_windows)
+  }
+  else {
+    $result['error_windows'] = $result_windows
+    $exit_code = $exit_code_windows
+  }
+
+  $data_chocolatey = AvailableUpdates-Chocolatey($False)
+  $result_chocolatey = $data_chocolatey['result']
+  $exit_code_chocolatey = $data_chocolatey['exit_code']
+  if ($exit_code_chocolatey -eq 0) {
+    $result['updates'] += @($result_chocolatey)
+  }
+  else {
+    $result['error_chocolatey'] = $result_chocolatey
+    $exit_code = $exit_code_chocolatey
+  }
 } else {
   Write-Error "Unknown provider! Expected 'windows', 'chocolatey', 'all'. Got: $provider"
   exit 100

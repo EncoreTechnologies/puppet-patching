@@ -42,7 +42,7 @@
 #
 plan patching::available_updates (
   TargetSpec $nodes,
-  # TODO CSV and JSON outputs
+  # TODO JSON
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
   Boolean                       $noop   = false,
 ) {

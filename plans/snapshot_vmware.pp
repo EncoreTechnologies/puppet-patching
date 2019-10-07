@@ -76,6 +76,7 @@ plan patching::snapshot_vmware (
   Boolean $noop                 = false,
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
+  $group_vars = $targets[0].vars
   $_vm_name_property = pick($group_vars['patching_vm_name_property'], $vm_name_property)
   $_snapshot_name = pick($group_vars['patching_snapshot_name'], $snapshot_name)
   $_snapshot_description = pick_default($group_vars['patching_snapshot_description'], $snapshot_description)

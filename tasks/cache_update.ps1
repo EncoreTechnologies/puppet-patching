@@ -8,6 +8,11 @@ Param(
   [Boolean]$_noop = $false
 )
 
+# TODO 
+# - WUA: run wuactl?
+# - Chocolatey: ?
+
+
 # if ($_noop) {
 #   Write-Output '{"message": "noop - cache was not updated"}'
 #   exit 0

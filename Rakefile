@@ -84,5 +84,3 @@ EOM
   end
 end
 
-# exclude plans because puppet-syntax doesn't support them yet: https://github.com/voxpupuli/puppet-syntax/issues/95
-PuppetSyntax.exclude_paths = ["plans/**/*", "vendor/**/*"]
