@@ -93,7 +93,7 @@ plan patching::snapshot_vmware (
         $n.uri
       }
       default: {
-        fail_plan("Unsupported vm_name_property: #{_vm_name_property}")
+        fail_plan("Unsupported vm_name_property: ${_vm_name_property}")
       }
     }
   }
