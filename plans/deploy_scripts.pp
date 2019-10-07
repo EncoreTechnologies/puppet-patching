@@ -48,7 +48,7 @@ plan patching::deploy_scripts(
       scripts      => $scripts,
       patching_dir => pick($patching_dir, $patching::params::patching_dir),
       bin_dir      => pick($bin_dir, $patching::params::bin_dir),
-      bin_dir      => pick($log_dir, $patching::params::log_dir),
+      log_dir      => pick($log_dir, $patching::params::log_dir),
       owner        => pick($owner, $patching::params::owner),
       group        => pick($group, $patching::params::group),
       mode         => pick($mode, $patching::params::mode),

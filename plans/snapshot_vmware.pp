@@ -92,6 +92,9 @@ plan patching::snapshot_vmware (
       'uri': {
         $n.uri
       }
+      default: {
+        fail_plan("Unsupported vm_name_property: #{_vm_name_property}")
+      }
     }
   }
 
@@ -110,15 +113,15 @@ plan patching::snapshot_vmware (
 
   if !$noop {
     return patching::snapshot_vmware($vm_names,
-                                     $_snapshot_name,
-                                     $vsphere_host,
-                                     $vsphere_username,
-                                     $vsphere_password,
-                                     $vsphere_datacenter,
-                                     $vsphere_insecure,
-                                     $_snapshot_description,
-                                     $_snapshot_memory,
-                                     $_snapshot_quiesce,
-                                     $action)
+                                      $_snapshot_name,
+                                      $vsphere_host,
+                                      $vsphere_username,
+                                      $vsphere_password,
+                                      $vsphere_datacenter,
+                                      $vsphere_insecure,
+                                      $_snapshot_description,
+                                      $_snapshot_memory,
+                                      $_snapshot_quiesce,
+                                      $action)
   }
 }

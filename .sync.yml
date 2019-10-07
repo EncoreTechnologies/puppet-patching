@@ -16,8 +16,6 @@ appveyor.yml:
 Gemfile:
   required:
     ':development':
-      - gem: 'puppet-lint-absolute_classname-check'
-        version: '>= 0.2.4'
       - gem: 'puppet-lint-absolute_template_path'
         version: '>= 1.0.1'
       - gem: 'puppet-lint-alias-check'
