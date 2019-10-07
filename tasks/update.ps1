@@ -265,7 +265,7 @@ function Update-Chocolatey(
       Log-Timestamp -Path $log_file -Value "========================================="
       return @{
         'result' = @{'upgraded' = @();
-                     'installed'est t = @()};
+                     'installed' = @()};
         'exit_code' = $exit_code;
       }
     }
