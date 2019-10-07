@@ -1,6 +1,37 @@
-# TODO List
+# Enhancements
+ - Document config variables used by plans for customization in the plan docs itself
+ - Resource for deploying pre/post patch scripts
+ - Better reporting
+   - more details about the patches applied
+   - multiple tabs in a spreadsheet, maybe?
+   - timestamps in the update logs
+   - duration of patching?
+   - output OS facts in the report
+   - maybe iterate and gather list of avaialable fields from all hashes in the update list, then make those our columns
+ - JSON output format for plans
+ - patching::pre_post_update plan, pretty print scripts that were ran and their success/failure
+ - patching::update plan for pretty printing
+ - put chocolatey test into a function in test utils
+ - refactor update.ps1
+ - update.ps1 support updating specific packages
+ - 
+ 
+# New features
  - Promote content
    - save promoted patches so we can migrate between WSUS environments
  - Monitoring enable/disable
- - Resource for deploying pre/post patch scripts
- - 
+ - Notifications
+   - slack
+   - email
+ - ServiceNow change integrataion
+ - Inventory plugins
+   - Satellite/Foreman
+   - WSUS
+   - IPA
+   - AD
+   - VMware
+   - ServiceNow
+ - Reverse clustered workflow
+ - Network patching
+ - VMware patching
+ - Should we add 'facts' to describe end-node's customizations that mirror vars in bolt plans?

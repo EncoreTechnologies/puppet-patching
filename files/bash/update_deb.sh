@@ -4,7 +4,6 @@
 # export RESULT_FILE  - name of the file to write JSON results to
 # export LOG_FILE     - name of the file to write OS specific patching logs to
 
-# TODO make this is own task
 ## Apt package manager
 apt-get -y update &>> "$LOG_FILE"
 STATUS=$?

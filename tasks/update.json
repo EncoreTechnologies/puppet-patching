@@ -22,7 +22,7 @@
       "type": "Optional[String[1]]"
     },
     "names": {
-      "description": "Name of the package(s) to update. If nothing is passed then all packages will be updated.",
+      "description": "Name of the package(s) to update. If nothing is passed then all packages will be updated. Note: this currently only works for Linux, Windows support will be added in the future for both Windows Update and Chocolatey (TODO)",
       "type": "Optional[Array[String]]"
     },
     "result_file": {

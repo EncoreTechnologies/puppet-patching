@@ -1,9 +1,5 @@
 #!/bin/bash
 
-## TODO: don't return any updated packages if we didn't do anything
-##       (right now we're pulling out last history from log files which might be from a previous
-##        run if no patches were installed)
-
 export PACKAGES="$PT_names"
 export RESULT_FILE="$PT_result_file"
 export LOG_FILE="$PT_log_file"

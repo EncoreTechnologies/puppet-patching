@@ -31,7 +31,7 @@ plan patching::update_history (
   TargetSpec          $nodes,
   Optional[ResultSet] $history     = undef,
   Optional[String]    $report_file = 'patching_report.csv',
-  # TODO CSV and JSON outputs
+  # TODO JSON outputs
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
@@ -77,7 +77,7 @@ plan patching::update_history (
           }
           # if this is windows we want to print KB articles (one per line?)
           if 'kb_ids' in $up {
-            # TODO: provider?
+            # TODO: provider? - need a custom tab for windows vs linux
 
             # create a new line for each KB article
             $csv_line = $up['kb_ids'].reduce('') |$kb_memo, $kb| {
@@ -86,7 +86,7 @@ plan patching::update_history (
             }
           }
           else {
-            # TODO version old?
+            # TODO version old? - need a custom tab for windows vs linux
 
             # create one line per update/upgrade
             $csv_line = "${hostname},upgraded,\"${name}\",\"${version}\",\n"

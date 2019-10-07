@@ -5,8 +5,6 @@ Param(
   # https://blogs.technet.microsoft.com/heyscriptingguy/2011/05/22/use-powershell-to-make-mandatory-           parameters/
   [Parameter(Mandatory = $False)]
   [String]$names,
-  # NICK START HERE (write results to file)
-  # TODO write results to file
   [String]$result_file,
   [String]$log_file,
   [String]$provider,
@@ -267,7 +265,7 @@ function Update-Chocolatey(
       Log-Timestamp -Path $log_file -Value "========================================="
       return @{
         'result' = @{'upgraded' = @();
-                     'installed' = @()};
+                     'installed'est t = @()};
         'exit_code' = $exit_code;
       }
     }

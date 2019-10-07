@@ -74,7 +74,7 @@ plan patching::reboot_required (
         }
       }
       'always': {
-        $nodes_reboot_attempted = $nodes
+        $nodes_reboot_attempted = $targets
         $reboot_resultset = run_plan('reboot',
                                       nodes             => $nodes,
                                       reconnect_timeout => 300,

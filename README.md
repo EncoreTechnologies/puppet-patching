@@ -77,7 +77,7 @@ and control of phased patching promotions.
 At some point in the future we will include tasks and plans to promote patches through
 these central patching server tools.
 
-TODO: Diagram
+![Patching Module Architecture](./images/patching_architecture_bolt.png)
 
 ## Design
 
@@ -154,7 +154,47 @@ bolt plan run patching::pre_update --nodes group_a
 By default this executes the following scripts (nodes where the script doesn't exist are ignored):
 * Linux = `/opt/patching/bin/pre_update.sh`
 * Windows = `C:\ProgramData\patching\pre_update.ps1`
- 
+
+### Deploying pre/post patching scripts
+
+An easy way to deploy pre/post patching scripts is via the `patching` Puppet manifest or the `patching::script` resource.
+
+Using the `patching` class:
+
+``` puppet
+class {'patching':
+  scripts => {
+    'pre_patch.sh': {
+      content => template('mymodule/patching/custom_app_post_patch.sh'),
+    },
+    'post_patch.sh': {
+      source => 'puppet:///mymodule/patching/custom_app_post_patch.sh',
+    },
+  },
+}
+```
+
+Via `patching::script` resources:
+
+``` puppet
+patching::script { 'custom_app_pre_patch.sh':
+  content => template('mymodule/patching/custom_app_pre_patch.sh'),
+}
+patching::script { 'custom_app_post_patch.sh':
+  source => 'puppet:///mymodule/patching/custom_app_post_patch.sh',
+}
+```
+
+Or via Hiera:
+
+```yaml
+patching::scripts:
+  custom_app_pre_patch.sh:
+    source: 'puppet:///mymodule/patching/custom_app_pre_patch.sh'
+  custom_app_post_patch.sh:
+    source: 'puppet:///mymodule/patching/custom_app_post_patch.sh'
+
+```
 
 ### Run a the full patching workflow end-to-end
 

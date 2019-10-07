@@ -3,6 +3,15 @@
 
 ## Table of Contents
 
+**Classes**
+
+* [`patching`](#patching): allows global customization of the patching resources
+* [`patching::params`](#patchingparams): params for the patching module resources
+
+**Defined types**
+
+* [`patching::script`](#patchingscript): manages a script for custom patching actions
+
 **Functions**
 
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates/deletes snapshots on VMs using the VMware vSphere API.
@@ -26,6 +35,7 @@
 * [`patching::available_updates`](#patchingavailable_updates): Checks all nodes for available updates reported by their Operating System.
 * [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
+* [`patching::deploy_scripts`](#patchingdeploy_scripts): 
 * [`patching::get_targets`](#patchingget_targets): Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
 * [`patching::post_update`](#patchingpost_update): Executes a custom post-update script on each node.
@@ -35,6 +45,239 @@
 * [`patching::reboot_required`](#patchingreboot_required): Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshots on nodes in VMware.
 * [`patching::update_history`](#patchingupdate_history): Collect update history from the results JSON file on the targets
+
+## Classes
+
+### patching
+
+allows global customization of the patching resources
+
+#### Examples
+
+##### Basic usage
+
+```puppet
+include patching
+```
+
+##### Customizing script location
+
+```puppet
+class {'patching':
+  bin_dir => '/my/custom/patching/scripts',
+}
+```
+
+##### Customizing the owner/group/mode of the scripts
+
+```puppet
+class {'patching':
+  owner => 'svc_patching',
+  group => 'svc_patching',
+  mode  => '0700',
+}
+```
+
+##### Customizing from hiera
+
+```puppet
+patching::bin_dir: '/my/custom/app/patching/dir'
+patching::owner: 'svc_patching'
+patching::group: 'svc_patching'
+patching::mode: '0700'
+```
+
+##### Deploying scripts from hiera
+
+```puppet
+patching::scripts:
+  custom_app_pre_patch.sh:
+    source: 'puppet://mymodule/patching/custom_app_pre_patch.sh'
+  custom_app_post_patch.sh:
+    source: 'puppet://mymodule/patching/custom_app_post_patch.sh'
+```
+
+#### Parameters
+
+The following parameters are available in the `patching` class.
+
+##### `patching_dir`
+
+Data type: `Any`
+
+Global directory as the base for `bin_dir` and `log_dir`
+
+Default value: $patching::params::patching_dir
+
+##### `bin_dir`
+
+Data type: `Any`
+
+Global directory where the scripts will be installed
+
+Default value: $patching::params::bin_dir
+
+##### `log_dir`
+
+Data type: `Any`
+
+Global directory where log files will be written during patching
+
+Default value: $patching::params::log_dir
+
+##### `owner`
+
+Data type: `Any`
+
+Default owner of installed scripts
+
+Default value: $patching::params::owner
+
+##### `group`
+
+Data type: `Any`
+
+Default group of installed scripts
+
+Default value: $patching::params::group
+
+##### `mode`
+
+Data type: `Any`
+
+Default file mode of installed scripts
+
+Default value: $patching::params::mode
+
+##### `scripts`
+
+Data type: `Optional[Hash]`
+
+Hash of script resources to instantiate. Useful for declaring script installs from hiera.
+
+Default value: `undef`
+
+### patching::params
+
+params for the patching module resources
+
+## Defined types
+
+### patching::script
+
+manages a script for custom patching actions
+
+#### Examples
+
+##### Basic usage from static file
+
+```puppet
+include patching
+patching::script { 'pre_patch.sh':
+  source => 'puppet://mymodule/patching/custom_app_pre_patch.sh',
+}
+```
+
+##### Basic usage from template
+
+```puppet
+include patching
+patching::script { 'pre_patch.sh':
+  content => template('mymodule/patching/custom_app_pre_patch.sh'),
+}
+```
+
+##### Installing the script into a different path with a different name
+
+```puppet
+include patching
+patching::script { 'custom_app_pre_patch.sh':
+  content => template('mymodule/patching/custom_app_pre_patch.sh'),
+  bin_dir => '/my/custom/app/patching/dir',
+}
+```
+
+##### Installing multiple scripts into a different path
+
+```puppet
+class {'patching':
+  bin_dir => '/my/custom/app/patching/dir',
+}
+
+# we don't have to override bin_dir on each of these because
+# we configured it gobally in the patching class above
+patching::script { 'custom_app_pre_patch.sh':
+  content => template('mymodule/patching/custom_app_pre_patch.sh'),
+}
+patching::script { 'custom_app_post_patch.sh':
+  content => template('mymodule/patching/custom_app_post_patch.sh'),
+}
+```
+
+##### From hiera
+
+```puppet
+patching::bin_dir: '/my/custom/app/patching/dir'
+patching::scripts:
+  custom_app_pre_patch.sh:
+    source: 'puppet://mymodule/patching/custom_app_pre_patch.sh'
+  custom_app_post_patch.sh:
+    source: 'puppet://mymodule/patching/custom_app_post_patch.sh'
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::script` defined type.
+
+##### `source`
+
+Data type: `Any`
+
+Source (puppet path) for the `file` resource of the script.
+Either `source` our `content` must be specified. If neither are specified an error will be thrown.
+
+Default value: `undef`
+
+##### `content`
+
+Data type: `Any`
+
+Content (raw string, result of `template()`, etc) for the `file` resource of the script.
+Either `source` our `content` must be specified. If neither are specified an error will be thrown.
+
+Default value: `undef`
+
+##### `bin_dir`
+
+Data type: `Any`
+
+Directory where the script will be installed
+
+Default value: $patching::bin_dir
+
+##### `owner`
+
+Data type: `Any`
+
+Owner of the script file
+
+Default value: $patching::owner
+
+##### `group`
+
+Data type: `Any`
+
+Group of the script file
+
+Default value: $patching::group
+
+##### `mode`
+
+Data type: `Any`
+
+File mode to set on the script
+
+Default value: $patching::mode
 
 ## Functions
 
@@ -216,7 +459,7 @@ What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not
 
 Data type: `Optional[Array[String]]`
 
-Name of the package(s) to update. If nothing is passed then all packages will be updated.
+Name of the package(s) to update. If nothing is passed then all packages will be updated. Note: this currently only works for Linux, Windows support will be added in the future for both Windows Update and Chocolatey (TODO)
 
 ##### `result_file`
 
@@ -579,6 +822,88 @@ immediately when performing the online check. This will result in a halt of the
 patching process.
 
 Default value: `false`
+
+### patching::deploy_scripts
+
+The patching::deploy_scripts class.
+
+#### Examples
+
+##### CLI deploy a pre patching script
+
+```puppet
+bolt plan run patching::deploy_scripts scripts='{"pre_patch.sh": {"source": "puppet:///modules/test/patching/pre_patch.sh"}}'
+```
+
+##### CLI deploy a pre and post patching script
+
+```puppet
+bolt plan run patching::deploy_scripts scripts='{"pre_patch.sh": {"source": "puppet:///modules/test/patching/pre_patch.sh"}, "post_patch.sh": {"source": "puppet:///modules/test/patching/post_patch.sh"}}'
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::deploy_scripts` plan.
+
+##### `owner`
+
+Data type: `Optional[String]`
+
+Default owner of installed scripts
+
+Default value: `undef`
+
+##### `group`
+
+Data type: `Optional[String]`
+
+Default group of installed scripts
+
+Default value: `undef`
+
+##### `mode`
+
+Data type: `Optional[String]`
+
+Default file mode of installed scripts
+
+Default value: `undef`
+
+##### `nodes`
+
+Data type: `TargetSpec`
+
+
+
+##### `scripts`
+
+Data type: `Hash`
+
+
+
+##### `patching_dir`
+
+Data type: `Optional[String]`
+
+
+
+Default value: `undef`
+
+##### `bin_dir`
+
+Data type: `Optional[String]`
+
+
+
+Default value: `undef`
+
+##### `log_dir`
+
+Data type: `Optional[String]`
+
+
+
+Default value: `undef`
 
 ### patching::get_targets
 

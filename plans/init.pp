@@ -52,7 +52,7 @@
 #   hosts and wait a few hours for application teams to test after you're done patching.
 #   In this case you can run with `snapshot_delete=false` and then a few hours later
 #   you can run the `patching::snapshot_vmware action=delete` sometime in the future.
-# 
+#
 # @param [Boolean] noop
 #   Flag to enable noop mode for the underlying plans and tasks.
 #
@@ -83,9 +83,6 @@ plan patching (
   Boolean          $snapshot_delete  = true,
   Boolean          $noop             = false,
 ) {
-  # TODO content promotion
-  # TODO monitoring disable plan
-
   ## Filter offline nodes
   $check_puppet_result = run_plan('patching::check_puppet',
                                   nodes                => $nodes,
