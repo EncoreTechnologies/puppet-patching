@@ -110,7 +110,7 @@ if ($provider -eq 'windows') {
   $result = @{"updates" = @()}
   $exit_code = 0
   
-  $data_windows = @(AvailableUpdates-Windows)
+  $data_windows = AvailableUpdates-Windows
   $result_windows = $data_windows['result']
   $exit_code_windows = $data_windows['exit_code']
   if ($exit_code_windows -eq 0) {
