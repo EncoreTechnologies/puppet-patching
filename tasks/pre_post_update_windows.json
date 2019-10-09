@@ -1,8 +1,8 @@
 {
-  "description": "Run pre-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a pre-update script).",
+  "description": "Pre-post-update definition to make bolt not throw a warning. Best to use pre_update or post_update directly.",
   "supports_noop": true,
+  "private": true,
   "implementations": [
-    {"name": "pre_post_update_linux.sh", "requirements": ["shell"]},
     {"name": "pre_post_update_windows.ps1", "requirements": ["powershell"]}
   ],
   "parameters": {

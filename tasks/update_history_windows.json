@@ -1,10 +1,7 @@
 {
   "description": "Reads the update history from the JSON 'result_file'.",
+  "private": true,
   "implementations": [
-    {
-      "name": "update_history_linux.sh",
-      "requirements": ["shell"]
-    },
     {
       "name": "update_history_windows.ps1",
       "requirements": ["powershell"]

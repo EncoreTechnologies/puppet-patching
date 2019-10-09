@@ -1,0 +1,11 @@
+{
+  "description": "Checks if a reboot is pending",
+  "private": true,
+  "implementations": [
+    {
+      "name": "reboot_required_windows.ps1",
+      "requirements": ["powershell"],
+      "files": ["patching/files/powershell/TaskUtils.ps1"]
+    }
+  ]
+}

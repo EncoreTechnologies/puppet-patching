@@ -2,8 +2,8 @@
   "description": "Run post-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a post-update script).",
   "supports_noop": true,
   "implementations": [
-    {"name": "pre_post_update.sh", "requirements": ["shell"]},
-    {"name": "pre_post_update.ps1", "requirements": ["powershell"]}
+    {"name": "pre_post_update_linux.sh", "requirements": ["shell"]},
+    {"name": "pre_post_update_windows.ps1", "requirements": ["powershell"]}
   ],
   "parameters": {
     "script": {

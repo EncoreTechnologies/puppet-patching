@@ -1,16 +1,8 @@
 {
   "description": "Collects information about available updates on a target system",
   "supports_noop": true,
+  "private": true,
   "implementations": [
-    {
-      "name": "available_updates_linux.sh",
-      "requirements": ["shell"],
-      "files": [
-        "patching/files/bash/os_test.sh",
-        "patching/files/bash/available_updates_rh.sh",
-        "patching/files/bash/available_updates_deb.sh"
-      ]
-    },
     {
       "name": "available_updates_windows.ps1", 
       "requirements": ["powershell"],

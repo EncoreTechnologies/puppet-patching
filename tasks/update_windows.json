@@ -1,15 +1,7 @@
 {
   "description": "Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windows Update and `choco update`.",
+  "private": true,
   "implementations": [
-    {
-      "name": "update_linux.sh",
-      "requirements": ["shell"],
-      "files": [
-        "patching/files/bash/os_test.sh",
-        "patching/files/bash/update_rh.sh",
-        "patching/files/bash/update_deb.sh"
-      ]
-    },
     {
       "name": "update_windows.ps1",
       "requirements": ["powershell"],
