@@ -92,9 +92,9 @@ patching::mode: '0700'
 ```puppet
 patching::scripts:
   custom_app_pre_patch.sh:
-    source: 'puppet://mymodule/patching/custom_app_pre_patch.sh'
+    source: 'puppet:///mymodule/patching/custom_app_pre_patch.sh'
   custom_app_post_patch.sh:
-    source: 'puppet://mymodule/patching/custom_app_post_patch.sh'
+    source: 'puppet:///mymodule/patching/custom_app_post_patch.sh'
 ```
 
 #### Parameters
@@ -121,7 +121,7 @@ Default value: $patching::params::bin_dir
 
 Data type: `Any`
 
-Global directory where log files will be written during patching
+Directory where log files will be written during patching
 
 Default value: $patching::params::log_dir
 
@@ -220,9 +220,9 @@ patching::script { 'custom_app_post_patch.sh':
 patching::bin_dir: '/my/custom/app/patching/dir'
 patching::scripts:
   custom_app_pre_patch.sh:
-    source: 'puppet://mymodule/patching/custom_app_pre_patch.sh'
+    source: 'puppet:///mymodule/patching/custom_app_pre_patch.sh'
   custom_app_post_patch.sh:
-    source: 'puppet://mymodule/patching/custom_app_post_patch.sh'
+    source: 'puppet:///mymodule/patching/custom_app_post_patch.sh'
 ```
 
 #### Parameters
