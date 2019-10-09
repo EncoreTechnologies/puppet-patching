@@ -1,11 +1,7 @@
 {
   "description": "Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.",
+  "private": true,
   "implementations": [
-    {
-      "name": "cache_remove_linux.sh",
-      "requirements": ["shell"],
-      "files": ["patching/files/bash/os_test.sh"]
-    },
     {
       "name": "cache_remove_windows.ps1",
       "requirements": ["powershell"]

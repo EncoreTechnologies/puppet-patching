@@ -2,12 +2,12 @@
   "description": "Reads the update history from the JSON 'result_file'.",
   "implementations": [
     {
-      "name": "update_history.sh",
+      "name": "update_history_linux.sh",
       "requirements": ["shell"],
       "files": ["patching/files/bash/os_test.sh"]
     },
     {
-      "name": "update_history.ps1",
+      "name": "update_history_windows.ps1",
       "requirements": ["powershell"],
       "files": ["patching/files/powershell/TaskUtils.ps1"]
     }

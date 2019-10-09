@@ -1,12 +1,8 @@
 {
   "description": "Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.",
   "supports_noop": true,
+  "private": true,
   "implementations": [
-    {
-      "name": "cache_update_linux.sh",
-      "requirements": ["shell"],
-      "files": ["patching/files/bash/os_test.sh"]
-    },
     {
       "name": "cache_update_windows.ps1",
       "requirements": ["powershell"],
