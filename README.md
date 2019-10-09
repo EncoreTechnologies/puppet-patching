@@ -2,6 +2,12 @@
 # patching
 
 [![Build Status](https://travis-ci.org/EncoreTechnologies/puppet-patching.svg?branch=master)](https://travis-ci.org/EncoreTechnologies/puppet-patching)
+[![Puppet Forge Version](https://img.shields.io/puppetforge/v/encore/patching.svg)](https://forge.puppet.com/encore/patching)
+[![Puppet Forge Downloads](https://img.shields.io/puppetforge/dt/encore/patching.svg)](https://forge.puppet.com/encore/patching)
+[![Puppet Forge Score](https://img.shields.io/puppetforge/f/encore/patching.svg)](https://forge.puppet.com/encore/patching)
+[![Puppet PDK Version](https://img.shields.io/puppetforge/pdk-version/encore/patching.svg)](https://forge.puppet.com/encore/patching)
+[![puppetmodule.info docs](http://www.puppetmodule.info/images/badge.png)](http://www.puppetmodule.info/m/encore-patching)
+
 
 #### Table of Contents
 

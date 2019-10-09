@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## Development
+
+* Added shields/badges to the README. (Enhancement)
+  
+  Contributed by Nick Maludy (@nmaludy)
+
+
 ## Release 0.2.0
 
 * Renamed task implementations to `_linux` and `_windows` to work around a Forge bug
