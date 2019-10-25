@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Add support for RHEL 8 based distributions (Enhancement)
+
+  Contributed by Vadym Chepkov (@vchepkov)
+
 * Added shields/badges to the README. (Enhancement)
   
   Contributed by Nick Maludy (@nmaludy)
