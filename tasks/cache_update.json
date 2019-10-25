@@ -1,5 +1,5 @@
 {
-  "description": "Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.",
+  "description": "Updates the targets update cache. For RHEL/CentOS this means a `yum clean expire-cache`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.",
   "supports_noop": true,
   "implementations": [
     {

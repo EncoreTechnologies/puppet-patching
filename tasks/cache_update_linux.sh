@@ -11,10 +11,10 @@ fi
 ################################################################################
 if [[ -n "$OS_TEST_RH" ]]; then
   # update yum cache
-  OUTPUT=$(yum makecache fast 2>&1)
+  OUTPUT=$(yum clean expire-cache 2>&1)
   STATUS=$?
   if [[ $STATUS -ne 0 ]]; then
-    ERROR="yum makecache fast FAILED, you probably forgot to run this as sudo or there is a network error."
+    ERROR="yum clean expire-cache FAILED, you probably forgot to run this as sudo or there is a network error."
   fi
 ################################################################################  
 elif [[ -n "$OS_TEST_DEB" ]]; then

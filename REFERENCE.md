@@ -464,7 +464,7 @@ Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clea
 
 ### cache_update
 
-Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
+Updates the targets update cache. For RHEL/CentOS this means a `yum clean expire-cache`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
 
 **Supports noop?** true
 
