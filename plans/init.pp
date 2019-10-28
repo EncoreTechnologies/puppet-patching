@@ -18,28 +18,34 @@
 #   immediately when performing the online check. This will result in a halt of the
 #   patching process.
 #
+# @param [Boolean] monitoring_enabled
+#   Flag to enable/disable the execute of the monitoring_plan.
+#   This is useful if you don't want to call out to a monitoring system during provisioning.
+#   To configure this globally, use the `patching_monitor_enabled` var.
+#
 # @param [Optional[String]] monitoring_plan
 #   Name of the plan to use for disabling/enabling monitoring steps of the workflow.
+#   To configure this globally, use the `patching_monitor_plan` var.
 #
-# @param [String] pre_update_plan
+# @param [Optional[String]] pre_update_plan
 #   Name of the plan to use for executing the pre-update step of the workflow.
 #
-# @param [String] post_update_plan
+# @param [Optional[String]] post_update_plan
 #   Name of the plan to use for executing the post-update step of the workflow.
 #
-# @param [Enum['only_required', 'never', 'always']] reboot_strategy
+# @param [Optional[Enum['only_required', 'never', 'always']]] reboot_strategy
 #   Determines the reboot strategy for the run.
 #
 #    - 'only_required' only reboots hosts that require it based on info reported from the OS
 #    - 'never' never reboots the hosts
 #    - 'always' will reboot the host no matter what
 #
-# @param [String] reboot_message
+# @param [Optional[String]] reboot_message
 #   Message displayed to the user prior to the system rebooting
 #
 # @param [Optional[String]] snapshot_plan
 #   Name of the plan to use for executing snaphot creation and deletion steps of the workflow
-#   You can also pass `''` or `undef'` as an easy way to disable both creation and deletion.
+#   You can also pass `'disabled'` or `undef'` as an easy way to disable both creation and deletion.
 #
 # @param [Boolean] snapshot_create
 #   Flag to enable/disable creating snapshots before patching groups.
@@ -77,15 +83,16 @@
 plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,
-  Optional[String] $monitoring_plan   = 'patching::monitoring_solarwinds',
-  String           $pre_update_plan   = 'patching::pre_update',
-  String           $post_update_plan  = 'patching::post_update',
-  Enum['only_required', 'never', 'always'] $reboot_strategy = 'only_required',
-  String           $reboot_message   = 'NOTICE: This system is currently being updated.',
-  Optional[String] $snapshot_plan    = 'patching::snapshot_vmware',
-  Boolean          $snapshot_create  = true,
-  Boolean          $snapshot_delete  = true,
-  Boolean          $noop             = false,
+  Boolean          $monitoring_enabled = true,
+  Optional[String] $monitoring_plan    = undef,
+  Optional[String] $pre_update_plan    = undef,
+  Optional[String] $post_update_plan   = undef,
+  Optional[Enum['only_required', 'never', 'always']] $reboot_strategy = undef,
+  Optional[String] $reboot_message     = undef,
+  Optional[String] $snapshot_plan      = undef,
+  Boolean          $snapshot_create    = true,
+  Boolean          $snapshot_delete    = true,
+  Boolean          $noop               = false,
 ) {
   ## Filter offline nodes
   $check_puppet_result = run_plan('patching::check_puppet',
@@ -109,14 +116,31 @@ plan patching (
     # if there is no customization for this group, it defaults to the global setting
     # set at the plan level above
     $group_vars = $ordered_nodes[0].vars
-    $monitoring_plan_group = pick_default($group_vars['patching_monitoring_plan'], $monitoring_plan)
-    $reboot_strategy_group = pick($group_vars['patching_reboot_strategy'], $reboot_strategy)
-    $reboot_message_group = pick($group_vars['patching_reboot_message'], $reboot_message)
-    $pre_update_plan_group = pick($group_vars['patching_pre_update_plan'], $pre_update_plan)
-    $post_update_plan_group = pick($group_vars['patching_post_update_plan'], $post_update_plan)
-    $snapshot_plan_group = pick_default($group_vars['patching_snapshot_plan'], $snapshot_plan)
-    $snapshot_create_group = pick($group_vars['patching_snapshot_create'], $snapshot_create)
-    $snapshot_delete_group = pick($group_vars['patching_snapshot_delete'], $snapshot_delete)
+    # Prescedence: CLI > Config > Default
+    $monitoring_plan_group = pick($monitoring_plan,
+                                  $group_vars['patching_monitoring_plan'],
+                                  'patching::monitoring_solarwinds')
+    $monitoring_enabled_group = pick($monitoring_enabled,
+                                      $group_vars['patching_monitoring_enabled'])
+    $reboot_strategy_group = pick($reboot_strategy,
+                                  $group_vars['patching_reboot_strategy'],
+                                  'only_required')
+    $reboot_message_group = pick($reboot_message,
+                                  $group_vars['patching_reboot_message'],
+                                  'NOTICE: This system is currently being updated.')
+    $pre_update_plan_group = pick($pre_update_plan,
+                                  $group_vars['patching_pre_update_plan'],
+                                  'patching::pre_update')
+    $post_update_plan_group = pick($post_update_plan,
+                                    $group_vars['patching_post_update_plan'],
+                                    'patching::post_update')
+    $snapshot_plan_group = pick($snapshot_plan,
+                                $group_vars['patching_snapshot_plan'],
+                                'patching::snapshot_vmware')
+    $snapshot_create_group = pick($snapshot_create,
+                                  $group_vars['patching_snapshot_create'])
+    $snapshot_delete_group = pick($snapshot_delete,
+                                  $group_vars['patching_snapshot_delete'])
 
     # do normal patching
 
@@ -135,7 +159,7 @@ plan patching (
     }
 
     ## Disable monitoring
-    if $monitoring_plan_group and $monitoring_plan_group != ''  {
+    if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
       run_plan($monitoring_plan_group,
                 nodes  => $update_targets,
                 action => 'disable',
@@ -143,7 +167,7 @@ plan patching (
     }
 
     ## Create VM snapshots
-    if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != ''{
+    if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled'{
       run_plan($snapshot_plan_group,
                 nodes  => $update_targets,
                 action => 'create',
@@ -189,7 +213,7 @@ plan patching (
                 noop     => $noop)
 
       ## Remove VM snapshots
-      if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != '' {
+      if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
         run_plan($snapshot_plan_group,
                   nodes  => $update_ok_targets,
                   action => 'delete',
@@ -201,7 +225,7 @@ plan patching (
     # }
 
     ## enable monitoring
-    if $monitoring_plan_group and $monitoring_plan_group != ''  {
+    if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled'  {
       run_plan($monitoring_plan_group,
                 nodes  => $update_targets,
                 action => 'enable',

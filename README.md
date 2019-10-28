@@ -112,12 +112,14 @@ This workflow consists of the following phases:
 * Organize inventory into groups, in the proper order required for patching
 * For each group...
 * Check for available updates
+* Disable monitoring
 * Snapshot the VMs
 * Pre-patch custom tasks
 * Update the host (patch)
 * Post-patch custom tasks
 * Reboot that require a reboot
 * Delete snapshots
+* Enable monitoring
 
 ## Usage
 

@@ -23,12 +23,24 @@ All notable changes to this project will be documented in this file.
   
   Contributed by Nick Maludy (@nmaludy)
 
-* Added a new config option `patching_monitoring_target_name_property` that determines
-  what property on the target maps to the node's name in the monitoring tool (SolarWinds).
-  This was intentionally made discinct from `patching_snapshot_target_name_property` in case
-  the tools used different names for the same node/target. (Enhancement)
+* Added a new configs:
+    - `patching_monitoring_plan` Name of the plan to execute for monitoring alerts control.
+      (default: `patching::monitoring_solarwinds`)
+    - `patching_monitoring_enabled` Enable/disable the monitoring phases of patching.
+      (default: `true`)
+    - `patching_monitoring_target_name_property` Determines what property on the target
+      maps to the node's name in the monitoring tool (SolarWinds).
+      This was intentionally made discinct from `patching_snapshot_target_name_property` in case
+      the tools used different names for the same node/target.
   
   Contributed by Nick Maludy (@nmaludy)
+  
+* Empty strings `''` for plan names no longer disable the execution of plans (the
+  `pick()` function removes these, so it gets ignored). Instead pass in the string
+  `'disabled'` to disable the use of a pluggable plan. (Bug fix)
+  
+  Contributed by Nick Maludy (@nmaludy)
+  
 
 ## Release 0.2.0
 
