@@ -15,19 +15,35 @@
 **Functions**
 
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates/deletes snapshots on VMs using the VMware vSphere API.
+* [`patching::target_names`](#patchingtarget_names): Returns an array of names, one for each target, based on the $name_property
 
 **Tasks**
 
 * [`available_updates`](#available_updates): Collects information about available updates on a target system
+* [`available_updates_linux`](#available_updates_linux): Collects information about available updates on a target system
+* [`available_updates_windows`](#available_updates_windows): Collects information about available updates on a target system
 * [`cache_remove`](#cache_remove): Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows thi
+* [`cache_remove_linux`](#cache_remove_linux): Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows thi
+* [`cache_remove_windows`](#cache_remove_windows): Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows thi
 * [`cache_update`](#cache_update): Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this m
+* [`cache_update_linux`](#cache_update_linux): Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this m
+* [`cache_update_windows`](#cache_update_windows): Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this m
 * [`history`](#history): Reads the update history from the JSON 'result_file'.
+* [`monitoring_solarwinds`](#monitoring_solarwinds): Enable or disable monitoring alerts on hosts in SolarWinds.
 * [`post_update`](#post_update): Run post-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this a
+* [`pre_post_update_linux`](#pre_post_update_linux): Pre-post-update definition to make bolt not throw a warning. Best to use pre_update or post_update directly.
+* [`pre_post_update_windows`](#pre_post_update_windows): Pre-post-update definition to make bolt not throw a warning. Best to use pre_update or post_update directly.
 * [`pre_update`](#pre_update): Run pre-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this al
 * [`puppet_facts`](#puppet_facts): Gather system facts using 'puppet facts'. Puppet agent MUST be installed for this to work.
 * [`reboot_required`](#reboot_required): Checks if a reboot is pending
+* [`reboot_required_linux`](#reboot_required_linux): Checks if a reboot is pending
+* [`reboot_required_windows`](#reboot_required_windows): Checks if a reboot is pending
 * [`update`](#update): Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windo
 * [`update_history`](#update_history): Reads the update history from the JSON 'result_file'.
+* [`update_history_linux`](#update_history_linux): Reads the update history from the JSON 'result_file'.
+* [`update_history_windows`](#update_history_windows): Reads the update history from the JSON 'result_file'.
+* [`update_linux`](#update_linux): Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windo
+* [`update_windows`](#update_windows): Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windo
 
 **Plans**
 
@@ -36,7 +52,8 @@
 * [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
 * [`patching::deploy_scripts`](#patchingdeploy_scripts): 
-* [`patching::get_targets`](#patchingget_targets): Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
+* [`patching::get_targets`](#patchingget_targets): <code>get_targets()</code> except it also performs online checks and gathers facts in one step.
+* [`patching::monitoring_solarwinds`](#patchingmonitoring_solarwinds): Creates or deletes VM snapshots on nodes in VMware.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
 * [`patching::post_update`](#patchingpost_update): Executes a custom post-update script on each node.
 * [`patching::pre_post_update`](#patchingpre_post_update): Common entry point for executing the pre/post update custom scripts
@@ -359,9 +376,61 @@ Data type: `Optional[String]`
 
 Action to perform on the snapshot, 'create' or 'delete'
 
+### patching::target_names
+
+Type: Puppet Language
+
+Returns an array of names, one for each target, based on the $name_property
+
+#### `patching::target_names(TargetSpec $targets, Enum['name', 'uri'] $name_property)`
+
+The patching::target_names function.
+
+Returns: `Array[String]` Array of names, one for each target
+
+##### `targets`
+
+Data type: `TargetSpec`
+
+List of targets to extract the name from
+
+##### `name_property`
+
+Data type: `Enum['name', 'uri']`
+
+Property in the Target to use as the name
+
 ## Tasks
 
 ### available_updates
+
+Collects information about available updates on a target system
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `provider`
+
+Data type: `Optional[String[1]]`
+
+What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not used. For Windows the available values are: 'windows', 'chocolatey', 'all' (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all' is passed and Chocolatey isn't installed then Chocolatey will simply be skipped. If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.
+
+### available_updates_linux
+
+Collects information about available updates on a target system
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `provider`
+
+Data type: `Optional[String[1]]`
+
+What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not used. For Windows the available values are: 'windows', 'chocolatey', 'all' (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all' is passed and Chocolatey isn't installed then Chocolatey will simply be skipped. If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.
+
+### available_updates_windows
 
 Collects information about available updates on a target system
 
@@ -381,7 +450,31 @@ Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clea
 
 **Supports noop?** false
 
+### cache_remove_linux
+
+Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
+
+**Supports noop?** false
+
+### cache_remove_windows
+
+Removes/clears the target's update cache. For RHEL/CentOS this means a `yum clean all`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
+
+**Supports noop?** false
+
 ### cache_update
+
+Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
+
+**Supports noop?** true
+
+### cache_update_linux
+
+Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
+
+**Supports noop?** true
+
+### cache_update_windows
 
 Updates the targets update cache. For RHEL/CentOS this means a `yum makecache fast`. For Debian this means a `apt update`. For Windows this means a Windows Update refresh.
 
@@ -401,6 +494,26 @@ Data type: `Optional[String[1]]`
 
 Log file for patching results. This file will contain the JSON output that is returned from these tasks. This is data that was written by patching::update. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
 
+### monitoring_solarwinds
+
+Enable or disable monitoring alerts on hosts in SolarWinds.
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `nodes`
+
+Data type: `Array[String[1]]`
+
+List of hostnames or IP addresses for nodes in SolarWinds that will have monitoring alerts either enabled or disabled.
+
+##### `action`
+
+Data type: `Enum['enable', 'disable']`
+
+Action to perform on monitored nodes. 'enable' will enable monitoring alerts. 'disable' will disable monitoring alerts on nodes.
+
 ### post_update
 
 Run post-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this allows us to run thist task on all hosts, even if they don't have a post-update script).
@@ -414,6 +527,34 @@ Run post-update script on target host(s), only if it exists. If the script doesn
 Data type: `Optional[String[1]]`
 
 Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/post_update.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/post_update.ps1.
+
+### pre_post_update_linux
+
+Pre-post-update definition to make bolt not throw a warning. Best to use pre_update or post_update directly.
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `script`
+
+Data type: `Optional[String[1]]`
+
+Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/pre_update.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/pre_update.ps1.
+
+### pre_post_update_windows
+
+Pre-post-update definition to make bolt not throw a warning. Best to use pre_update or post_update directly.
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `script`
+
+Data type: `Optional[String[1]]`
+
+Absolute path of the script to execute. If no script name is passed on Linux hosts a default is used: /opt/patching/bin/pre_update.sh. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/bin/pre_update.ps1.
 
 ### pre_update
 
@@ -436,6 +577,18 @@ Gather system facts using 'puppet facts'. Puppet agent MUST be installed for thi
 **Supports noop?** false
 
 ### reboot_required
+
+Checks if a reboot is pending
+
+**Supports noop?** false
+
+### reboot_required_linux
+
+Checks if a reboot is pending
+
+**Supports noop?** false
+
+### reboot_required_windows
 
 Checks if a reboot is pending
 
@@ -486,6 +639,98 @@ Reads the update history from the JSON 'result_file'.
 Data type: `Optional[String[1]]`
 
 Log file for patching results. This file will contain the JSON output that is returned from these tasks. This is data that was written by patching::update. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
+
+### update_history_linux
+
+Reads the update history from the JSON 'result_file'.
+
+**Supports noop?** false
+
+#### Parameters
+
+##### `result_file`
+
+Data type: `Optional[String[1]]`
+
+Log file for patching results. This file will contain the JSON output that is returned from these tasks. This is data that was written by patching::update. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
+
+### update_history_windows
+
+Reads the update history from the JSON 'result_file'.
+
+**Supports noop?** false
+
+#### Parameters
+
+##### `result_file`
+
+Data type: `Optional[String[1]]`
+
+Log file for patching results. This file will contain the JSON output that is returned from these tasks. This is data that was written by patching::update. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
+
+### update_linux
+
+Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windows Update and `choco update`.
+
+**Supports noop?** false
+
+#### Parameters
+
+##### `provider`
+
+Data type: `Optional[String[1]]`
+
+What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not used. For Windows the available values are: 'windows', 'chocolatey', 'all' (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all' is passed and Chocolatey isn't installed then Chocolatey will simply be skipped. If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.
+
+##### `names`
+
+Data type: `Optional[Array[String]]`
+
+Name of the package(s) to update. If nothing is passed then all packages will be updated. Note: this currently only works for Linux, Windows support will be added in the future for both Windows Update and Chocolatey (TODO)
+
+##### `result_file`
+
+Data type: `Optional[String[1]]`
+
+Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.json
+
+##### `log_file`
+
+Data type: `Optional[String[1]]`
+
+Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.log
+
+### update_windows
+
+Execute OS updates on the target. For RedHat/CentOS this runs `yum update`. For Debian/Ubuntu runs `apt upgrade`. For Windows this runs Windows Update and `choco update`.
+
+**Supports noop?** false
+
+#### Parameters
+
+##### `provider`
+
+Data type: `Optional[String[1]]`
+
+What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not used. For Windows the available values are: 'windows', 'chocolatey', 'all' (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all' is passed and Chocolatey isn't installed then Chocolatey will simply be skipped. If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.
+
+##### `names`
+
+Data type: `Optional[Array[String]]`
+
+Name of the package(s) to update. If nothing is passed then all packages will be updated. Note: this currently only works for Linux, Windows support will be added in the future for both Windows Update and Chocolatey (TODO)
+
+##### `result_file`
+
+Data type: `Optional[String[1]]`
+
+Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.json
+
+##### `log_file`
+
+Data type: `Optional[String[1]]`
+
+Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.log
 
 ## Plans
 
@@ -549,6 +794,14 @@ immediately when performing the online check. This will result in a halt of the
 patching process.
 
 Default value: `false`
+
+##### `monitoring_plan`
+
+Data type: `Optional[String]`
+
+Name of the plan to use for disabling/enabling monitoring steps of the workflow.
+
+Default value: 'patching::monitoring_solarwinds'
 
 ##### `pre_update_plan`
 
@@ -640,7 +893,8 @@ output.
  - Windows:
    - Windows Update API: Queries the WUA for updates. This is the standard update mechanism
      for Windows.
-   - Chocolatey: If installed, runs <code>choco outdated</code>. If not installed, Chocolatey is ignored.
+   - Chocolatey: If installed, runs <code>choco outdated</code>.
+     If not installed, Chocolatey is ignored.
 
 #### Examples
 
@@ -688,8 +942,12 @@ Data type: `Enum['none', 'pretty', 'csv']`
 Output format for printing user-friendly information during the plan run.
 This also determines the format of the information returned from this plan.
 
-  - 'none' : Prints no data to the screen. Returns the raw ResultSet from the patching::available_updates task
-  - 'pretty' : Prints the data out in a easy to consume format, one line per host, showing the number of available updates per host. Returns a Hash containing two keys: 'has_updates' - an array of TargetSpec that have updates available, 'no_updates' - an array of hosts that have no updates available.
+  - 'none' : Prints no data to the screen. Returns the raw ResultSet from
+     the patching::available_updates task
+  - 'pretty' : Prints the data out in a easy to consume format, one line per host,
+     showing the number of available updates per host. Returns a Hash containing
+     two keys: 'has_updates' - an array of TargetSpec that have updates available,
+     'no_updates' - an array of hosts that have no updates available.
   - 'csv' : Prints and returns CSV formatted data, one row for each update of each host.
 
 Default value: 'pretty'
@@ -940,6 +1198,100 @@ The following parameters are available in the `patching::get_targets` plan.
 Data type: `TargetSpec`
 
 Set of targets to run against.
+
+### patching::monitoring_solarwinds
+
+Communicates to the vSphere API from the local Bolt control node using
+the [rbvmomi](https://github.com/vmware/rbvmomi) Ruby gem.
+
+To install the rbvmomi gem on the bolt control node:
+```shell
+  /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
+```
+
+TODO config variables
+
+#### Examples
+
+##### Remote target definition for $monitoring_target
+
+```puppet
+vars:
+  patching_monitoring_plan: 'patching::monitoring_solarwinds'
+  patching_monitoring_target: 'solarwinds'
+
+groups:
+  - name: solarwinds
+    config:
+      transport: remote
+      remote:
+        port: 17778
+        username: 'domain\svc_bolt_sw'
+        password:
+          _plugin: pkcs7
+          encrypted_value: >
+            ENC[PKCS7,xxx]
+    targets:
+      - solawrinds.domain.tld
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::monitoring_solarwinds` plan.
+
+##### `nodes`
+
+Data type: `TargetSpec`
+
+Set of targets to run against.
+
+##### `action`
+
+Data type: `Enum['enable', 'disable']`
+
+What action to perform on the monitored nodes:
+
+  - `enable` Resumes monitoring alerts
+  - 'disable' Supresses monitoring alerts
+
+##### `target_name_property`
+
+Data type: `Optional[Enum['name', 'uri']]`
+
+Determines what property on the Target object will be used as the name when
+mapping the Target to a Node in SolarWinds.
+
+ - `uri` : use the `uri` property on the Target. This is preferred because
+    If you specify a list of Targets in the inventory file, the value shown in that
+    list is set as the `uri` and not the `name`, in this case `name` will be `undef`.
+ - `name` : use the `name` property on the Target, this is not preferred because
+    `name` is usually a short name or nickname.
+
+Default value: `undef`
+
+##### `monitoring_target`
+
+Data type: `TargetSpec`
+
+Name or reference to the remote transport target of the Monitoring server.
+This will be used when to determine how to communicate with the SolarWinds API.
+The remote transport should have the following properties:
+  - [Integer] port
+      Port to use when communicating with SolarWinds API (default: 17778)
+  - [String] username
+      Username for authenticating with the SolarWinds API
+  - [Password] password
+      Password for authenticating with the SolarWinds API
+
+Default value: .vars['patching_monitoring_target']
+
+##### `noop`
+
+Data type: `Boolean`
+
+Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
+
+Default value: `false`
 
 ### patching::ordered_groups
 
@@ -1379,9 +1731,9 @@ What action to perform on the snapshots:
   - `create` creates a new snapshot
   - 'delete' deletes snapshots by matching the `snapshot_name` passed in.
 
-##### `vm_name_property`
+##### `target_name_property`
 
-Data type: `Enum['name', 'uri']`
+Data type: `Optional[Enum['name', 'uri']]`
 
 Determines what property on the Target object will be used as the VM name when
 mapping the Target to a VM in vSphere.
@@ -1392,7 +1744,7 @@ mapping the Target to a VM in vSphere.
  - `name` : use the `name` property on the Target, this is not preferred because
     `name` is usually a short name or nickname.
 
-Default value: 'uri'
+Default value: `undef`
 
 ##### `vsphere_host`
 

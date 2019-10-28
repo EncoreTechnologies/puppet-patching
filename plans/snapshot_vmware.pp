@@ -19,7 +19,7 @@
 #     - `create` creates a new snapshot
 #     - 'delete' deletes snapshots by matching the `snapshot_name` passed in.
 #
-# @param [Enum['name', 'uri']] vm_name_property
+# @param [Optional[Enum['name', 'uri']]] target_name_property
 #   Determines what property on the Target object will be used as the VM name when
 #   mapping the Target to a VM in vSphere.
 #
@@ -63,7 +63,7 @@
 plan patching::snapshot_vmware (
   TargetSpec $nodes,
   Enum['create', 'delete'] $action,
-  Enum['name', 'uri']  $vm_name_property = 'uri',
+  Optional[Enum['name', 'uri']] $target_name_property = undef,
   String[1] $vsphere_host       = get_targets($nodes)[0].vars['vsphere_host'],
   String[1] $vsphere_username   = get_targets($nodes)[0].vars['vsphere_username'],
   String[1] $vsphere_password   = get_targets($nodes)[0].vars['vsphere_password'],
@@ -77,26 +77,17 @@ plan patching::snapshot_vmware (
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
   $group_vars = $targets[0].vars
-  $_vm_name_property = pick($group_vars['patching_vm_name_property'], $vm_name_property)
+  # Order: CLI > Config > Default
+  $_target_name_property = pick($target_name_property,
+                                $group_vars['patching_snapshot_target_name_property'],
+                                'uri')
   $_snapshot_name = pick($group_vars['patching_snapshot_name'], $snapshot_name)
   $_snapshot_description = pick_default($group_vars['patching_snapshot_description'], $snapshot_description)
   $_snapshot_memory = pick($group_vars['patching_snapshot_memory'], $snapshot_memory)
   $_snapshot_quiesce = pick($group_vars['patching_snapshot_quiesce'], $snapshot_quiesce)
 
   # Create array of node names
-  $vm_names = $targets.map |$n| {
-    case $_vm_name_property {
-      'name': {
-        $n.name
-      }
-      'uri': {
-        $n.uri
-      }
-      default: {
-        fail_plan("Unsupported vm_name_property: ${_vm_name_property}")
-      }
-    }
-  }
+  $vm_names = patching::target_names($targets, $_target_name_property)
 
   # Display status message
   if $action == 'create' {

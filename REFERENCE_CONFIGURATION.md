@@ -5,6 +5,7 @@
 
 - [Overview](#overview)
 - [patching_order](#patching_order)
+- [patching_monitoring_target_name_propert](#patching_monitoring_target_name_property)
 - [patching_reboot_strategy](#patching_reboot_strategy)
 - [patching_reboot_message](#patching_reboot_message)
 - [patching_pre_update_plan](#patching_pre_update_plan)
@@ -16,7 +17,7 @@
 - [patching_snapshot_plan](#patching_snapshot_plan)
 - [patching_snapshot_create](#patching_snapshot_create)
 - [patching_snapshot_delete](#patching_snapshot_delete)
-- [patching_vm_name_property](#patching_vm_name_property)
+- [patching_snapshot_target_name_property](#patching_snapshot_target_name_property)
 - [patching_snapshot_name](#patching_snapshot_name)
 - [patching_snapshot_description](#patching_snapshot_description)
 - [patching_snapshot_memory](#patching_snapshot_memory)
@@ -80,6 +81,44 @@ groups:
 For more information see the [`patching::ordered_groups`](plans/patching_ordered_groups.pp) plan
 documentation.
 
+### patching_monitoring_target_name_property
+
+``` yaml
+type: Enum
+values:
+ - 'uri'
+ - 'name'
+default: 'uri'
+```
+
+When interacting with the Monitoring tool's API, Bolt needs to know how to associate a `target`
+to a node in the monitoring tool (used in `patching_monitoring_plan`: `patching::monitoring_solawrinds`)
+
+To accomplish this we provide the `patching_monitoring_target_name_property` setting that 
+allows you to select the `uri` (default) or the `name` of the target as the property 
+that will be used.
+
+This was intentionally made discinct from `patching_snapshot_target_name_property` in case
+the tools used different names for the same node/target.
+  
+Example:
+``` yaml
+groups:
+  # these nodes will use the default 'uri' as their Target name property
+  # this is because targets listed in this fashion have their 'uri' set to the 
+  # string present in the list
+  - name: vmware_nodes
+    targets:
+      - tomcat01.domain.tld
+
+  # these nodes will use a custom Target name associated with the 'name' property
+  - name: xen_nodes
+    vars:
+      patching_monitoring_target_name_property: 'name'
+    targets:
+      - uri: citrix01.domain.tld
+        name: CITRIX01
+```
 
 ### patching_reboot_strategy
 
@@ -321,7 +360,7 @@ Some common usecases:
   from being deleted at the end of patching by customizing `patching_snapshot_delete: false`.
   This hopefully allows our workflwo to adapt to your usecase.
   
-### patching_vm_name_property
+### patching_snapshot_target_name_property
 
 ``` yaml
 type: Enum
@@ -331,27 +370,29 @@ values:
 default: 'uri'
 ```
 
-When performing the snapshotting process, Bolt needs to know how to associate a `target`
-to a VM in the hypervisor. 
+When interacting with the Hypervisor's API, Bolt needs to know how to associate a `target`
+to a VM in the hypervisor (used in `patching_snapshot_plan`: `patching::snapshot_vmware`)
 
-To accomplish this we provide the `patching_vm_name_property` setting that allows you to select
-the `uri` (default) or the `name` of the target as the property that will be used.
+To accomplish this we provide the `patching_snapshot_target_name_property` setting that allows 
+you to select the `uri` (default) or the `name` of the target as the property that will be used.
 
+This was intentionally made discinct from `patching_monitoring_target_name_property` in case
+the tools used different names for the same node/target.
 
 Example:
 ``` yaml
 groups:
-  # these nodes will use the default 'uri' as their VM name property
+  # these nodes will use the default 'uri' as their Target name property
   # this is because targets listed in this fashion have their 'uri' set to the 
   # string present in the list
   - name: vmware_nodes
     targets:
       - tomcat01.domain.tld
 
-  # these nodes will use a custom VM name associated with the 'name' property
+  # these nodes will use a custom Target name associated with the 'name' property
   - name: xen_nodes
     vars:
-      patching_vm_name_property: 'name'
+      patching_snapshot_target_name_property: 'name'
     targets:
       - uri: citrix01.domain.tld
         name: CITRIX01

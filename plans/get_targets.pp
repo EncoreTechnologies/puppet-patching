@@ -1,4 +1,4 @@
-# @summary Works just like <code>get_targets()</code> but also performs online checks on the nodes and gathers facts about them all in one step.
+# @summary <code>get_targets()</code> except it also performs online checks and gathers facts in one step.
 #
 # A very common requirement when running individual plans from the commandline is that
 # each plan would need to perform the following steps:
