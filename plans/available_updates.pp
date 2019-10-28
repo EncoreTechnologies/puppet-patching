@@ -10,7 +10,8 @@
 #  - Windows:
 #    - Windows Update API: Queries the WUA for updates. This is the standard update mechanism
 #      for Windows.
-#    - Chocolatey: If installed, runs <code>choco outdated</code>. If not installed, Chocolatey is ignored.
+#    - Chocolatey: If installed, runs <code>choco outdated</code>.
+#      If not installed, Chocolatey is ignored.
 #
 # @param [TargetSpec] nodes
 #   Set of targets to run against.
@@ -18,8 +19,12 @@
 #   Output format for printing user-friendly information during the plan run.
 #   This also determines the format of the information returned from this plan.
 #
-#     - 'none' : Prints no data to the screen. Returns the raw ResultSet from the patching::available_updates task
-#     - 'pretty' : Prints the data out in a easy to consume format, one line per host, showing the number of available updates per host. Returns a Hash containing two keys: 'has_updates' - an array of TargetSpec that have updates available, 'no_updates' - an array of hosts that have no updates available.
+#     - 'none' : Prints no data to the screen. Returns the raw ResultSet from
+#        the patching::available_updates task
+#     - 'pretty' : Prints the data out in a easy to consume format, one line per host,
+#        showing the number of available updates per host. Returns a Hash containing
+#        two keys: 'has_updates' - an array of TargetSpec that have updates available,
+#        'no_updates' - an array of hosts that have no updates available.
 #     - 'csv' : Prints and returns CSV formatted data, one row for each update of each host.
 # @param [Boolean] noop
 #   Run this plan in noop mode, meaning no changes will be made to end systems.

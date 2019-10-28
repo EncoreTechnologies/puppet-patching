@@ -70,7 +70,9 @@
 # @return [Array[Struct[{'order' => Data, 'nodes' => Array[Target]}]]]
 #   An array of hashes, each hash containing two properties:
 #
-#     - 'order' : This is the value of the <code>patching_order</code> defined in the inventory. This can be any datatype you wish, as long as it's comparable with the <code>sort()</code> function.
+#     - 'order' : This is the value of the <code>patching_order</code> defined
+#       in the inventory. This can be any datatype you wish, as long as it's
+#       comparable with the <code>sort()</code> function.
 #     - 'nodes' : An array of targets in this group.
 #
 #  This is returned as an Array, because an Array has a defined order when

@@ -18,6 +18,9 @@
 #   immediately when performing the online check. This will result in a halt of the
 #   patching process.
 #
+# @param [Optional[String]] monitoring_plan
+#   Name of the plan to use for disabling/enabling monitoring steps of the workflow.
+#
 # @param [String] pre_update_plan
 #   Name of the plan to use for executing the pre-update step of the workflow.
 #
@@ -74,6 +77,7 @@
 plan patching (
   TargetSpec       $nodes,
   Boolean          $filter_offline_nodes = false,
+  Optional[String] $monitoring_plan   = 'patching::monitoring_solarwinds',
   String           $pre_update_plan   = 'patching::pre_update',
   String           $post_update_plan  = 'patching::post_update',
   Enum['only_required', 'never', 'always'] $reboot_strategy = 'only_required',
@@ -105,11 +109,12 @@ plan patching (
     # if there is no customization for this group, it defaults to the global setting
     # set at the plan level above
     $group_vars = $ordered_nodes[0].vars
+    $monitoring_plan_group = pick_default($group_vars['patching_monitoring_plan'], $monitoring_plan)
     $reboot_strategy_group = pick($group_vars['patching_reboot_strategy'], $reboot_strategy)
     $reboot_message_group = pick($group_vars['patching_reboot_message'], $reboot_message)
     $pre_update_plan_group = pick($group_vars['patching_pre_update_plan'], $pre_update_plan)
     $post_update_plan_group = pick($group_vars['patching_post_update_plan'], $post_update_plan)
-    $snapshot_plan_group = pick($group_vars['patching_snapshot_plan'], $snapshot_plan)
+    $snapshot_plan_group = pick_default($group_vars['patching_snapshot_plan'], $snapshot_plan)
     $snapshot_create_group = pick($group_vars['patching_snapshot_create'], $snapshot_create)
     $snapshot_delete_group = pick($group_vars['patching_snapshot_delete'], $snapshot_delete)
 
@@ -127,6 +132,14 @@ plan patching (
     $update_targets = $available_results['has_updates']
     if $update_targets.empty {
       next()
+    }
+
+    ## Disable monitoring
+    if $monitoring_plan_group and $monitoring_plan_group != ''  {
+      run_plan($monitoring_plan_group,
+                nodes  => $update_targets,
+                action => 'disable',
+                noop   => $noop)
     }
 
     ## Create VM snapshots
@@ -186,6 +199,14 @@ plan patching (
     # else {
     #   # TODO should we break here?
     # }
+
+    ## enable monitoring
+    if $monitoring_plan_group and $monitoring_plan_group != ''  {
+      run_plan($monitoring_plan_group,
+                nodes  => $update_targets,
+                action => 'enable',
+                noop   => $noop)
+    }
   }
 
   ## Collect summary report
