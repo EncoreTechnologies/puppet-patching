@@ -133,6 +133,18 @@ updates through the system's package manager:
 bolt plan run patching::available_updates --nodes group_a
 ```
 
+### Disable monitoring
+
+Prior to performing the snapshotting and patching steps, the plan will disable monitoring 
+alerts in SolarWinds (by default).
+
+This plan/task utilizes the `remote` transport []
+
+
+``` shell
+bolt plan run patching::monitoring_solarwinds --nodes group_a action=disable' monitoring_target=solarwinds
+```
+
 ### Create snapshots
 
 This plan will snapshot all of the hosts in VMware. The name of the VM in VMware is assumed to 

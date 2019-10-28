@@ -99,7 +99,7 @@ plan patching::monitoring_solarwinds (
 
   if !$noop {
     return run_task('patching::monitoring_solarwinds', $monitoring_target,
-                    nodes  => $vm_names,
+                    nodes  => $target_names,
                     action => $action)
   }
 }
