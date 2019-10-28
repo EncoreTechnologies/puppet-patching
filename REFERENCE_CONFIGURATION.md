@@ -5,7 +5,9 @@
 
 - [Overview](#overview)
 - [patching_order](#patching_order)
-- [patching_monitoring_target_name_propert](#patching_monitoring_target_name_property)
+- [patching_monitoring_enabled](#patching_monitoring_enabled)
+- [patching_monitoring_plan](#patching_monitoring_plan)
+- [patching_monitoring_target_name_property](#patching_monitoring_target_name_property)
 - [patching_reboot_strategy](#patching_reboot_strategy)
 - [patching_reboot_message](#patching_reboot_message)
 - [patching_pre_update_plan](#patching_pre_update_plan)
@@ -80,6 +82,54 @@ groups:
 
 For more information see the [`patching::ordered_groups`](plans/patching_ordered_groups.pp) plan
 documentation.
+
+### patching_monitoring_enabled
+
+```yaml
+type: Boolean
+default: true
+```
+
+Flag to enable/disable the `monitoring` phases of the patching process.
+Let's say you don't have a monitoring tool, or maybe you don't want to turn off alerts
+during patching, then simply set this to `false`.
+
+### patching_monitoring_plan
+
+```yaml
+type: String
+default: 'patching::monitoring_solarwinds'
+```
+
+Name of the plan to use for the `monitoring` phase of patching.
+Use this if you would like to use a custom plan for communicating with your monitoring system,
+Or, maybe you don't use SolarWinds (the default implementation) this is the variable
+to change what plan is called during the `monitoring` steps in the patching workflows.
+
+To disable monitoring all together (physical boxes for example) then set this to `undef` or 
+the string string `'disabled'` or use the `patching_monitoring_enabled` var.
+
+Example:
+
+``` yaml
+vars:
+  patching_monitoring_plan: mymodule::nagios_monitoring
+
+groups:
+  # these nodes will use the monitoring plan defined in the vars above using a custom Nagios plan
+  - name: on_prem_nodes
+    targets:
+      - tomcat01.domain.tld
+      - tomcat02.domain.tld
+      - tomcat03.domain.tld
+      
+  # these nodes will use the customized monitoring plan to turn off alerts in Datadog
+  - name: cloud_nodes
+    vars:
+      patching_monitoring_plan: mymodule::datadog_monitoring
+    targets:
+      - sql01.domain.tld
+```
 
 ### patching_monitoring_target_name_property
 
@@ -293,7 +343,8 @@ Used to customize the plan for the snapshot step in the workflow.
 
 Set this to whatever custom plan you would like in this module or another.
 
-To disable snapshotting all together (physical boxes for example) then set this to `undef` or an empty string `''`.
+To disable snapshotting all together (physical boxes for example) then set this to `undef` or 
+the string string `'disabled'` or use the `patching_snapshot_create` and `patching_snapshot_delete` vars.
 
 
 ``` yaml
@@ -313,7 +364,7 @@ groups:
   # these nodes will not perform the snapshot step because they're physical
   - name: physical_nodes
     vars:
-      patching_snapshot_plan: ''
+      patching_snapshot_plan: 'disabled'
     targets:
       - sql01.domain.tld
 ```
@@ -330,7 +381,7 @@ Used to customize the snapshot creation process.
 
 Some common usecases:
 * Setting this to `false` as an alternate way of disabling snapshots as opposed to 
-  customizing `patching_snapshot_plan: ''`. To accomplish this fully, you'll also need
+  customizing `patching_snapshot_plan: 'disabled'`. To accomplish this fully, you'll also need
   to set `patching_snapshot_delete: false` at the same time.
 * Say you ran the patching workflow and it failed halfway through, example a pre-patch failed.
   On that first patch run you used the default `patching_snapshot_create: true`.
@@ -349,7 +400,7 @@ Similar to `patching_snapshot_create` this handles the customization of the snap
 
 Some common usecases:
 * Setting this to `false` as an alternate way of disabling snapshots as opposed to 
-  customizing `patching_snapshot_plan: ''`. To accomplish this fully, you'll also need
+  customizing `patching_snapshot_plan: 'disabled'`. To accomplish this fully, you'll also need
   to set `patching_snapshot_create: false` at the same time.
   
 * Say you want to run patching and wait until the next day to delete snapshots because

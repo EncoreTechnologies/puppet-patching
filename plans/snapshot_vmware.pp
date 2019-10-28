@@ -44,16 +44,16 @@
 # @param [Boolean] vsphere_insecure
 #   Flag to enable insecure HTTPS connections by disabling SSL server certificate verification.
 #
-# @param [String[1]] snapshot_name
+# @param [Optional[String[1]]] snapshot_name
 #   Name of the snapshot
 #
-# @param [String] snapshot_description
+# @param [Optional[String]] snapshot_description
 #   Description of the snapshot
 #
-# @param [Boolean] snapshot_memory
+# @param [Optional[Boolean]] snapshot_memory
 #   Capture the VMs memory in the snapshot
 #
-# @param [Boolean] snapshot_quiesce
+# @param [Optional[Boolean]] snapshot_quiesce
 #   Quiesce/flush the filesystem when snapshotting the VM. This requires VMware tools be installed
 #   in the guest OS to work properly.
 #
@@ -69,10 +69,10 @@ plan patching::snapshot_vmware (
   String[1] $vsphere_password   = get_targets($nodes)[0].vars['vsphere_password'],
   String[1] $vsphere_datacenter = get_targets($nodes)[0].vars['vsphere_datacenter'],
   Boolean $vsphere_insecure     = get_targets($nodes)[0].vars['vsphere_insecure'],
-  String[1] $snapshot_name      = 'Bolt Patching Snapshot',
-  String $snapshot_description  = '',
-  Boolean $snapshot_memory      = false,
-  Boolean $snapshot_quiesce     = true,
+  Optional[String[1]] $snapshot_name      = undef,
+  Optional[String] $snapshot_description  = undef,
+  Optional[Boolean] $snapshot_memory      = undef,
+  Optional[Boolean] $snapshot_quiesce     = undef,
   Boolean $noop                 = false,
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
@@ -81,10 +81,18 @@ plan patching::snapshot_vmware (
   $_target_name_property = pick($target_name_property,
                                 $group_vars['patching_snapshot_target_name_property'],
                                 'uri')
-  $_snapshot_name = pick($group_vars['patching_snapshot_name'], $snapshot_name)
-  $_snapshot_description = pick_default($group_vars['patching_snapshot_description'], $snapshot_description)
-  $_snapshot_memory = pick($group_vars['patching_snapshot_memory'], $snapshot_memory)
-  $_snapshot_quiesce = pick($group_vars['patching_snapshot_quiesce'], $snapshot_quiesce)
+  $_snapshot_name = pick($snapshot_name,
+                          $group_vars['patching_snapshot_name'],
+                          'Bolt Patching Snapshot')
+  $_snapshot_description = pick_default($snapshot_description,
+                                        $group_vars['patching_snapshot_description'],
+                                        '')
+  $_snapshot_memory = pick($snapshot_memory,
+                            $group_vars['patching_snapshot_memory'],
+                            false)
+  $_snapshot_quiesce = pick($snapshot_quiesce,
+                            $group_vars['patching_snapshot_quiesce'],
+                            true)
 
   # Create array of node names
   $vm_names = patching::target_names($targets, $_target_name_property)

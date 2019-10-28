@@ -60,7 +60,7 @@
 #             encrypted_value: >
 #               ENC[PKCS7,xxx]
 #       targets:
-#         - solawrinds.domain.tld
+#         - solarwinds.domain.tld
 #
 plan patching::monitoring_solarwinds (
   TargetSpec                    $nodes,
