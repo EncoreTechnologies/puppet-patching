@@ -29,7 +29,7 @@ class MonitoringSolarwindsTask < TaskHelper
       sw_nodes = orion.get_node(n)
 
       if sw_nodes.empty?
-        missing_nodes << sw_nodes[0]
+        missing_nodes << n
         next
       elsif sw_nodes.length > 1
         raise ArgumentError, "Found [#{sw_nodes.length}] nodes matching '#{n}': #{sw_nodes.to_json}"
