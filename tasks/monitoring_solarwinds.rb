@@ -24,17 +24,24 @@ class MonitoringSolarwindsTask < TaskHelper
                                                username: remote_target[:username],
                                                password: remote_target[:password],
                                                port: remote_target.fetch(:port, 17_778))
-
+    missing_nodes = []
     uri_array = nodes.map do |n|
       sw_nodes = orion.get_node(n)
 
-      raise ArgumentError, "Unable to find node: #{n}" if sw_nodes.empty?
-      if sw_nodes.length > 1
+      if sw_nodes.empty?
+        missing_nodes << sw_nodes[0]
+      elsif sw_nodes.length > 1
         raise ArgumentError, "Found [#{sw_nodes.length}] nodes matching '#{n}': #{sw_nodes.to_json}"
       end
 
       # extract the URI property for our good nodes
       sw_nodes.map { |sw_n| sw_n['Uri'] }
+    end
+
+    # print all of the missing nodes at the same time to make debugging easier
+    unless missing_nodes.empty?
+      missing_pretty = JSON.pretty_generate(missing_nodes)
+      raise ArgumentError, "Unable to find the following nodes in SolarWinds: #{missing_pretty}"
     end
 
     uri_array.flatten!
