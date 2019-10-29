@@ -30,6 +30,7 @@ class MonitoringSolarwindsTask < TaskHelper
 
       if sw_nodes.empty?
         missing_nodes << sw_nodes[0]
+        next
       elsif sw_nodes.length > 1
         raise ArgumentError, "Found [#{sw_nodes.length}] nodes matching '#{n}': #{sw_nodes.to_json}"
       end
