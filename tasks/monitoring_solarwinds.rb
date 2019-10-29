@@ -41,7 +41,7 @@ class MonitoringSolarwindsTask < TaskHelper
 
     # print all of the missing nodes at the same time to make debugging easier
     unless missing_nodes.empty?
-      missing_pretty = JSON.pretty_generate(missing_nodes)
+      missing_pretty = JSON.pretty_generate(missing_nodes.sort)
       raise ArgumentError, "Unable to find the following nodes in SolarWinds: #{missing_pretty}"
     end
 
