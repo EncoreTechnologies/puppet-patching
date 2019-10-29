@@ -24,7 +24,6 @@
 #   will still be queried and returned.
 #
 # @return [Struct[{'required' => Array[TargetSpec], 'not_required' => Array[TargetSpec], 'attempted' => Array[TargetSpec], 'resultset' => ResultSet}]]
-#   Hash elements:
 #
 #    - `required` : array of targets whose host OS reported a reboot is required
 #    - `not_required` : array of targets whose host OS did not report a reboot being required

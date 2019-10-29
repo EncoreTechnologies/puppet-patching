@@ -18,7 +18,7 @@
 #   immediately when performing the online check. This will result in a halt of the
 #   patching process.
 #
-# @param [Boolean] monitoring_enabled
+# @param [Optional[Boolean]] monitoring_enabled
 #   Flag to enable/disable the execute of the monitoring_plan.
 #   This is useful if you don't want to call out to a monitoring system during provisioning.
 #   To configure this globally, use the `patching_monitor_enabled` var.
@@ -47,7 +47,7 @@
 #   Name of the plan to use for executing snaphot creation and deletion steps of the workflow
 #   You can also pass `'disabled'` or `undef'` as an easy way to disable both creation and deletion.
 #
-# @param [Boolean] snapshot_create
+# @param [Optional[Boolean]] snapshot_create
 #   Flag to enable/disable creating snapshots before patching groups.
 #   A common usecase to disabling snapshot creation is that, say you run patching
 #   with `snapshot_create` enabled and something goes wrong during patching and
@@ -55,7 +55,7 @@
 #   but don't want to create ANOTHER snapshot on top of the one we already have.
 #   In this case we would pass in `snapshot_create=false` when running the second time.
 #
-# @param [Boolean] snapshot_delete
+# @param [Optional[Boolean]] snapshot_delete
 #   Flag to enable/disable deleting snapshots after patching groups.
 #   A common usecase to disable snapshot deletion is that, say you want to patch your
 #   hosts and wait a few hours for application teams to test after you're done patching.
@@ -82,17 +82,17 @@
 #
 plan patching (
   TargetSpec       $nodes,
-  Boolean          $filter_offline_nodes = false,
-  Boolean          $monitoring_enabled = true,
-  Optional[String] $monitoring_plan    = undef,
-  Optional[String] $pre_update_plan    = undef,
-  Optional[String] $post_update_plan   = undef,
+  Boolean           $filter_offline_nodes = false,
+  Optional[Boolean] $monitoring_enabled   = undef,
+  Optional[String]  $monitoring_plan      = undef,
+  Optional[String]  $pre_update_plan      = undef,
+  Optional[String]  $post_update_plan     = undef,
   Optional[Enum['only_required', 'never', 'always']] $reboot_strategy = undef,
-  Optional[String] $reboot_message     = undef,
-  Optional[String] $snapshot_plan      = undef,
-  Boolean          $snapshot_create    = true,
-  Boolean          $snapshot_delete    = true,
-  Boolean          $noop               = false,
+  Optional[String]  $reboot_message       = undef,
+  Optional[String]  $snapshot_plan        = undef,
+  Optional[Boolean] $snapshot_create      = undef,
+  Optional[Boolean] $snapshot_delete      = undef,
+  Boolean           $noop                 = false,
 ) {
   ## Filter offline nodes
   $check_puppet_result = run_plan('patching::check_puppet',
@@ -121,7 +121,8 @@ plan patching (
                                   $group_vars['patching_monitoring_plan'],
                                   'patching::monitoring_solarwinds')
     $monitoring_enabled_group = pick($monitoring_enabled,
-                                      $group_vars['patching_monitoring_enabled'])
+                                      $group_vars['patching_monitoring_enabled'],
+                                      true)
     $reboot_strategy_group = pick($reboot_strategy,
                                   $group_vars['patching_reboot_strategy'],
                                   'only_required')
@@ -138,9 +139,11 @@ plan patching (
                                 $group_vars['patching_snapshot_plan'],
                                 'patching::snapshot_vmware')
     $snapshot_create_group = pick($snapshot_create,
-                                  $group_vars['patching_snapshot_create'])
+                                  $group_vars['patching_snapshot_create'],
+                                  true)
     $snapshot_delete_group = pick($snapshot_delete,
-                                  $group_vars['patching_snapshot_delete'])
+                                  $group_vars['patching_snapshot_delete'],
+                                  true)
 
     # do normal patching
 
