@@ -270,9 +270,14 @@ This module has been tested on the following operating systems:
 * RHEL
   * 6
   * 7
+  * 8
 * Ubuntu
   * 16.04
   * 18.04
+
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ## Contributors
 
