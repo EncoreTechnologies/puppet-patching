@@ -279,3 +279,4 @@ This module has been tested on the following operating systems:
 * Nick Maludy ([@nmaludy](https://github.com/nmaludy) Encore Technologies)
 * Rick Paxton (Encore Technologies)
 * Scott Strengowski (Encore Technologies)
+* Vadym Chepkov ([@vchepkov](https://github.com/vchepkov))

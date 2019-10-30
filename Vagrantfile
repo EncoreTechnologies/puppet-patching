@@ -9,15 +9,17 @@ provider   = provider.to_sym
 # virtualbox:
 #  - centos/6
 #  - centos/7
+#  - generic/centos8
 #  - 'ubuntu/trusty64'
 #  - 'ubuntu/xenial64'
 # libvirt
 #  - centos/6
 #  - centos/7
+#  - generic/centos8
 #  - generic/ubuntu1404
 #  - generic/ubuntu1604
 box_ubuntu = ENV['BOX'] ? ENV['BOX'] : 'generic/ubuntu1604'
-box_centos = ENV['BOX'] ? ENV['BOX'] : 'centos/7'
+box_centos = ENV['BOX'] ? ENV['BOX'] : 'generic/centos8'
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
