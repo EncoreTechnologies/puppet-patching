@@ -236,6 +236,16 @@ plan patching (
     }
   }
 
+  ## Re-establish all targets availability after reboot
+  # This is necessary in case one of the groups affects the availability of a previous group.
+  # Two use cases here:
+  #  1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the 
+  #     VMs to go offline and we need to wait for those child VMs to come back up before
+  #     collecting history metrics.
+  #  2. A later group is a linux router. In this instance maybe the patching of the linux router
+  #     affects the reachability of previous hosts.
+  wait_until_available($targets, wait_time => 300)
+
   ## Collect summary report
   run_plan('patching::update_history',
             nodes  => $targets,
