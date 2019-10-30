@@ -67,7 +67,7 @@ plan patching::update_history (
     'csv': {
       $csv_header = "host,action,name,version,kb (windows only)\n"
       $report = $_history.reduce($csv_header) |$res_memo, $res| {
-        $hostname = $res.target.host
+        $hostname = $res.target.name
         $num_updates = $res['upgraded'].length
         $host_updates = $res['upgraded'].reduce('') |$up_memo, $up| {
           $name = $up['name']
