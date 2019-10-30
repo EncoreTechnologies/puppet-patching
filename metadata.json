@@ -1,6 +1,6 @@
 {
   "name": "encore-patching",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Encore Technologies",
   "summary": "Implements OS patching workflows using Bolt tasks and plans.",
   "license": "Apache-2.0",

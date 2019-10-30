@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+
+## Release 0.3.0 (2019-10-30)
+
 * Add support for RHEL 8 based distributions (Enhancement)
 
   Contributed by Vadym Chepkov (@vchepkov)
