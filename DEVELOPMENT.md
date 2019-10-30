@@ -1,5 +1,13 @@
 # Development Tips & Tricks
 
+## Quick start
+
+```shell
+ln -s ../ site-modules/patching
+vagrant up centos
+bolt task run facts --targets vagrant_centos
+```
+
 ## Ideology
 
 We've setup this repo to be used with the following:
