@@ -115,7 +115,7 @@ plan patching::ordered_groups (
   $ordered_keys = sort(keys($ordered_hash))
   out::message("Groups = ${ordered_keys}")
   $ordered_groups = $ordered_keys.map |$o| {
-    $ordered_targets = $ordered_hash[$o].map |$t| {$t.host}
+    $ordered_targets = $ordered_hash[$o].map |$t| {$t.name}
     out::message("Group '${o}' targets = ${ordered_targets}")
     # trust me, we have to assign to a variable here, it's a detail of the puppet
     # language parser that gets mad, but only because there is the loop above

@@ -72,7 +72,7 @@ plan patching::available_updates (
     'csv': {
       $csv_header = 'hostname,num_updates,name,version (linux only),kbs (windows only)\n'
       $csv = $available_results.reduce($csv_header) |$res_memo, $res| {
-        $hostname = $res.target.host
+        $hostname = $res.target.name
         $num_updates = $res['updates'].length
         $host_updates = $res['updates'].reduce('') |$up_memo, $up| {
           $name = $up['name']
