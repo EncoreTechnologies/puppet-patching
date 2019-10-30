@@ -270,12 +270,18 @@ This module has been tested on the following operating systems:
 * RHEL
   * 6
   * 7
+  * 8
 * Ubuntu
   * 16.04
   * 18.04
+
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ## Contributors
 
 * Nick Maludy ([@nmaludy](https://github.com/nmaludy) Encore Technologies)
 * Rick Paxton (Encore Technologies)
 * Scott Strengowski (Encore Technologies)
+* Vadym Chepkov ([@vchepkov](https://github.com/vchepkov))

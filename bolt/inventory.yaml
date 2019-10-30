@@ -1,0 +1,21 @@
+---
+version: 2
+config:
+  ssh:
+    host-key-check: false
+    user: vagrant
+    run-as: root
+
+groups:
+  - name: patching
+    targets:
+      - name: vagrant_centos
+        uri: 192.168.121.100
+        config:
+          ssh:
+            private-key: .vagrant/machines/centos/libvirt/private_key
+      - name: vagrant_ubuntu
+        uri: 192.168.121.101
+        config:
+          ssh:
+            private-key: .vagrant/machines/ubuntu/libvirt/private_key
