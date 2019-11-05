@@ -37,4 +37,10 @@ def puppet_executable
 end
 
 # Delegate to puppet facts
-exec(puppet_executable, 'facts', '--render-as', 'json')
+puppet_exe = puppet_executable
+if puppet_exe != 'puppet'
+  # If using the standard install of Puppet, then clear out any custom GEM_PATH that may
+  # be set on the system. Custom GEM_PATHs can cause all sorts of issues when puppet loads
+  ENV.delete('GEM_PATH')
+end
+exec(puppet_exe, 'facts', '--render-as', 'json')
