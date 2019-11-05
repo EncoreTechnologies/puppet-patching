@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Fixed a bug in `patching::puppet_facts` where the sub command would fail to run on 
+  installations with custom `GEM_PATH` settings. (Bug Fix)
+  
+  Contributed by Nick Maludy (@nmaludy)
+
 
 ## Release 0.3.0 (2019-10-30)
 
