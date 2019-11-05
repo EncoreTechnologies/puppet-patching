@@ -10,10 +10,18 @@ class MonitoringSolarwindsTask < TaskHelper
   end
 
   def task(nodes: nil,
+           name_property: nil,
            action: nil,
            **kwargs)
     add_module_lib_paths(kwargs[:_installdir])
     require 'puppet_x/encore/patching/orion_client'
+
+    # nodes can be a string (one target) or an array of targets
+    # if it's a string (single target) convert it to an array so we can treat them the same
+    nodes = [nodes] unless nodes.is_a?(Array)
+
+    # set name_property to a default of 'DNS' if it isn't specified
+    name_property = 'DNS' if name_property.nil?
 
     # this key contains all of the remote configuration from the inventory.yaml
     # combined with information for the remote target (SolarWinds server)
@@ -24,9 +32,10 @@ class MonitoringSolarwindsTask < TaskHelper
                                                username: remote_target[:username],
                                                password: remote_target[:password],
                                                port: remote_target.fetch(:port, 17_778))
+
     missing_nodes = []
     uri_array = nodes.map do |n|
-      sw_nodes = orion.get_node(n)
+      sw_nodes = orion.get_node(n, name_property: name_property)
 
       if sw_nodes.empty?
         missing_nodes << n
@@ -42,7 +51,7 @@ class MonitoringSolarwindsTask < TaskHelper
     # print all of the missing nodes at the same time to make debugging easier
     unless missing_nodes.empty?
       missing_pretty = JSON.pretty_generate(missing_nodes.sort)
-      raise ArgumentError, "Unable to find the following nodes in SolarWinds: #{missing_pretty}"
+      raise ArgumentError, "Unable to find the following nodes in SolarWinds using the name property '#{name_property}': #{missing_pretty}"
     end
 
     uri_array.flatten!

@@ -6,6 +6,7 @@
 - [Overview](#overview)
 - [patching_order](#patching_order)
 - [patching_monitoring_enabled](#patching_monitoring_enabled)
+- [patching_monitoring_name_property](#patching_monitoring_name_property)
 - [patching_monitoring_plan](#patching_monitoring_plan)
 - [patching_monitoring_target_name_property](#patching_monitoring_target_name_property)
 - [patching_reboot_strategy](#patching_reboot_strategy)
@@ -94,6 +95,38 @@ Flag to enable/disable the `monitoring` phases of the patching process.
 Let's say you don't have a monitoring tool, or maybe you don't want to turn off alerts
 during patching, then simply set this to `false`.
 
+### patching_monitoring_name_property
+
+``` yaml
+type: Optional[String[1]]
+```
+
+When querying a monitoring tool (SolarWinds) you might need to query different fields
+depending on how you're setup. This might not be used in all implementations.
+
+* SolarWinds: We check to see if the target's name is an IP address,
+              if it is then we use the `'IPAddress'` property, 
+              otherwise we use the `'DNS'` property by default.
+              If you specify this configuration option, we will still do the IP address
+              check, but if it's not an IP address we will use this property name
+              as the default, rather than `'DNS'`.
+              Apart from `'IPAddress'` and `'DNS'`, another good option is `'Caption'`
+              which is a user-modifyable field in the SolarWinds console.
+              This value can be the name of any colum on the `Orion.Nodes` table.
+
+Example:
+``` yaml
+groups:
+  - name: vmware_nodes
+    vars:
+      # match the target's 'name' to the 'Caption' property in SolarWinds
+      patching_monitoring_target_name_property: 'name'
+      patching_monitoring_name_property: 'Caption'
+    targets:
+      - name: TOMCAT01
+        uri: tomcat01.domain.tld
+```
+
 ### patching_monitoring_plan
 
 ```yaml
@@ -148,7 +181,7 @@ To accomplish this we provide the `patching_monitoring_target_name_property` set
 allows you to select the `uri` (default) or the `name` of the target as the property 
 that will be used.
 
-This was intentionally made discinct from `patching_snapshot_target_name_property` in case
+This was intentionally made distinct from `patching_snapshot_target_name_property` in case
 the tools used different names for the same node/target.
   
 Example:
@@ -427,7 +460,7 @@ to a VM in the hypervisor (used in `patching_snapshot_plan`: `patching::snapshot
 To accomplish this we provide the `patching_snapshot_target_name_property` setting that allows 
 you to select the `uri` (default) or the `name` of the target as the property that will be used.
 
-This was intentionally made discinct from `patching_monitoring_target_name_property` in case
+This was intentionally made distinct from `patching_monitoring_target_name_property` in case
 the tools used different names for the same node/target.
 
 Example:
