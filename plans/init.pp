@@ -21,11 +21,11 @@
 # @param [Optional[Boolean]] monitoring_enabled
 #   Flag to enable/disable the execute of the monitoring_plan.
 #   This is useful if you don't want to call out to a monitoring system during provisioning.
-#   To configure this globally, use the `patching_monitor_enabled` var.
+#   To configure this globally, use the `patching_monitoring_enabled` var.
 #
 # @param [Optional[String]] monitoring_plan
 #   Name of the plan to use for disabling/enabling monitoring steps of the workflow.
-#   To configure this globally, use the `patching_monitor_plan` var.
+#   To configure this globally, use the `patching_monitoring_plan` var.
 #
 # @param [Optional[String]] pre_update_plan
 #   Name of the plan to use for executing the pre-update step of the workflow.
