@@ -8,6 +8,13 @@ All notable changes to this project will be documented in this file.
   installations with custom `GEM_PATH` settings. (Bug Fix)
   
   Contributed by Nick Maludy (@nmaludy)
+  
+* Changed the property we use to look up SolarWinds nodes from `'Caption'` to `'DNS'` by
+  default. Also made the property configurable using the `patching_monitoring_name_property`.
+  There are now new parameters on the `patching::monitoring_solarwinds` task and plans
+  to allow specifying what property we are matching for on the SolarWinds side. (Enhancement)
+  
+  Contributed by Nick Maludy (@nmaludy)
 
 
 ## Release 0.3.0 (2019-10-30)

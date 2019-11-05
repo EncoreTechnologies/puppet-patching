@@ -40,6 +40,14 @@
 #     - [Password] password
 #         Password for authenticating with the SolarWinds API
 #
+# @param [Optional[String[1]]] monitoring_name_property
+#   Determines what property to match in SolarWinds when looking up targets.
+#   By default we determine if the target's name is an IP address, if it is then we
+#   use the 'IPAddress' property, otherwise we use whatever property this is set to.
+#   Available options that we've seen used are 'DNS' if the target's name is a DNS FQDN,
+#   or 'Caption' if you're looking up by a nick-name for the target.
+#   This can really be any field on the Orion.Nodes table.
+#
 # @param [Boolean] noop
 #   Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
 #
@@ -67,6 +75,7 @@ plan patching::monitoring_solarwinds (
   Enum['enable', 'disable']     $action,
   Optional[Enum['name', 'uri']] $target_name_property = undef,
   TargetSpec $monitoring_target = get_targets($nodes)[0].vars['patching_monitoring_target'],
+  Optional[String[1]] $monitoring_name_property = undef,
   Boolean    $noop              = false,
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
@@ -74,6 +83,9 @@ plan patching::monitoring_solarwinds (
   $_target_name_property = pick($target_name_property,
                                 $group_vars['patching_monitoring_target_name_property'],
                                 'uri')
+  $_monitoring_name_property = pick($monitoring_name_property,
+                                    $group_vars['patching_monitoring_name_property'],
+                                    'DNS')
 
   # Create array of node names
   $target_names = patching::target_names($targets, $_target_name_property)
@@ -99,7 +111,8 @@ plan patching::monitoring_solarwinds (
 
   if !$noop {
     return run_task('patching::monitoring_solarwinds', $monitoring_target,
-                    nodes  => $target_names,
-                    action => $action)
+                    nodes         => $target_names,
+                    action        => $action,
+                    name_property => $monitoring_name_property)
   }
 }

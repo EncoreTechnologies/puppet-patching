@@ -48,9 +48,10 @@ module PuppetX::Patching
       JSON.parse(resp.body)
     end
 
-    def get_node(hostname_or_ip)
-      field = ip?(hostname_or_ip) ? 'IPAddress' : 'Caption'
-      q = "SELECT NodeID, Uri, IPAddress, Caption FROM Orion.Nodes WHERE #{field}=@query_on"
+    def get_node(hostname_or_ip, name_property: 'DNS')
+      field = ip?(hostname_or_ip) ? 'IPAddress' : name_property
+      field_list = ['NodeID', 'Uri', 'IPAddress', name_property].uniq
+      q = "SELECT #{field_list.join(',')} FROM Orion.Nodes WHERE #{field}=@query_on"
       params = {
         'query_on' => hostname_or_ip,
       }
