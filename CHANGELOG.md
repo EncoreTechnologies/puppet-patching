@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Re-establish all targets availability after reboot
+
+  Contributed by Vadym Chepkov (@vchepkov)
+
 * Fixed a bug in `patching::puppet_facts` where the sub command would fail to run on 
   installations with custom `GEM_PATH` settings. (Bug Fix)
   
