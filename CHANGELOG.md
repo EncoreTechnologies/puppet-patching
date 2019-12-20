@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Modify the scripts to use /etc/os-release. This will fallback to older methods in the absense of /etc/os-release. (Enhancement)
+
+  Contributed by Michael Surato (@msurato)
 
 
 ## Release 0.3.0 (2019-10-30)
