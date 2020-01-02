@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Modify the scripts to use /etc/os-release. This will fallback to older methods in the absense of /etc/os-release. (Enhancement)
+
+  Contributed by Michael Surato (@msurato)
 
 * Re-establish all targets availability after reboot
 
