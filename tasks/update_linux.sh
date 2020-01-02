@@ -16,22 +16,30 @@ if [[ ! -e "$RESULT_FILE" ]]; then
   touch "$RESULT_FILE"
 fi
 
-# Run our OS tests, exports OS_TEST_DEB and OS_TEST_RH
+# Run our OS tests, export OS_RELEASE
 source "${PT__installdir}/patching/files/bash/os_test.sh"
 
+# default
 STATUS=0
-################################################################################
-if [[ -n "$OS_TEST_RH" ]]; then
-  source "${PT__installdir}/patching/files/bash/update_rh.sh"
-  STATUS=$?
+
+case $OS_RELEASE in
 ################################################################################  
-elif [[ -n "$OS_TEST_DEB" ]]; then
-  source "${PT__installdir}/patching/files/bash/update_deb.sh"
-  STATUS=$?
+  RHEL | CENTOS)
+    # RedHat variant
+    source "${PT__installdir}/patching/files/bash/update_rh.sh"
+    STATUS=$?
+    ;;
+################################################################################  
+  DEBIAN | UBUNTU)
+    # Debian variant
+    source "${PT__installdir}/patching/files/bash/update_deb.sh"
+    STATUS=$?
+    ;;
 ################################################################################
-else
-  echo "Unknown Operating System: OS_TEST_DEB=${OS_TEST_DEB} OS_TEST_RH=${OS_TEST_RH}"
-  exit 2
-fi
+  *)
+    echo "Unknown Operating System: ${OS_RELEASE}"
+    STATUS=2
+    ;;
+esac
 
 exit $STATUS
