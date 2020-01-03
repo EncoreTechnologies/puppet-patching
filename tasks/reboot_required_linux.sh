@@ -18,6 +18,11 @@ case $OS_RELEASE in
     source "${PT__installdir}/patching/files/bash/reboot_required_deb.sh"
     ;;
 ################################################################################  
+  SLES)
+    # SUSE variant
+    source "${PT__installdir}/patching/files/bash/reboot_required_sles.sh"
+    ;;
+################################################################################
   *)
     echo "ERROR - Unknown Operating System: ${OS_RELEASE}"
     exit 2
