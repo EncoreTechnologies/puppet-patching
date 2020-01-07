@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+
+
+## Release 0.4.0 (2020-01-06)
+
 * Add support for SUSE Linux Enterprise. (Enhancement)
 
   Contributed by Michael Surato (@msurato)
