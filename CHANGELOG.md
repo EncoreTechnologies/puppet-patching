@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Add support for SUSE Linux Enterprise. (Enhancement)
+
+  Contributed by Michael Surato (@msurato)
+  
 * Modify the scripts to use /etc/os-release. This will fallback to older methods in the absense of /etc/os-release. (Enhancement)
 
   Contributed by Michael Surato (@msurato)

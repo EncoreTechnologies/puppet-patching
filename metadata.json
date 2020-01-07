@@ -9,11 +9,22 @@
   "issues_url": "https://github.com/EncoreTechnologies/puppet-patching/issues",
   "dependencies": [
     {
+      "name": "puppetlabs/puppet_agent",
+      "version_requirement": ">= 2.2.0 < 3.0.0"
+    },
+    {
       "name": "puppetlabs/stdlib",
       "version_requirement": ">= 4.13.1 < 7.0.0"
     }
   ],
   "operatingsystem_support": [
+    {
+      "operatingsystem": "SLES",
+      "operatingsystemrelease": [
+        "12",
+        "15"
+      ]
+    },
     {
       "operatingsystem": "CentOS",
       "operatingsystemrelease": [

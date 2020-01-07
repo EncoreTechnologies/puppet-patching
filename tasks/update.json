@@ -7,7 +7,8 @@
       "files": [
         "patching/files/bash/os_test.sh",
         "patching/files/bash/update_rh.sh",
-        "patching/files/bash/update_deb.sh"
+        "patching/files/bash/update_deb.sh",
+        "patching/files/bash/update_sles.sh"
       ]
     },
     {

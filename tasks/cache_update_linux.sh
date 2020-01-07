@@ -31,6 +31,16 @@ case $OS_RELEASE in
     fi
     ;;
 ################################################################################
+  SLES)
+    # SUSE variant
+    ## Update zypper cache
+    OUTPUT=$(zypper ref 2>&1)
+    STATUS=$?
+    if [[ $STATUS -ne 0 ]]; then
+      ERROR="zypper ref FAILED, you probably forgot to run this as sudo or there is a network error."
+    fi
+    ;;
+################################################################################
   *)
     ERROR="Unknown Operating System: ${OS_RELEASE}"
     STATUS=2

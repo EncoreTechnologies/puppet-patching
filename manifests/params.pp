@@ -25,6 +25,14 @@ class patching::params {
       $group = 'root'
       $mode = '0770'
     }
+    'Suse': {
+      $patching_dir = '/opt/patching'
+      $bin_dir = "${patching_dir}/bin"
+      $log_dir = "${patching_dir}/log"
+      $owner = 'root'
+      $group = 'root'
+      $mode = '0770'
+    }
     default: {
       fail("Unsupported OS family: ${facts['os']['family']}")
     }
