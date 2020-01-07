@@ -36,6 +36,12 @@ case $OS_RELEASE in
     STATUS=$?
     ;;
 ################################################################################
+  SLES)
+    # SUSE variant
+    source "${PT__installdir}/patching/files/bash/update_sles.sh"
+    STATUS=$?
+    ;;
+################################################################################
   *)
     echo "Unknown Operating System: ${OS_RELEASE}"
     STATUS=2

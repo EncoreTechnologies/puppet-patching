@@ -15,6 +15,11 @@ case $OS_RELEASE in
     source "${PT__installdir}/patching/files/bash/available_updates_deb.sh"
     ;;
 ################################################################################  
+  SLES)
+    # SUSE variant
+    source "${PT__installdir}/patching/files/bash/available_updates_sles.sh"
+    ;;
+################################################################################
   *)
     echo "Unknown Operating System: ${OS_RELEASE}"
     exit 2
