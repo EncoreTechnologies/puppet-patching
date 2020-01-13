@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Modified location of the puppet executable on Linux to use the supported wrapper. This sets
+  library paths to solve consistency issues. (Bug Fix)
+  
+  Contributed by Michael Surato (@msurato)
 
 ## Release 0.4.0 (2020-01-06)
 
