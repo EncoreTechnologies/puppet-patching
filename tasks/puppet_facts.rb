@@ -29,7 +29,7 @@ def puppet_executable
         File.join(installed_dir, 'bin', 'puppet')
       end
   else
-    puppet = '/opt/puppetlabs/puppet/bin/puppet'
+    puppet = '/opt/puppetlabs/bin/puppet'
   end
 
   # Fall back to PATH lookup if puppet-agent isn't installed
