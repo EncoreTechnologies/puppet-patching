@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Add support for Fedora Linux. (Enhancement)
+
+  Contributed by Vadym Chepkov (@vchepkov)
 
 ## Release 0.4.0 (2020-01-06)
 
