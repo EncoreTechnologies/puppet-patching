@@ -100,12 +100,14 @@ if ($provider -eq '') {
 
 $exit_code = 0
 if ($provider -eq 'windows') {
-  $result = @{"updates" = @(AvailableUpdates-Windows)}
-  $exit_code = $result_chocolatey['exit_code']
+  $data_windows = AvailableUpdates-Windows
+  $result = @{"updates" = @($data_windows['result'])}
+  $exit_code = $data_windows['exit_code']
 } elseif ($provider -eq 'chocolatey') {
-  $result_chocolatey = AvailableUpdates-Chocolatey($True)
-  $result = @{"updates" = @($result_chocolatey['result'])}
-  $exit_code = $result_chocolatey['exit_code']
+  $data_chocolatey = AvailableUpdates-Chocolatey($True)
+  Write-Output $data_chocolatey
+  $result = @{"updates" = @($data_chocolatey['result'])}
+  $exit_code = $data_chocolatey['exit_code']
 } elseif ($provider -eq 'all') {
   $result = @{"updates" = @()}
   $exit_code = 0
