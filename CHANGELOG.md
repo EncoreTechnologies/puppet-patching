@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Fixed bug in `patching::snapshot_vmware` where the wrong snapshot name was printed to the user. (Bug Fix)
+  
+  Contributed by Nick Maludy (@nmaludy)
+  
+* Fixed bug in `patching::available_updates_windows` where using `provider=windows` threw an error. (Bug Fix)
+  
+  Contributed by Nick Maludy (@nmaludy)
+
 * Add support for Fedora Linux. (Enhancement)
 
   Contributed by Vadym Chepkov (@vchepkov)
