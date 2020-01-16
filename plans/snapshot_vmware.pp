@@ -99,12 +99,12 @@ plan patching::snapshot_vmware (
 
   # Display status message
   if $action == 'create' {
-    out::message("Creating VM snapshot '${snapshot_name}' for:")
+    out::message("Creating VM snapshot '${_snapshot_name}' for:")
     $vm_names.each |$n| {
       out::message(" + ${n}")
     }
   } else {
-    out::message("Deleting VM snapshot '${snapshot_name}' for:")
+    out::message("Deleting VM snapshot '${_snapshot_name}' for:")
     $vm_names.each |$n| {
       out::message(" - ${n}")
     }
