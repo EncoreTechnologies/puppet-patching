@@ -62,6 +62,16 @@
 #   In this case you can run with `snapshot_delete=false` and then a few hours later
 #   you can run the `patching::snapshot_vmware action=delete` sometime in the future.
 #
+# @param [Optional[Integer]] reboot_wait
+#   Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one 
+#   of the groups affects the availability of a previous group.
+#   Two use cases here:
+#    1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the 
+#       VMs to go offline and we need to wait for those child VMs to come back up before
+#       collecting history metrics.
+#    2. A later group is a linux router. In this instance maybe the patching of the linux router
+#       affects the reachability of previous hosts.
+# 
 # @param [Boolean] noop
 #   Flag to enable noop mode for the underlying plans and tasks.
 #
@@ -80,6 +90,9 @@
 # @example CLI - Customize the pre/post update plans to use your own module's version
 #   bolt plan run patching --nodes linux_patching pre_update_plan='mymodule::pre_update' post_update_plan='mymodule::post_update'
 #
+# @example CLI - Wait 10 minutes for systems to become available as some systems take longer to reboot.
+#   bolt plan run patching --nodes linux_patching,windows_patching --reboot_wait 600
+#
 plan patching (
   TargetSpec       $nodes,
   Boolean           $filter_offline_nodes = false,
@@ -92,6 +105,7 @@ plan patching (
   Optional[String]  $snapshot_plan        = undef,
   Optional[Boolean] $snapshot_create      = undef,
   Optional[Boolean] $snapshot_delete      = undef,
+  Optional[Integer] $reboot_wait          = 300,
   Boolean           $noop                 = false,
 ) {
   ## Filter offline nodes
@@ -244,7 +258,7 @@ plan patching (
   #     collecting history metrics.
   #  2. A later group is a linux router. In this instance maybe the patching of the linux router
   #     affects the reachability of previous hosts.
-  wait_until_available($targets, wait_time => 300)
+  wait_until_available($targets, wait_time => $reboot_wait)
 
   ## Collect summary report
   run_plan('patching::update_history',

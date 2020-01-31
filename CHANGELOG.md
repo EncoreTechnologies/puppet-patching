@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Made the timeout after reboot a configurable parameter. (Enhancement)
+
+  Contributed by Michael Surato (@msurato)
+
 * Fixed bug in `patching::snapshot_vmware` where the wrong snapshot name was printed to the user. (Bug Fix)
   
   Contributed by Nick Maludy (@nmaludy)
