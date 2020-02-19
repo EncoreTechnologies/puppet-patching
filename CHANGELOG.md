@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* BREAKING CHANGE: Fixed bug in `patching::check_puppet` to convert the `nodes` parameter 
+  to `targets` so it's compatible with the `puppetlabs-facts` module `1.0.0` and Bolt >= `1.48.0`.
+  This is a BREAKING CHANGE! (Bug Fix)
+
+  Contributed by Nick Maludy (@nmaludy)
+
 * Made the timeout after reboot a configurable parameter. (Enhancement)
 
   Contributed by Michael Surato (@msurato)

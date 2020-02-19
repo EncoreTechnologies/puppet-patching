@@ -80,7 +80,7 @@ plan patching::check_puppet (
   if !$targets_no_puppet.empty() {
     # run `facter` if it's available otherwise get basic facts
     run_plan('facts',
-              nodes => $targets_no_puppet)
+              targets => $targets_no_puppet)
   }
 
   return({
