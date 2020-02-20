@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+
+## Release 0.5.0 (2020-02-20)
+
 * Made the timeout after reboot a configurable parameter. (Enhancement)
 
   Contributed by Michael Surato (@msurato)
