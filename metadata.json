@@ -1,6 +1,6 @@
 {
   "name": "encore-patching",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "Encore Technologies",
   "summary": "Implements OS patching workflows using Bolt tasks and plans.",
   "license": "Apache-2.0",
@@ -79,7 +79,7 @@
       "version_requirement": ">= 4.10.0 < 7.0.0"
     }
   ],
-  "pdk-version": "1.15.0",
-  "template-url": "https://github.com/puppetlabs/pdk-templates#1.13.0",
-  "template-ref": "tags/1.13.0-0-g66e1443"
+  "pdk-version": "1.16.0",
+  "template-url": "https://github.com/puppetlabs/pdk-templates#1.16.0",
+  "template-ref": "tags/1.16.0-0-gaf44904"
 }
