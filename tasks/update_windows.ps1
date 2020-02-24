@@ -394,6 +394,11 @@ if ($provider -eq 'windows') {
 # convert results to JSON
 $result_json = ConvertTo-Json -Depth 100 $result
 
+# if the result file does not exist, create it
+if (-not (Test-Path $result_file)) {
+  New-Item -ItemType "file" -Path (Split-Path -Path $result_file) -Name (Split-Path -Path $result_file -Leaf) | Out-Null
+}
+
 # write results to results file
 Add-Content -Path $result_file -Value $result_json
 
