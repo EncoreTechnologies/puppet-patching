@@ -2,5 +2,8 @@
 # See https://github.com/puppetlabs/puppetlabs_spec_helper#using-fixtures for details
 ---
 fixtures:
+  forge_modules:
+    puppet_agent: 'puppetlabs/puppet_agent'
+    stdlib: 'puppetlabs/stdlib'
   symlinks:
     patching: "#{source_dir}"

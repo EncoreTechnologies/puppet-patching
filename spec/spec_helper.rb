@@ -58,6 +58,15 @@ def ensure_module_defined(module_name)
 end
 
 # 'spec_overrides' from sync.yml will appear below this line
+# setup for Bolt spec tests
 require 'bolt_spec/plans'
 BoltSpec::Plans.init
 include BoltSpec::Plans
+
+# setup the proper modulepath for Bolt
+base_dir = File.dirname(File.expand_path(__FILE__))
+RSpec.configure do |c|
+  # should we just use rspec_puppet
+  c.add_setting :module_path
+  c.module_path = File.join(base_dir, 'fixtures', 'modules')
+end
