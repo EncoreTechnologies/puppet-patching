@@ -16,6 +16,11 @@ if ($result_file -eq '') {
   $result_file = 'C:\ProgramData\patching\log\patching.json'
 }
 
+# if the result file does not exist, create it
+if (-not (Test-Path $result_file)) {
+  New-Item -ItemType "file" -Path (Split-Path -Path $result_file) -Name (Split-Path -Path $result_file -Leaf) | Out-Null
+}
+
 $pattern_matches = Select-String -Path $result_file -Pattern "^{$"
 if ($pattern_matches) {
   # get the LAST matching line number of { , the start of a JSON document
