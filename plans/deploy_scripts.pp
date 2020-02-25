@@ -2,7 +2,7 @@
 #
 # TODO support deploying without Puppet on the end node?
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 #
 # @param [Hash] scripts
@@ -32,7 +32,7 @@
 # @example CLI deploy a pre and post patching script
 #   bolt plan run patching::deploy_scripts scripts='{"pre_patch.sh": {"source": "puppet:///modules/test/patching/pre_patch.sh"}, "post_patch.sh": {"source": "puppet:///modules/test/patching/post_patch.sh"}}'
 plan patching::deploy_scripts(
-  TargetSpec $nodes,
+  TargetSpec $targets,
   Hash $scripts,
   Optional[String] $patching_dir = undef,
   Optional[String] $bin_dir      = undef,
@@ -41,8 +41,8 @@ plan patching::deploy_scripts(
   Optional[String] $group        = undef,
   Optional[String] $mode         = undef,
 ) {
-  $targets = run_plan('patching::get_targets', nodes => $nodes)
-  return apply($targets) {
+  $_targets = run_plan('patching::get_targets', targets => $targets)
+  return apply($_targets) {
     include patching::params
     class { 'patching':
       scripts      => $scripts,

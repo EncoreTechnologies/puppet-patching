@@ -1,28 +1,28 @@
-# @summary Checks each node to see if Puppet is installed, then gather Facts on all nodes.
+# @summary Checks each node to see if Puppet is installed, then gather Facts on all targets.
 #
 # Executes the <code>puppet_agent::version</code> task to check if Puppet is installed
-# on all of the nodes. Once finished, the result is split into two groups:
+# on all of the targets. Once finished, the result is split into two groups:
 #
-#  1. Nodes with puppet
-#  2. Nodes with no puppet
+#  1. Targets with puppet
+#  2. Targets with no puppet
 #
-# The nodes with puppet are queried for facts using the <code>patching::puppet_facts</code> plan.
-# Nodes without puppet are queried for facts using the simpler <code>facts</code> plan.
+# The targets with puppet are queried for facts using the <code>patching::puppet_facts</code> plan.
+# Targets without puppet are queried for facts using the simpler <code>facts</code> plan.
 #
 # This plan is designed to be the first plan executed in a patching workflow.
 # It can be used to stop the patching process if any hosts are offline by setting
-# <code>filter_offline_nodes=false</code> (default). It can also be used
-# to patch any hosts that are currently available and ignoring any offline nodes
-# by setting <code>filter_offline_nodes=true</code>.
+# <code>filter_offline_targets=false</code> (default). It can also be used
+# to patch any hosts that are currently available and ignoring any offline targets
+# by setting <code>filter_offline_targets=true</code>.
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
-# @param [Boolean] filter_offline_nodes
-#   Flag to determine if offline nodes should be filtered out of the list of targets
+# @param [Boolean] filter_offline_targets
+#   Flag to determine if offline targets should be filtered out of the list of targets
 #   returned by this plan. If true, when running the <code>puppet_agent::version</code>
-#   check, any nodes that return an error will be filtered out and ignored.
+#   check, any targets that return an error will be filtered out and ignored.
 #   Those targets will not be returned in any of the data structures in the result of
-#   this plan. If false, then any nodes that are offline will cause this plan to error
+#   this plan. If false, then any targets that are offline will cause this plan to error
 #   immediately when performing the online check. This will result in a halt of the
 #   patching process.
 #
@@ -30,37 +30,37 @@
 #                  no_puppet => Array[TargetSpec],
 #                  all => Array[TargetSpec]}]]
 #
-# @example CLI - Basic usage (error if any nodes are offline)
-#   bolt plan run patching::check_puppet --nodes linux_hosts
+# @example CLI - Basic usage (error if any targets are offline)
+#   bolt plan run patching::check_puppet --targets linux_hosts
 #
-# @example CLI - Filter offline nodes (only return online nodes)
-#   bolt plan run patching::check_puppet --nodes linux_hosts filter_offline_nodes=true
+# @example CLI - Filter offline targets (only return online targets)
+#   bolt plan run patching::check_puppet --targets linux_hosts filter_offline_targets=true
 #
-# @example Plan - Basic usage (error if any nodes are offline)
+# @example Plan - Basic usage (error if any targets are offline)
 #   $results = run_plan('patching::check_puppet',
-#                       nodes => $linux_hosts)
+#                       targets => $linux_hosts)
 #   $targets_has_puppet = $results['has_puppet']
 #   $targets_no_puppet = $results['no_puppet']
 #   $targets_all = $results['all']
 #
-# @example Plan - Filter offline nodes (only return online nodes)
+# @example Plan - Filter offline targets (only return online targets)
 #   $results = run_plan('patching::check_puppet',
-#                       nodes                => $linux_hosts,
-#                       filter_offline_nodes => true)
+#                       targets                => $linux_hosts,
+#                       filter_offline_targets => true)
 #   $targets_online_has_puppet = $results['has_puppet']
 #   $targets_online_no_puppet = $results['no_puppet']
 #   $targets_online = $results['all']
 #
 plan patching::check_puppet (
-  TargetSpec $nodes,
-  Boolean $filter_offline_nodes = false,
+  TargetSpec $targets,
+  Boolean $filter_offline_targets = false,
 ) {
-  $targets = get_targets($nodes)
-  ## This will check all nodes to verify online by checking their Puppet agent version
-  $targets_version = run_task('puppet_agent::version', $targets,
-                              _catch_errors => $filter_offline_nodes)
-  # if we're filtering out offline nodes, then only accept the ok_set from the task above
-  if $filter_offline_nodes {
+  $_targets = get_targets($targets)
+  ## This will check all targets to verify online by checking their Puppet agent version
+  $targets_version = run_task('puppet_agent::version', $_targets,
+                              _catch_errors => $filter_offline_targets)
+  # if we're filtering out offline targets, then only accept the ok_set from the task above
+  if $filter_offline_targets {
     $targets_filtered = $targets_version.ok_set
   }
   else {
@@ -75,12 +75,12 @@ plan patching::check_puppet (
     # run `puppet facts` on targets with Puppet because it returns a more complete
     # set of facts than just running `facter`
     run_plan('patching::puppet_facts',
-              nodes => $targets_with_puppet)
+              targets => $targets_with_puppet)
   }
   if !$targets_no_puppet.empty() {
     # run `facter` if it's available otherwise get basic facts
     run_plan('facts',
-              nodes => $targets_no_puppet)
+              targets => $targets_no_puppet)
   }
 
   return({

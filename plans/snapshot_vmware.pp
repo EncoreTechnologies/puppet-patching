@@ -1,4 +1,4 @@
-# @summary Creates or deletes VM snapshots on nodes in VMware.
+# @summary Creates or deletes VM snapshots on targets in VMware.
 #
 # Communicates to the vSphere API from the local Bolt control node using
 # the [rbvmomi](https://github.com/vmware/rbvmomi) Ruby gem.
@@ -10,7 +10,7 @@
 #
 # TODO config variables
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 #
 # @param [Enum['create', 'delete']] action
@@ -61,22 +61,22 @@
 #   Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
 #
 plan patching::snapshot_vmware (
-  TargetSpec $nodes,
+  TargetSpec $targets,
   Enum['create', 'delete'] $action,
   Optional[Enum['name', 'uri']] $target_name_property = undef,
-  String[1] $vsphere_host       = get_targets($nodes)[0].vars['vsphere_host'],
-  String[1] $vsphere_username   = get_targets($nodes)[0].vars['vsphere_username'],
-  String[1] $vsphere_password   = get_targets($nodes)[0].vars['vsphere_password'],
-  String[1] $vsphere_datacenter = get_targets($nodes)[0].vars['vsphere_datacenter'],
-  Boolean $vsphere_insecure     = get_targets($nodes)[0].vars['vsphere_insecure'],
+  String[1] $vsphere_host       = get_targets($targets)[0].vars['vsphere_host'],
+  String[1] $vsphere_username   = get_targets($targets)[0].vars['vsphere_username'],
+  String[1] $vsphere_password   = get_targets($targets)[0].vars['vsphere_password'],
+  String[1] $vsphere_datacenter = get_targets($targets)[0].vars['vsphere_datacenter'],
+  Boolean $vsphere_insecure     = get_targets($targets)[0].vars['vsphere_insecure'],
   Optional[String[1]] $snapshot_name      = undef,
   Optional[String] $snapshot_description  = undef,
   Optional[Boolean] $snapshot_memory      = undef,
   Optional[Boolean] $snapshot_quiesce     = undef,
   Boolean $noop                 = false,
 ) {
-  $targets = run_plan('patching::get_targets', nodes => $nodes)
-  $group_vars = $targets[0].vars
+  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $group_vars = $_targets[0].vars
   # Order: CLI > Config > Default
   $_target_name_property = pick($target_name_property,
                                 $group_vars['patching_snapshot_target_name_property'],
@@ -95,7 +95,7 @@ plan patching::snapshot_vmware (
                             true)
 
   # Create array of node names
-  $vm_names = patching::target_names($targets, $_target_name_property)
+  $vm_names = patching::target_names($_targets, $_target_name_property)
 
   # Display status message
   if $action == 'create' {
