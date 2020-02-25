@@ -12,12 +12,21 @@
 .gitlab-ci.yml:
   # we don't use GitLab
   unmanaged: true
+.travis.yml:
+  # removed Puppet 5 checks here
+  remove_includes:
+    - env: PUPPET_GEM_VERSION="~> 5.0" CHECK=parallel_spec
+      rvm: 2.4.5
+      stage: spec
 appveyor.yml:
   # we don't use Appveyor
   unmanaged: true
 Gemfile:
   required:
     ':development':
+      - gem: 'rake'
+      - gem: 'bolt'
+        version: '>= 1.48.0'
       - gem: 'puppet-lint-absolute_template_path'
         version: '>= 1.0.1'
       - gem: 'puppet-lint-alias-check'
@@ -40,15 +49,29 @@ Gemfile:
         version: '>= 0.3.0'
       - gem: 'puppet-lint-version_comparison-check'
         version: '>= 0.2.1'
+      - gem: 'puppetlabs_spec_helper'
       - gem: 'r10k'
         version: '>= 3.0.0'
+      - gem: 'rspec-puppet-facts'
       # cri is needed by r10k, but due to a bug in the cri gem v2.15.7 it breaks r10k
       # see: https://github.com/puppetlabs/r10k/issues/930
       - gem: 'cri'
         version: '2.15.6'
       - gem: 'yaml-lint'
         version: '>= 0.0.10'
-# Rakefile:
-#   extras:
-#     - "# exclude plans because puppet-syntax doesn't support them yet: https://github.com/voxpupuli/puppet-syntax/issues/95"
-#     - 'PuppetSyntax.exclude_paths = ["plans/**/*", "vendor/**/*"]'
+spec/spec_helper.rb:
+  mock_with: ':rspec'
+  spec_overrides:
+    - '# setup for Bolt spec tests'
+    - "require 'bolt_spec/plans'"
+    - 'BoltSpec::Plans.init'
+    - 'include BoltSpec::Plans'
+    - ''
+    - '# setup the proper modulepath for Bolt'
+    - 'base_dir = File.dirname(File.expand_path(__FILE__))'
+    - 'RSpec.configure do |c|'
+    - '  # should we just use rspec_puppet'
+    - '  c.add_setting :module_path'
+    - "  c.module_path = File.join(base_dir, 'fixtures', 'modules')"
+    - 'end'
+

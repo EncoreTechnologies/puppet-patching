@@ -3,4 +3,8 @@
 ---
 fixtures:
   forge_modules:
-#     stdlib: "puppetlabs/stdlib"
+    facts: 'puppetlabs/facts'
+    puppet_agent: 'puppetlabs/puppet_agent'
+    stdlib: 'puppetlabs/stdlib'
+  symlinks:
+    patching: "#{source_dir}"
