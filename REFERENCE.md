@@ -48,19 +48,19 @@
 **Plans**
 
 * [`patching`](#patching): Our generic and semi-opinionated workflow.
-* [`patching::available_updates`](#patchingavailable_updates): Checks all targets for available updates reported by their Operating System.
+* [`patching::available_updates`](#patchingavailable_updates): Checks all nodes for available updates reported by their Operating System.
 * [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
-* [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all targets.
+* [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all nodes.
 * [`patching::deploy_scripts`](#patchingdeploy_scripts): 
 * [`patching::get_targets`](#patchingget_targets): <code>get_targets()</code> except it also performs online checks and gathers facts in one step.
-* [`patching::monitoring_solarwinds`](#patchingmonitoring_solarwinds): Creates or deletes VM snapshots on targets in VMware.
+* [`patching::monitoring_solarwinds`](#patchingmonitoring_solarwinds): Creates or deletes VM snapshots on nodes in VMware.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
 * [`patching::post_update`](#patchingpost_update): Executes a custom post-update script on each node.
 * [`patching::pre_post_update`](#patchingpre_post_update): Common entry point for executing the pre/post update custom scripts
 * [`patching::pre_update`](#patchingpre_update): Executes a custom pre-update script on each node.
-* [`patching::puppet_facts`](#patchingpuppet_facts): Plan thatr runs 'puppet facts' on the targets and sets them as facts on the Target objects.
-* [`patching::reboot_required`](#patchingreboot_required): Querys a targets operating system to determine if a reboot is required and then reboots the targets that require rebooting.
-* [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshots on targets in VMware.
+* [`patching::puppet_facts`](#patchingpuppet_facts): Plan thatr runs 'puppet facts' on the nodes and sets them as facts on the Target objects.
+* [`patching::reboot_required`](#patchingreboot_required): Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
+* [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshots on nodes in VMware.
 * [`patching::update_history`](#patchingupdate_history): Collect update history from the results JSON file on the targets
 
 ## Classes
@@ -502,23 +502,23 @@ Enable or disable monitoring alerts on hosts in SolarWinds.
 
 #### Parameters
 
-##### `targets`
+##### `nodes`
 
 Data type: `Variant[String[1], Array[String[1]]]`
 
-List of hostnames or IP addresses for targets in SolarWinds that will have monitoring alerts either enabled or disabled.
+List of hostnames or IP addresses for nodes in SolarWinds that will have monitoring alerts either enabled or disabled.
 
 ##### `name_property`
 
 Data type: `Optional[String[1]]`
 
-Property to use when looking up an Orion.Node in SolarWinds from a Bolt::Target. By default we check to see if the node is an IP address, if it is then we use the 'IPAddress' property, otherwise we use 'DNS'. If you want to change what the 'other' property is when the node name isn't an IP address, then specify this property.
+Property to use when looking up nodes. By default we check to see if the node is an IP address, if it is then we use the 'IPAddress' property, otherwise we use 'DNS'. If you want to change what the 'other' property is when the node name isn't an IP address, then specify this property.
 
 ##### `action`
 
 Data type: `Enum['enable', 'disable']`
 
-Action to perform on monitored targets. 'enable' will enable monitoring alerts. 'disable' will disable monitoring alerts on targets.
+Action to perform on monitored nodes. 'enable' will enable monitoring alerts. 'disable' will disable monitoring alerts on nodes.
 
 ### post_update
 
@@ -753,55 +753,55 @@ it to meet their needs.
 ##### CLI - Basic usage
 
 ```puppet
-bolt plan run patching --targets linux_patching,windows_patching
+bolt plan run patching --nodes linux_patching,windows_patching
 ```
 
 ##### CLI - Disable snapshot creation, because an old patching run failed and we have an old snapshot to rely on
 
 ```puppet
-bolt plan run patching --targets linux_patching,windows_patching snapshot_create=false
+bolt plan run patching --nodes linux_patching,windows_patching snapshot_create=false
 ```
 
 ##### CLI - Disable snapshot deletion, because we want to wait for app teams to test.
 
 ```puppet
-bolt plan run patching --targets linux_patching,windows_patching snapshot_delete=true
+bolt plan run patching --nodes linux_patching,windows_patching snapshot_delete=true
 
 # sometime in the future, delete the snapshots
-bolt plan run patching::snapshot_vmare --targets linux_patching,windows_patching action='delete'
+bolt plan run patching::snapshot_vmare --nodes linux_patching,windows_patching action='delete'
 ```
 
 ##### CLI - Customize the pre/post update plans to use your own module's version
 
 ```puppet
-bolt plan run patching --targets linux_patching pre_update_plan='mymodule::pre_update' post_update_plan='mymodule::post_update'
+bolt plan run patching --nodes linux_patching pre_update_plan='mymodule::pre_update' post_update_plan='mymodule::post_update'
 ```
 
 ##### CLI - Wait 10 minutes for systems to become available as some systems take longer to reboot.
 
 ```puppet
-bolt plan run patching --targets linux_patching,windows_patching --reboot_wait 600
+bolt plan run patching --nodes linux_patching,windows_patching --reboot_wait 600
 ```
 
 #### Parameters
 
 The following parameters are available in the `patching` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
 Set of targets to run against.
 
-##### `filter_offline_targets`
+##### `filter_offline_nodes`
 
 Data type: `Boolean`
 
-Flag to determine if offline targets should be filtered out of the list of targets
+Flag to determine if offline nodes should be filtered out of the list of targets
 returned by this plan. If true, when running the <code>puppet_agent::version</code>
-check, any targets that return an error will be filtered out and ignored.
+check, any nodes that return an error will be filtered out and ignored.
 Those targets will not be returned in any of the data structures in the result of
-this plan. If false, then any targets that are offline will cause this plan to error
+this plan. If false, then any nodes that are offline will cause this plan to error
 immediately when performing the online check. This will result in a halt of the
 patching process.
 
@@ -939,27 +939,27 @@ output.
 ##### CLI - Basic Usage
 
 ```puppet
-bolt plan run patching::available_updates --targets linux_hosts
+bolt plan run patching::available_updates --nodes linux_hosts
 ```
 
 ##### CLI - Get available update information in CSV format for creating reports
 
 ```puppet
-bolt plan run patching::available_updates --targets linux_hosts format=csv
+bolt plan run patching::available_updates --nodes linux_hosts format=csv
 ```
 
 ##### Plan - Basic Usage
 
 ```puppet
 run_plan('patching::available_updates',
-         targets => $linux_hosts)
+         nodes => $linux_hosts)
 ```
 
 ##### Plan - Get available update information in CSV format for creating reports
 
 ```puppet
 run_plan('patching::available_updates',
-         targets  => $linux_hosts,
+         nodes  => $linux_hosts,
          format => 'csv')
 ```
 
@@ -967,7 +967,7 @@ run_plan('patching::available_updates',
 
 The following parameters are available in the `patching::available_updates` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1004,10 +1004,10 @@ Default value: `false`
 Online checks are done querying for the node's Puppet version using the
 <code>puppet_agent::version</code> task.
 This plan is designed to be used ad-hoc as a quick health check of your inventory.
-It is the intention of this plan to be used as "first pass" when onboarding new targets
+It is the intention of this plan to be used as "first pass" when onboarding new nodes
 into a Bolt rotation.
-One would build their inventory file of all targets from their trusted data sources.
-Then take the inventory files and run this plan against them to isolate problem targets
+One would build their inventory file of all nodes from their trusted data sources.
+Then take the inventory files and run this plan against them to isolate problem nodes
 and remediate them.
 Once this plan runs successfuly on your inventory, you know that Bolt can connect
 and can begin the patching proces.
@@ -1037,7 +1037,7 @@ bolt plan run patching::check_online
 
 The following parameters are available in the `patching::check_online` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1046,50 +1046,50 @@ Set of targets to run against.
 ### patching::check_puppet
 
 Executes the <code>puppet_agent::version</code> task to check if Puppet is installed
-on all of the targets. Once finished, the result is split into two groups:
+on all of the nodes. Once finished, the result is split into two groups:
 
- 1. Targets with puppet
- 2. Targets with no puppet
+ 1. Nodes with puppet
+ 2. Nodes with no puppet
 
-The targets with puppet are queried for facts using the <code>patching::puppet_facts</code> plan.
-Targets without puppet are queried for facts using the simpler <code>facts</code> plan.
+The nodes with puppet are queried for facts using the <code>patching::puppet_facts</code> plan.
+Nodes without puppet are queried for facts using the simpler <code>facts</code> plan.
 
 This plan is designed to be the first plan executed in a patching workflow.
 It can be used to stop the patching process if any hosts are offline by setting
-<code>filter_offline_targets=false</code> (default). It can also be used
-to patch any hosts that are currently available and ignoring any offline targets
-by setting <code>filter_offline_targets=true</code>.
+<code>filter_offline_nodes=false</code> (default). It can also be used
+to patch any hosts that are currently available and ignoring any offline nodes
+by setting <code>filter_offline_nodes=true</code>.
 
 #### Examples
 
-##### CLI - Basic usage (error if any targets are offline)
+##### CLI - Basic usage (error if any nodes are offline)
 
 ```puppet
-bolt plan run patching::check_puppet --targets linux_hosts
+bolt plan run patching::check_puppet --nodes linux_hosts
 ```
 
-##### CLI - Filter offline targets (only return online targets)
+##### CLI - Filter offline nodes (only return online nodes)
 
 ```puppet
-bolt plan run patching::check_puppet --targets linux_hosts filter_offline_targets=true
+bolt plan run patching::check_puppet --nodes linux_hosts filter_offline_nodes=true
 ```
 
-##### Plan - Basic usage (error if any targets are offline)
+##### Plan - Basic usage (error if any nodes are offline)
 
 ```puppet
 $results = run_plan('patching::check_puppet',
-                    targets => $linux_hosts)
+                    nodes => $linux_hosts)
 $targets_has_puppet = $results['has_puppet']
 $targets_no_puppet = $results['no_puppet']
 $targets_all = $results['all']
 ```
 
-##### Plan - Filter offline targets (only return online targets)
+##### Plan - Filter offline nodes (only return online nodes)
 
 ```puppet
 $results = run_plan('patching::check_puppet',
-                    targets                => $linux_hosts,
-                    filter_offline_targets => true)
+                    nodes                => $linux_hosts,
+                    filter_offline_nodes => true)
 $targets_online_has_puppet = $results['has_puppet']
 $targets_online_no_puppet = $results['no_puppet']
 $targets_online = $results['all']
@@ -1099,21 +1099,21 @@ $targets_online = $results['all']
 
 The following parameters are available in the `patching::check_puppet` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
 Set of targets to run against.
 
-##### `filter_offline_targets`
+##### `filter_offline_nodes`
 
 Data type: `Boolean`
 
-Flag to determine if offline targets should be filtered out of the list of targets
+Flag to determine if offline nodes should be filtered out of the list of targets
 returned by this plan. If true, when running the <code>puppet_agent::version</code>
-check, any targets that return an error will be filtered out and ignored.
+check, any nodes that return an error will be filtered out and ignored.
 Those targets will not be returned in any of the data structures in the result of
-this plan. If false, then any targets that are offline will cause this plan to error
+this plan. If false, then any nodes that are offline will cause this plan to error
 immediately when performing the online check. This will result in a halt of the
 patching process.
 
@@ -1165,7 +1165,7 @@ Default file mode of installed scripts
 
 Default value: `undef`
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1205,9 +1205,9 @@ Default value: `undef`
 
 A very common requirement when running individual plans from the commandline is that
 each plan would need to perform the following steps:
- - Convert the TargetSpec from a string into an Array[Target] using <code>get_targets($targets)</code>
- - Check for targets that are online (calls plan <code>patching::check_puppet</code>
- - Gather facts about the targets
+ - Convert the TargetSpec from a string into an Array[Target] using <code>get_targets($nodes)</code>
+ - Check for nodes that are online (calls plan <code>patching::check_puppet</code>
+ - Gather facts about the nodes
 
 This plan combines all of that into one so that it can be reused in all of the other
 plans within this module. It also adds some smart checking so that, if multiple plans
@@ -1220,9 +1220,9 @@ only hapens once.
 
 ```puppet
 plan mymodule::myplan (
-  TargetSpec $targets
+  TargetSpec $nodes
 ) {
-  $targets = run_plan('patching::get_targets', targets => $targets)
+  $targets = run_plan('patching::get_targets', nodes => $ndoes)
   # do normal stuff with your $targets
 }
 ```
@@ -1231,7 +1231,7 @@ plan mymodule::myplan (
 
 The following parameters are available in the `patching::get_targets` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1277,7 +1277,7 @@ groups:
 
 The following parameters are available in the `patching::monitoring_solarwinds` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1287,7 +1287,7 @@ Set of targets to run against.
 
 Data type: `Enum['enable', 'disable']`
 
-What action to perform on the monitored targets:
+What action to perform on the monitored nodes:
 
   - `enable` Resumes monitoring alerts
   - 'disable' Supresses monitoring alerts
@@ -1348,7 +1348,7 @@ Default value: `false`
 
 When patching hosts it is common that you don't want to patch them all at the same time,
 for obvious reasons. To facilitate this we devised the concept of a "patching order".
-Patching order is a mechanism to allow targets to be organized into groups and
+Patching order is a mechanism to allow nodes to be organized into groups and
 then sorted so that a custom order can be defined for your specific usecase.
 
 The way one assigns a patching order to a target or group is using <code>vars</code>
@@ -1373,17 +1373,17 @@ groups:
 ```
 
 When the <code>patching_order</code> is defined at the group level, it is inherited
-by all targets within that group.
+by all nodes within that group.
 
 The reason this plan exists is that there is no concept of a "group" in the bolt
 runtime, so we need to artificially recreate them using our <code>patching_order</code>
 vars paradigm.
 
-An added benefit to this paradigm is that you may have grouped your targets logically
+An added benefit to this paradigm is that you may have grouped your nodes logically
 on a different dimension, say by application. If it's OK that multiple applications be
 patched at the same time, we can assign the same patching order to multiple groups
 in the inventory. Then, when run through this plan, they will be aggregated together
-into one large group of targets that will all be patched concurrently.
+into one large group of nodes that will all be patched concurrently.
 
 Example, app_xxx and app_zzz both can be patched at the same time, but app_yyy needs to go
 later in the process:
@@ -1419,10 +1419,10 @@ groups:
 ##### Basic usage
 
 ```puppet
-$ordered_groups = run_plan('patching::ordered_groups', targets => $targets)
+$ordered_groups = run_plan('patching::ordered_groups', nodes => $targets)
 $ordered_groups.each |$group_hash| {
   $group_order = $group_hash['order']
-  $group_targets = $group_hash['targets']
+  $group_nodes = $group_hash['nodes']
   # run your patching process for the group
 }
 ```
@@ -1431,7 +1431,7 @@ $ordered_groups.each |$group_hash| {
 
 The following parameters are available in the `patching::ordered_groups` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1459,12 +1459,12 @@ vars:
   patching_post_update_script_linux: /usr/local/bin/mysweetpatchingscript.sh
 
 groups:
-  # these targets will use the pre patching script defined in the vars above
+  # these nodes will use the pre patching script defined in the vars above
   - name: regular_nodes
     targets:
       - tomcat01.domain.tld
 
-  # these targets will use the customized patching script set for this group
+  # these nodes will use the customized patching script set for this group
   - name: sql_nodes
     vars:
       patching_post_update_script_linux: /bin/sqlpatching.sh
@@ -1477,27 +1477,27 @@ groups:
 ##### CLI - Basic usage
 
 ```puppet
-bolt plan run patching::post_update --targets all_hosts
+bolt plan run patching::post_update --nodes all_hosts
 ```
 
 ##### CLI - Custom scripts
 
 ```puppet
-bolt plan run patching::post_update --targets all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
+bolt plan run patching::post_update --nodes all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
 ```
 
 ##### Plan - Basic usage
 
 ```puppet
 run_plan('patching::post_update',
-         targets => $all_hosts)
+         nodes => $all_hosts)
 ```
 
 ##### Plan - Custom scripts
 
 ```puppet
 run_plan('patching::post_update',
-         targets        => $all_hosts,
+         nodes          => $all_hosts,
          script_linux   => '/my/sweet/script.sh',
          script_windows => 'C:\my\sweet\script.ps1')
 ```
@@ -1506,7 +1506,7 @@ run_plan('patching::post_update',
 
 The following parameters are available in the `patching::post_update` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1516,7 +1516,7 @@ Set of targets to run against.
 
 Data type: `String[1]`
 
-Path to the script that will be executed on Linux targets.
+Path to the script that will be executed on Linux nodes.
 
 Default value: '/opt/patching/bin/post_update.sh'
 
@@ -1524,7 +1524,7 @@ Default value: '/opt/patching/bin/post_update.sh'
 
 Data type: `String[1]`
 
-Path to the script that will be executed on Windows targets.
+Path to the script that will be executed on Windows nodes.
 
 Default value: 'C:\ProgramData\patching\bin\post_update.ps1'
 
@@ -1548,7 +1548,7 @@ patching::post_update
 
 The following parameters are available in the `patching::pre_post_update` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1564,7 +1564,7 @@ Name of the pre/post update task to execute.
 
 Data type: `Optional[String[1]]`
 
-Path to the script that will be executed on Linux targets.
+Path to the script that will be executed on Linux nodes.
 
 Default value: `undef`
 
@@ -1572,7 +1572,7 @@ Default value: `undef`
 
 Data type: `Optional[String[1]]`
 
-Path to the script that will be executed on Windows targets.
+Path to the script that will be executed on Windows nodes.
 
 Default value: `undef`
 
@@ -1606,12 +1606,12 @@ vars:
   patching_pre_update_script_linux: /usr/local/bin/mysweetpatchingscript.sh
 
 groups:
-  # these targets will use the pre patching script defined in the vars above
+  # these nodes will use the pre patching script defined in the vars above
   - name: regular_nodes
     targets:
       - tomcat01.domain.tld
 
-  # these targets will use the customized patching script set for this group
+  # these nodes will use the customized patching script set for this group
   - name: sql_nodes
     vars:
       patching_pre_update_script_linux: /bin/sqlpatching.sh
@@ -1624,27 +1624,27 @@ groups:
 ##### CLI - Basic usage
 
 ```puppet
-bolt plan run patching::pre_update --targets all_hosts
+bolt plan run patching::pre_update --nodes all_hosts
 ```
 
 ##### CLI - Custom scripts
 
 ```puppet
-bolt plan run patching::pre_update --targets all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
+bolt plan run patching::pre_update --nodes all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
 ```
 
 ##### Plan - Basic usage
 
 ```puppet
 run_plan('patching::pre_update',
-         targets => $all_hosts)
+         nodes => $all_hosts)
 ```
 
 ##### Plan - Custom scripts
 
 ```puppet
 run_plan('patching::pre_update',
-         targets        => $all_hosts,
+         nodes          => $all_hosts,
          script_linux   => '/my/sweet/script.sh',
          script_windows => 'C:\my\sweet\script.ps1')
 ```
@@ -1653,7 +1653,7 @@ run_plan('patching::pre_update',
 
 The following parameters are available in the `patching::pre_update` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1663,7 +1663,7 @@ Set of targets to run against.
 
 Data type: `String[1]`
 
-Path to the script that will be executed on Linux targets.
+Path to the script that will be executed on Linux nodes.
 
 Default value: '/opt/patching/bin/pre_update.sh'
 
@@ -1671,7 +1671,7 @@ Default value: '/opt/patching/bin/pre_update.sh'
 
 Data type: `String[1]`
 
-Path to the script that will be executed on Windows targets.
+Path to the script that will be executed on Windows nodes.
 
 Default value: 'C:\ProgramData\patching\bin\pre_update.ps1'
 
@@ -1695,7 +1695,7 @@ Under the hood it is executeing the `patching::puppet_facts` task.
 
 The following parameters are available in the `patching::puppet_facts` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1708,14 +1708,14 @@ is rebooting hosts. Sometimes hosts need to always be reboot, othertimes never r
 
 To provide this flexibility we created this function that wraps the `reboot` plan with
 a `strategy` that is controllable as a parameter. This provides flexibilty in
-rebooting specific targets in certain ways (by group). Along with the power to expand
+rebooting specific nodes in certain ways (by group). Along with the power to expand
 our strategy offerings in the future.
 
 #### Parameters
 
 The following parameters are available in the `patching::reboot_required` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1767,7 +1767,7 @@ TODO config variables
 
 The following parameters are available in the `patching::snapshot_vmware` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
@@ -1895,7 +1895,7 @@ that data.
 
 The following parameters are available in the `patching::update_history` plan.
 
-##### `targets`
+##### `nodes`
 
 Data type: `TargetSpec`
 
