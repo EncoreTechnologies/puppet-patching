@@ -3,6 +3,7 @@
 ---
 fixtures:
   forge_modules:
+    facts: 'puppetlabs/facts'
     puppet_agent: 'puppetlabs/puppet_agent'
     stdlib: 'puppetlabs/stdlib'
   symlinks:
