@@ -408,4 +408,4 @@ Write-Output $result_json
 Log-Timestamp -Path $log_file -Value "= Finished Update"
 Log-Timestamp -Path $log_file -Value "=================================================================================="
 
-exit $exit_code
+exit 0
