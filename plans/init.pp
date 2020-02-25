@@ -263,7 +263,7 @@ plan patching (
   ## Collect summary report
   run_plan('patching::update_history',
             nodes  => $targets,
-            format => 'csv')
+            format => 'none')
 
   ## Display final status
   return()
