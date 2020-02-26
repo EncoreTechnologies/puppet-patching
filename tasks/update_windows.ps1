@@ -330,82 +330,98 @@ function Update-Chocolatey(
 }
 
 ################################################################################
-
-if ($provider -eq '') {
-  $provider = 'all'
-}
-if ($log_file -eq '') {
-  $log_file = 'C:\ProgramData\patching\log\patching.log'
-}
-if ($result_file -eq '') {
-  $result_file = 'C:\ProgramData\patching\log\patching.json'
-}
-# create directories for log files, if they don't exist
-New-Item -ItemType Directory -Force -Path (Split-Path -Path $log_file) | Out-Null
-New-Item -ItemType Directory -Force -Path (Split-Path -Path $result_file) | Out-Null
-
-Log-Timestamp -Path $log_file -Value "=================================================================================="
-Log-Timestamp -Path $log_file -Value "= Starting Update"
-Log-Timestamp -Path $log_file -Value "provider = $provider"
-
-if ($provider -eq 'windows') {
-  $data = Update-Windows -log_file $log_file -_installdir $_installdir
-  $result = $data['result']
-  $exit_code = $data['exit_code']
-} elseif ($provider -eq 'chocolatey') {
-  $data = Update-Chocolatey -log_file $log_file -choco_required -$True
-  $result = $data['result']
-  $exit_code = $data['exit_code']
-} elseif ($provider -eq 'all') {
-  $result = @{'upgraded' = @();
-              'installed' = @();}
-  $exit_code = 0
-
-  # Windows Update
-  $data_windows = Update-Windows -log_file $log_file -_installdir $_installdir
-  $result_windows = $data_windows['result']
-  $exit_code_windows = $data_windows['exit_code']
-  if ($exit_code_windows -eq 0) {
-    $result['upgraded'] += @($result_windows['upgraded'])
-    $result['installed'] += @($result_windows['installed'])
+try {
+  if ($provider -eq '') {
+    $provider = 'all'
   }
-  else {
-    $result['error_windows'] = $result_windows
-    $exit_code = $exit_code_windows
+  if ($log_file -eq '') {
+    $log_file = 'C:\ProgramData\patching\log\patching.log'
   }
+  if ($result_file -eq '') {
+    $result_file = 'C:\ProgramData\patching\log\patching.json'
+  }
+  # create directories for log files, if they don't exist
+  New-Item -ItemType Directory -Force -Path (Split-Path -Path $log_file) | Out-Null
+  New-Item -ItemType Directory -Force -Path (Split-Path -Path $result_file) | Out-Null
 
-  # Chocolatey upgrade
-  $data_chocolatey = Update-Chocolatey -log_file $log_file -choco_required $False
-  $result_chocolatey = $data_chocolatey['result']
-  $exit_code_chocolatey = $data_chocolatey['exit_code']
-  if ($exit_code_chocolatey -eq 0) {
-    $result['upgraded'] += @($result_chocolatey['upgraded'])
-    $result['installed'] += @($result_chocolatey['installed'])
+  Log-Timestamp -Path $log_file -Value "=================================================================================="
+  Log-Timestamp -Path $log_file -Value "= Starting Update"
+  Log-Timestamp -Path $log_file -Value "provider = $provider"
+
+  if ($provider -eq 'windows') {
+    $data = Update-Windows -log_file $log_file -_installdir $_installdir
+    $result = $data['result']
+    $exit_code = $data['exit_code']
+  } elseif ($provider -eq 'chocolatey') {
+    $data = Update-Chocolatey -log_file $log_file -choco_required -$True
+    $result = $data['result']
+    $exit_code = $data['exit_code']
+  } elseif ($provider -eq 'all') {
+    $result = @{'upgraded' = @();
+                'installed' = @();}
+    $exit_code = 0
+
+    # Windows Update
+    $data_windows = Update-Windows -log_file $log_file -_installdir $_installdir
+    $result_windows = $data_windows['result']
+    $exit_code_windows = $data_windows['exit_code']
+    if ($exit_code_windows -eq 0) {
+      $result['upgraded'] += @($result_windows['upgraded'])
+      $result['installed'] += @($result_windows['installed'])
+    }
+    else {
+      $result['error_windows'] = $result_windows
+      $exit_code = $exit_code_windows
+    }
+    Log-Timestamp -Path $log_file -Value "exit_code_windows = $exit_code_windows"
+
+    # Chocolatey upgrade
+    $data_chocolatey = Update-Chocolatey -log_file $log_file -choco_required $False
+    $result_chocolatey = $data_chocolatey['result']
+    $exit_code_chocolatey = $data_chocolatey['exit_code']
+    if ($exit_code_chocolatey -eq 0) {
+      $result['upgraded'] += @($result_chocolatey['upgraded'])
+      $result['installed'] += @($result_chocolatey['installed'])
+    }
+    else {
+      $result['error_chocolatey'] = $result_chocolatey
+      $exit_code = $exit_code_chocolatey
+    }
+    Log-Timestamp -Path $log_file -Value "exit_code_chocolatey = $exit_code_chocolatey"
+  } else {
+    Write-Error "Unknown provider! Expected 'windows', 'chocolatey', 'all'. Got: $provider"
+    exit 100
   }
-  else {
-    $result['error_chocolatey'] = $result_chocolatey
-    $exit_code = $exit_code_chocolatey
-  }
-} else {
-  Write-Error "Unknown provider! Expected 'windows', 'chocolatey', 'all'. Got: $provider"
-  exit 100
+  
+  Log-Timestamp -Path $log_file -Value "exit_code = $exit_code"
+
+  # convert results to JSON
+  $result_json = ConvertTo-Json -Depth 100 $result
+
+  # write results to results file
+  Log-Timestamp -Path $log_file -Value "Adding results to results file..."
+  Add-Content -Path $result_file -Value $result_json
+
+  # write results to stdout
+  Log-Timestamp -Path $log_file -Value "Writing results to stdout"
+  Write-Output $result_json
+
+  Log-Timestamp -Path $log_file -Value "= Finished Update"
+  Log-Timestamp -Path $log_file -Value "=================================================================================="
+
+  exit $exit_code
+} Catch {
+  $exception_str = $_ | Out-String
+  Log-Timestamp -Path $log_file -Value "********** ERROR in main task ************"
+  Log-Timestamp -Path $log_file -Value $exception_str
+  ConvertTo-Json -Depth 100 @{ "_error" = @{
+                                 "msg" = "Exception occurred.";
+                                 "kind" = "puppetlabs.tasks/task-error";
+                                 "details" = @{ "exitcode" = 1;
+                                                "exception" = $exception_str;
+                                              };
+                               };
+                             };
+  exit 1
 }
 
-# convert results to JSON
-$result_json = ConvertTo-Json -Depth 100 $result
-
-# if the result file does not exist, create it
-if (-not (Test-Path $result_file)) {
-  New-Item -ItemType "file" -Path (Split-Path -Path $result_file) -Name (Split-Path -Path $result_file -Leaf) | Out-Null
-}
-
-# write results to results file
-Add-Content -Path $result_file -Value $result_json
-
-# write results to stdout
-Write-Output $result_json
-
-Log-Timestamp -Path $log_file -Value "= Finished Update"
-Log-Timestamp -Path $log_file -Value "=================================================================================="
-
-exit 0
