@@ -36,7 +36,7 @@ plan patching::reboot_required (
   String $message = 'NOTICE: This system is currently being updated.',
   Boolean $noop   = false,
 ) {
-  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   $_strategy = pick($group_vars['patching_reboot_strategy'], $strategy)
   $_message = pick($group_vars['patching_reboot_message'], $message)
@@ -61,8 +61,7 @@ plan patching::reboot_required (
       'only_required': {
         if !$targets_reboot_required.empty() {
           $targets_reboot_attempted = $targets_reboot_required
-          $reboot_resultset = run_plan('reboot',
-                                        targets           => $targets_reboot_required,
+          $reboot_resultset = run_plan('reboot', $targets_reboot_required,
                                         reconnect_timeout => 300,
                                         message           => $_message,
                                         _catch_errors     => true)
@@ -74,8 +73,7 @@ plan patching::reboot_required (
       }
       'always': {
         $targets_reboot_attempted = $targets
-        $reboot_resultset = run_plan('reboot',
-                                      targets           => $targets,
+        $reboot_resultset = run_plan('reboot', $targets,
                                       reconnect_timeout => 300,
                                       message           => $_message,
                                       _catch_errors     => true)

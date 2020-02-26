@@ -41,7 +41,7 @@ plan patching::deploy_scripts(
   Optional[String] $group        = undef,
   Optional[String] $mode         = undef,
 ) {
-  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
   return apply($_targets) {
     include patching::params
     class { 'patching':

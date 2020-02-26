@@ -37,15 +37,13 @@
 #   bolt plan run patching::check_puppet --targets linux_hosts filter_offline_targets=true
 #
 # @example Plan - Basic usage (error if any targets are offline)
-#   $results = run_plan('patching::check_puppet',
-#                       targets => $linux_hosts)
+#   $results = run_plan('patching::check_puppet', $linux_hosts)
 #   $targets_has_puppet = $results['has_puppet']
 #   $targets_no_puppet = $results['no_puppet']
 #   $targets_all = $results['all']
 #
 # @example Plan - Filter offline targets (only return online targets)
-#   $results = run_plan('patching::check_puppet',
-#                       targets                => $linux_hosts,
+#   $results = run_plan('patching::check_puppet', $linux_hosts,
 #                       filter_offline_targets => true)
 #   $targets_online_has_puppet = $results['has_puppet']
 #   $targets_online_no_puppet = $results['no_puppet']
@@ -74,13 +72,11 @@ plan patching::check_puppet (
   if !$targets_with_puppet.empty() {
     # run `puppet facts` on targets with Puppet because it returns a more complete
     # set of facts than just running `facter`
-    run_plan('patching::puppet_facts',
-              targets => $targets_with_puppet)
+    run_plan('patching::puppet_facts', $targets_with_puppet)
   }
   if !$targets_no_puppet.empty() {
     # run `facter` if it's available otherwise get basic facts
-    run_plan('facts',
-              targets => $targets_no_puppet)
+    run_plan('facts', $targets_no_puppet)
   }
 
   return({

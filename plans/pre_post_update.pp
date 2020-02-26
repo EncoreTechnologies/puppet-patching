@@ -27,8 +27,7 @@ plan patching::pre_post_update (
   Boolean             $noop           = false,
 ) {
   out::message("pre_post_update - noop = ${noop}")
-  $_targets = run_plan('patching::get_targets',
-                        targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
 
   # split into linux vs Windows
   $targets_linux = $_targets.filter |$t| { facts($t)['os']['family'] != 'windows' }
