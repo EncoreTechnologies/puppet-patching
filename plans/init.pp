@@ -109,14 +109,13 @@ plan patching (
   Boolean           $noop                 = false,
 ) {
   ## Filter offline targets
-  $check_puppet_result = run_plan('patching::check_puppet',
-                                  targets                => $targets,
+  $check_puppet_result = run_plan('patching::check_puppet', $targets,
                                   filter_offline_targets => $filter_offline_targets)
   # use all targets, both with and without puppet
   $_targets = $check_puppet_result['all']
 
   ## Group all of the targets based on their 'patching_order' var
-  $ordered_groups = run_plan('patching::ordered_groups', targets => $_targets)
+  $ordered_groups = run_plan('patching::ordered_groups', $_targets)
 
   # we can now use the $ordered_keys array above to index into our $ordered_hash
   # pretty cool huh?
@@ -166,8 +165,7 @@ plan patching (
               _noop => $noop)
 
     ## Check for updates on hosts
-    $available_results = run_plan('patching::available_updates',
-                                  targets => $ordered_targets,
+    $available_results = run_plan('patching::available_updates', $ordered_targets,
                                   format  => 'pretty',
                                   noop    => $noop)
     $update_targets = $available_results['has_updates']
@@ -177,24 +175,21 @@ plan patching (
 
     ## Disable monitoring
     if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
-      run_plan($monitoring_plan_group,
-                targets => $update_targets,
-                action  => 'disable',
-                noop    => $noop)
+      run_plan($monitoring_plan_group, $update_targets,
+                action => 'disable',
+                noop   => $noop)
     }
 
     ## Create VM snapshots
     if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled'{
-      run_plan($snapshot_plan_group,
-                targets => $update_targets,
-                action  => 'create',
-                noop    => $noop)
+      run_plan($snapshot_plan_group, $update_targets,
+                action => 'create',
+                noop   => $noop)
     }
 
     ## Run pre-patching script.
-    run_plan($pre_update_plan_group,
-              targets => $update_targets,
-              noop    => $noop)
+    run_plan($pre_update_plan_group, $update_targets,
+              noop => $noop)
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
@@ -218,23 +213,20 @@ plan patching (
 
     if !$update_ok_targets.empty {
       ## Run post-patching script.
-      run_plan($post_update_plan_group,
-                targets => $update_ok_targets,
-                noop    => $noop)
+      run_plan($post_update_plan_group, $update_ok_targets,
+                noop => $noop)
 
       ## Check if reboot required and reboot if true.
-      run_plan('patching::reboot_required',
-                targets  => $update_ok_targets,
+      run_plan('patching::reboot_required', $update_ok_targets,
                 strategy => $reboot_strategy_group,
                 message  => $reboot_message_group,
                 noop     => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
-        run_plan($snapshot_plan_group,
-                  targets => $update_ok_targets,
-                  action  => 'delete',
-                  noop    => $noop)
+        run_plan($snapshot_plan_group, $update_ok_targets,
+                  action => 'delete',
+                  noop   => $noop)
       }
     }
     # else {
@@ -243,10 +235,9 @@ plan patching (
 
     ## enable monitoring
     if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled'  {
-      run_plan($monitoring_plan_group,
-                targets => $update_targets,
-                action  => 'enable',
-                noop    => $noop)
+      run_plan($monitoring_plan_group, $update_targets,
+                action => 'enable',
+                noop   => $noop)
     }
   }
 
@@ -261,9 +252,8 @@ plan patching (
   wait_until_available($_targets, wait_time => $reboot_wait)
 
   ## Collect summary report
-  run_plan('patching::update_history',
-            targets => $_targets,
-            format  => 'pretty')
+  run_plan('patching::update_history', $_targets,
+            format => 'pretty')
 
   ## Display final status
   return()

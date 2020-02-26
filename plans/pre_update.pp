@@ -52,12 +52,10 @@
 #   bolt plan run patching::pre_update --targets all_hosts script_linux='/my/sweet/script.sh' script_windows='C:\my\sweet\script.ps1'
 #
 # @example Plan - Basic usage
-#   run_plan('patching::pre_update',
-#            targets => $all_hosts)
+#   run_plan('patching::pre_update', $all_hosts)
 #
 # @example Plan - Custom scripts
-#   run_plan('patching::pre_update',
-#            targets        => $all_hosts,
+#   run_plan('patching::pre_update', $all_hosts,
 #            script_linux   => '/my/sweet/script.sh',
 #            script_windows => 'C:\my\sweet\script.ps1')
 #
@@ -67,13 +65,12 @@ plan patching::pre_update (
   String[1] $script_windows = 'C:\ProgramData\patching\bin\pre_update.ps1',
   Boolean   $noop           = false,
 ) {
-  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   $_script_linux = pick($group_vars['patching_pre_update_script_linux'], $script_linux)
   $_script_windows = pick($group_vars['patching_pre_update_script_windows'], $script_windows)
 
-  return run_plan('patching::pre_post_update',
-                  targets        => $_targets,
+  return run_plan('patching::pre_post_update', $_targets,
                   task           => 'patching::pre_update',
                   script_linux   => $_script_linux,
                   script_windows => $_script_windows,

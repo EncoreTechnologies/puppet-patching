@@ -34,7 +34,7 @@ plan patching::update_history (
   # TODO JSON outputs
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
 ) {
-  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
 
   ## Collect update history
   if $history {

@@ -20,7 +20,7 @@
 #   plan mymodule::myplan (
 #     TargetSpec $targets
 #   ) {
-#     $targets = run_plan('patching::get_targets', targets => $targets)
+#     $targets = run_plan('patching::get_targets', $targets)
 #     # do normal stuff with your $targets
 #   }
 plan patching::get_targets (
@@ -29,7 +29,7 @@ plan patching::get_targets (
   $_targets = get_targets($targets)
   $target_first_facts = facts($_targets[0])
   if !$target_first_facts['os'] or !$target_first_facts['os']['family'] {
-    run_plan('patching::check_puppet', targets => $_targets)
+    run_plan('patching::check_puppet', $_targets)
   }
   return $_targets
 }

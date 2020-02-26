@@ -37,12 +37,10 @@
 #   bolt plan run patching::available_updates --targets linux_hosts format=csv
 #
 # @example Plan - Basic Usage
-#   run_plan('patching::available_updates',
-#            targets => $linux_hosts)
+#   run_plan('patching::available_updates', $linux_hosts)
 #
 # @example Plan - Get available update information in CSV format for creating reports
-#   run_plan('patching::available_updates',
-#            targets  => $linux_hosts,
+#   run_plan('patching::available_updates', $linux_hosts,
 #            format => 'csv')
 #
 plan patching::available_updates (

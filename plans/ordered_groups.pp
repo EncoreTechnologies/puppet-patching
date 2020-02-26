@@ -80,7 +80,7 @@
 #  so we wanted this to be very concrete.
 #
 # @example Basic usage
-#   $ordered_groups = run_plan('patching::ordered_groups', targets => $targets)
+#   $ordered_groups = run_plan('patching::ordered_groups', $targets)
 #   $ordered_groups.each |$group_hash| {
 #     $group_order = $group_hash['order']
 #     $group_targets = $group_hash['targets']

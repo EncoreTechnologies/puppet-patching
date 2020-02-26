@@ -78,7 +78,7 @@ plan patching::monitoring_solarwinds (
   Optional[String[1]] $monitoring_name_property = undef,
   Boolean    $noop              = false,
 ) {
-  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   $_target_name_property = pick($target_name_property,
                                 $group_vars['patching_monitoring_target_name_property'],

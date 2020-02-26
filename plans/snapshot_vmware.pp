@@ -75,7 +75,7 @@ plan patching::snapshot_vmware (
   Optional[Boolean] $snapshot_quiesce     = undef,
   Boolean $noop                 = false,
 ) {
-  $_targets = run_plan('patching::get_targets', targets => $targets)
+  $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   # Order: CLI > Config > Default
   $_target_name_property = pick($target_name_property,
