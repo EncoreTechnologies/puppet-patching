@@ -1,4 +1,4 @@
-# @summary Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
+:was# @summary Querys a nodes operating system to determine if a reboot is required and then reboots the nodes that require rebooting.
 #
 # Patching in different environments comes with various unique requirements, one of those
 # is rebooting hosts. Sometimes hosts need to always be reboot, othertimes never rebooted.
@@ -31,10 +31,11 @@
 #    - `resultset` : results from the `reboot` plan for the attempted hosts (potentially an empty `ResultSet`)
 #
 plan patching::reboot_required (
-  TargetSpec $nodes,
+  TargetSpec        $nodes,
   Enum['only_required', 'never', 'always'] $strategy = 'only_required',
-  String $message = 'NOTICE: This system is currently being updated.',
-  Boolean $noop   = false,
+  String            $message     = 'NOTICE: This system is currently being updated.',
+  Boolean           $noop        = false,
+  Optional[Integer] $reboot_wait = 300,
 ) {
   $targets = run_plan('patching::get_targets', nodes => $nodes)
   $group_vars = $targets[0].vars
@@ -63,7 +64,7 @@ plan patching::reboot_required (
           $nodes_reboot_attempted = $nodes_reboot_required
           $reboot_resultset = run_plan('reboot',
                                         nodes             => $nodes_reboot_required,
-                                        reconnect_timeout => 300,
+                                        reconnect_timeout => $reboot_wait,
                                         message           => $_message,
                                         _catch_errors     => true)
         }
@@ -76,7 +77,7 @@ plan patching::reboot_required (
         $nodes_reboot_attempted = $targets
         $reboot_resultset = run_plan('reboot',
                                       nodes             => $nodes,
-                                      reconnect_timeout => 300,
+                                      reconnect_timeout => $reboot_wait,
                                       message           => $_message,
                                       _catch_errors     => true)
       }
