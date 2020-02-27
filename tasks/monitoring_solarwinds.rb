@@ -9,16 +9,16 @@ class MonitoringSolarwindsTask < TaskHelper
     end
   end
 
-  def task(nodes: nil,
+  def task(targets: nil,
            name_property: nil,
            action: nil,
            **kwargs)
     add_module_lib_paths(kwargs[:_installdir])
     require 'puppet_x/encore/patching/orion_client'
 
-    # nodes can be a string (one target) or an array of targets
+    # targets can be a string (one target) or an array of targets
     # if it's a string (single target) convert it to an array so we can treat them the same
-    nodes = [nodes] unless nodes.is_a?(Array)
+    targets = [targets] unless targets.is_a?(Array)
 
     # set name_property to a default of 'DNS' if it isn't specified
     name_property = 'DNS' if name_property.nil?
@@ -33,25 +33,25 @@ class MonitoringSolarwindsTask < TaskHelper
                                                password: remote_target[:password],
                                                port: remote_target.fetch(:port, 17_778))
 
-    missing_nodes = []
-    uri_array = nodes.map do |n|
-      sw_nodes = orion.get_node(n, name_property: name_property)
+    missing_targets = []
+    uri_array = targets.map do |t|
+      sw_nodes = orion.get_node(t, name_property: name_property)
 
       if sw_nodes.empty?
-        missing_nodes << n
+        missing_targets << t
         next
       elsif sw_nodes.length > 1
-        raise ArgumentError, "Found [#{sw_nodes.length}] nodes matching '#{n}': #{sw_nodes.to_json}"
+        raise ArgumentError, "Found [#{sw_nodes.length}] targets matching '#{t}': #{sw_nodes.to_json}"
       end
 
       # extract the URI property for our good nodes
       sw_nodes.map { |sw_n| sw_n['Uri'] }
     end
 
-    # print all of the missing nodes at the same time to make debugging easier
-    unless missing_nodes.empty?
-      missing_pretty = JSON.pretty_generate(missing_nodes.sort)
-      raise ArgumentError, "Unable to find the following nodes in SolarWinds using the name property '#{name_property}': #{missing_pretty}"
+    # print all of the missing targets at the same time to make debugging easier
+    unless missing_targets.empty?
+      missing_pretty = JSON.pretty_generate(missing_targets.sort)
+      raise ArgumentError, "Unable to find the following targets in SolarWinds using the name property '#{name_property}': #{missing_pretty}"
     end
 
     uri_array.flatten!

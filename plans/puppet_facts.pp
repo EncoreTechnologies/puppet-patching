@@ -1,4 +1,4 @@
-# @summary Plan thatr runs 'puppet facts' on the nodes and sets them as facts on the Target objects.
+# @summary Plan thatr runs 'puppet facts' on the targets and sets them as facts on the Target objects.
 #
 # This is inspired by: https://github.com/puppetlabs/puppetlabs-facts/blob/master/plans/init.pp
 # Except instead of just running `facter` it runs `puppet facts` to set additional
@@ -6,15 +6,15 @@
 #
 # Under the hood it is executeing the `patching::puppet_facts` task.
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 #
 # @return [ResultSet] The results from the execution of the `patching::puppet_facts` task.
 #
 plan patching::puppet_facts(
-  TargetSpec $nodes
+  TargetSpec $targets
 ) {
-  $result_set = run_task('patching::puppet_facts', $nodes)
+  $result_set = run_task('patching::puppet_facts', $targets)
   # puppet facts returns a structure like:
   #   name: mynodename.domain.tld
   #   values:
