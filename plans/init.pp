@@ -6,15 +6,15 @@
 # We fully expect others to take this workflow as a build-block and customize
 # it to meet their needs.
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 #
-# @param [Boolean] filter_offline_nodes
-#   Flag to determine if offline nodes should be filtered out of the list of targets
+# @param [Boolean] filter_offline_targets
+#   Flag to determine if offline targets should be filtered out of the list of targets
 #   returned by this plan. If true, when running the <code>puppet_agent::version</code>
-#   check, any nodes that return an error will be filtered out and ignored.
+#   check, any targets that return an error will be filtered out and ignored.
 #   Those targets will not be returned in any of the data structures in the result of
-#   this plan. If false, then any nodes that are offline will cause this plan to error
+#   this plan. If false, then any targets that are offline will cause this plan to error
 #   immediately when performing the online check. This will result in a halt of the
 #   patching process.
 #
@@ -63,39 +63,39 @@
 #   you can run the `patching::snapshot_vmware action=delete` sometime in the future.
 #
 # @param [Optional[Integer]] reboot_wait
-#   Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one 
+#   Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
 #   of the groups affects the availability of a previous group.
 #   Two use cases here:
-#    1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the 
+#    1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
 #       VMs to go offline and we need to wait for those child VMs to come back up before
 #       collecting history metrics.
 #    2. A later group is a linux router. In this instance maybe the patching of the linux router
 #       affects the reachability of previous hosts.
-# 
+#
 # @param [Boolean] noop
 #   Flag to enable noop mode for the underlying plans and tasks.
 #
 # @example CLI - Basic usage
-#   bolt plan run patching --nodes linux_patching,windows_patching
+#   bolt plan run patching --targets linux_patching,windows_patching
 #
 # @example CLI - Disable snapshot creation, because an old patching run failed and we have an old snapshot to rely on
-#   bolt plan run patching --nodes linux_patching,windows_patching snapshot_create=false
+#   bolt plan run patching --targets linux_patching,windows_patching snapshot_create=false
 #
 # @example CLI - Disable snapshot deletion, because we want to wait for app teams to test.
-#   bolt plan run patching --nodes linux_patching,windows_patching snapshot_delete=true
+#   bolt plan run patching --targets linux_patching,windows_patching snapshot_delete=true
 #
 #   # sometime in the future, delete the snapshots
-#   bolt plan run patching::snapshot_vmare --nodes linux_patching,windows_patching action='delete'
+#   bolt plan run patching::snapshot_vmare --targets linux_patching,windows_patching action='delete'
 #
 # @example CLI - Customize the pre/post update plans to use your own module's version
-#   bolt plan run patching --nodes linux_patching pre_update_plan='mymodule::pre_update' post_update_plan='mymodule::post_update'
+#   bolt plan run patching --targets linux_patching pre_update_plan='mymodule::pre_update' post_update_plan='mymodule::post_update'
 #
 # @example CLI - Wait 10 minutes for systems to become available as some systems take longer to reboot.
-#   bolt plan run patching --nodes linux_patching,windows_patching --reboot_wait 600
+#   bolt plan run patching --targets linux_patching,windows_patching --reboot_wait 600
 #
 plan patching (
-  TargetSpec       $nodes,
-  Boolean           $filter_offline_nodes = false,
+  TargetSpec        $targets,
+  Boolean           $filter_offline_targets = false,
   Optional[Boolean] $monitoring_enabled   = undef,
   Optional[String]  $monitoring_plan      = undef,
   Optional[String]  $pre_update_plan      = undef,
@@ -108,28 +108,27 @@ plan patching (
   Optional[Integer] $reboot_wait          = 300,
   Boolean           $noop                 = false,
 ) {
-  ## Filter offline nodes
-  $check_puppet_result = run_plan('patching::check_puppet',
-                                  nodes                => $nodes,
-                                  filter_offline_nodes => $filter_offline_nodes)
+  ## Filter offline targets
+  $check_puppet_result = run_plan('patching::check_puppet', $targets,
+                                  filter_offline_targets => $filter_offline_targets)
   # use all targets, both with and without puppet
-  $targets = $check_puppet_result['all']
+  $_targets = $check_puppet_result['all']
 
-  ## Group all of the nodes based on their 'patching_order' var
-  $ordered_groups = run_plan('patching::ordered_groups', nodes => $targets)
+  ## Group all of the targets based on their 'patching_order' var
+  $ordered_groups = run_plan('patching::ordered_groups', $_targets)
 
   # we can now use the $ordered_keys array above to index into our $ordered_hash
   # pretty cool huh?
   $ordered_groups.each |$group_hash| {
-    $ordered_nodes = $group_hash['nodes']
-    if $ordered_nodes.empty {
-      fail_plan("Nodes not assigned the var: 'patching_order'")
+    $ordered_targets = $group_hash['targets']
+    if $ordered_targets.empty {
+      fail_plan("Targets not assigned the var: 'patching_order'")
     }
 
     # override configurable parameters on a per-group basis
     # if there is no customization for this group, it defaults to the global setting
     # set at the plan level above
-    $group_vars = $ordered_nodes[0].vars
+    $group_vars = $ordered_targets[0].vars
     # Prescedence: CLI > Config > Default
     $monitoring_plan_group = pick($monitoring_plan,
                                   $group_vars['patching_monitoring_plan'],
@@ -162,14 +161,13 @@ plan patching (
     # do normal patching
 
     ## Update patching cache (yum update, apt-get update, etc)
-    run_task('patching::cache_update', $ordered_nodes,
+    run_task('patching::cache_update', $ordered_targets,
               _noop => $noop)
 
     ## Check for updates on hosts
-    $available_results = run_plan('patching::available_updates',
-                                  nodes  => $ordered_nodes,
-                                  format => 'pretty',
-                                  noop   => $noop)
+    $available_results = run_plan('patching::available_updates', $ordered_targets,
+                                  format  => 'pretty',
+                                  noop    => $noop)
     $update_targets = $available_results['has_updates']
     if $update_targets.empty {
       next()
@@ -177,24 +175,21 @@ plan patching (
 
     ## Disable monitoring
     if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
-      run_plan($monitoring_plan_group,
-                nodes  => $update_targets,
+      run_plan($monitoring_plan_group, $update_targets,
                 action => 'disable',
                 noop   => $noop)
     }
 
     ## Create VM snapshots
     if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled'{
-      run_plan($snapshot_plan_group,
-                nodes  => $update_targets,
+      run_plan($snapshot_plan_group, $update_targets,
                 action => 'create',
                 noop   => $noop)
     }
 
     ## Run pre-patching script.
-    run_plan($pre_update_plan_group,
-              nodes => $update_targets,
-              noop  => $noop)
+    run_plan($pre_update_plan_group, $update_targets,
+              noop => $noop)
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
@@ -218,21 +213,18 @@ plan patching (
 
     if !$update_ok_targets.empty {
       ## Run post-patching script.
-      run_plan($post_update_plan_group,
-                nodes => $update_ok_targets,
-                noop  => $noop)
+      run_plan($post_update_plan_group, $update_ok_targets,
+                noop => $noop)
 
       ## Check if reboot required and reboot if true.
-      run_plan('patching::reboot_required',
-                nodes    => $update_ok_targets,
+      run_plan('patching::reboot_required', $update_ok_targets,
                 strategy => $reboot_strategy_group,
                 message  => $reboot_message_group,
                 noop     => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
-        run_plan($snapshot_plan_group,
-                  nodes  => $update_ok_targets,
+        run_plan($snapshot_plan_group, $update_ok_targets,
                   action => 'delete',
                   noop   => $noop)
       }
@@ -243,8 +235,7 @@ plan patching (
 
     ## enable monitoring
     if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled'  {
-      run_plan($monitoring_plan_group,
-                nodes  => $update_targets,
+      run_plan($monitoring_plan_group, $update_targets,
                 action => 'enable',
                 noop   => $noop)
     }
@@ -253,16 +244,15 @@ plan patching (
   ## Re-establish all targets availability after reboot
   # This is necessary in case one of the groups affects the availability of a previous group.
   # Two use cases here:
-  #  1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the 
+  #  1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
   #     VMs to go offline and we need to wait for those child VMs to come back up before
   #     collecting history metrics.
   #  2. A later group is a linux router. In this instance maybe the patching of the linux router
   #     affects the reachability of previous hosts.
-  wait_until_available($targets, wait_time => $reboot_wait)
+  wait_until_available($_targets, wait_time => $reboot_wait)
 
   ## Collect summary report
-  run_plan('patching::update_history',
-            nodes  => $targets,
+  run_plan('patching::update_history', $_targets,
             format => 'pretty')
 
   ## Display final status
