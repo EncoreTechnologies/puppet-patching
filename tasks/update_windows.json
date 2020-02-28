@@ -18,11 +18,11 @@
       "type": "Optional[Array[String]]"
     },
     "result_file": {
-      "description": "Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.json",
+      "description": "Log file for patching results. This file will contain the JSON output that is returned from these tasks. The data is written to a log file so that you can collect it later by running patching::history. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/log/patching.json",
       "type": "Optional[String[1]]"
     },
     "log_file": {
-      "description": "Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/patching.log",
+      "description": "Log file for OS specific output during the patching process. This file will contain OS specific (RHEL/CentOS = yum history, Debian/Ubuntu = /var/log/apt/history.log, Windows = ??) data that this task used to generate its output. If no script name is passed on Linux hosts a default is used: /var/log/patching.log. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/patching/log/patching.log",
       "type": "Optional[String[1]]"
     }
   }
