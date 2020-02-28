@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* use 'name' instead of 'host' to better represent targets in inventory
+
+  Contributed by Vadym Chepkov (@vchepkov)
 
 ## Release 1.0.0 (2020-02-28)
 
