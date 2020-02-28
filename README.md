@@ -13,21 +13,25 @@
 
 - [Description](#description)
 - [Setup](#setup)
-  - [Setup Requirements](#setup-requirements)
-  - [Getting started](#getting-started)
+    - [Setup Requirements](#setup-requirements)
+    - [Quick Start](#quick-start)
 - [Architecture](#architecture)
 - [Design](#design)
 - [Patching Workflow](#patching-workflow)
 - [Usage](#usage)
-  - [Check for available updates](#check-for-available-updates)
-  - [Create snapshots](#create-snapshots)
-  - [Perform pre-patching checks and actions](#perform-pre-patching-checks-and-actions)
-  - [Run a the full patching workflow end-to-end](#run-a-the-full-patching-workflow-end-to-end)
+    - [Check for available updates](#check-for-available-updates)
+    - [Disable monitoring](#disable-monitoring)
+    - [Create snapshots](#create-snapshots)
+    - [Perform pre-patching checks and actions](#perform-pre-patching-checks-and-actions)
+    - [Deploying pre/post patching scripts](#deploying-prepost-patching-scripts)
+    - [Run a the full patching workflow end-to-end](#run-a-the-full-patching-workflow-end-to-end)
+    - [Patching with Puppet Enterprise (PE)](#patching-with-puppet-enterprise-pe)
 - [Configuration Options](#configuration-options)
 - [Reference](#reference)
 - [Limitations](#limitations)
 - [Development](#development)
 - [Contributors](#contributors)
+
 
 ## Description
 
@@ -234,6 +238,35 @@ Then, for each group:
 ``` shell
 bolt plan run patching --nodes group_a
 ```
+
+### Patching with Puppet Enterprise (PE)
+
+When executing patching with Puppet Enterprise Bolt will use the `pcp` transport.
+This transport has a default timeout of `1000` seconds. Windows patching is MUCH
+slower than this and the timeouts will need to be increased. 
+
+If you do not modify this default timeout, you may experience the following error
+in the `patching::update` task or any other long running task:
+
+``` yaml
+Starting: task patching::update on windowshost.company.com
+Finished: task patching::update with 1 failure in 1044.63 sec
+The following hosts failed during update:
+[{"target":"windowshost.company.com","action":"task","object":"patching::update","status":"failure","result":{"_output":"null","_error":{"kind":"puppetlabs.tasks/task-error","issue_code":"TASK_ERROR","msg":"The task failed with exit code unknown","details":{"exit_code":"unknown"}}},"node":"windowshost.company.com"}]
+```
+
+Below is an example `bolt.yaml` with the settings modified:
+
+``` yaml
+---
+pcp:
+  # 2 hours = 120 minutes = 7,200 seconds
+  job-poll-timeout: 7200
+```
+
+For a complete reference of the available settings for the `pcp` transport see 
+[bolt configuration reference](https://puppet.com/docs/bolt/latest/bolt_configuration_reference.html)
+documentation.
 
 ## Configuration Options
 
