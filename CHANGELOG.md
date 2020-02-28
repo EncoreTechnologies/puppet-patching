@@ -18,6 +18,10 @@ All notable changes to this project will be documented in this file.
 * Added documentation for patching with PE and `pcp` timeouts. (Documentation) #28
 
   Contributed by Nick Maludy (@nmaludy)
+  
+* PDK sync to 1.17.0 template (Enhancement)
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 0.5.0 (2020-02-20)
 
