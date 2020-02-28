@@ -211,6 +211,34 @@ function Convert-PSObjectToHashtable ([Parameter(ValueFromPipeline)]
 
 ################################################################################
 
+function Create-DirectoryIfNotExists(
+  [string]$Path
+) {
+  if (Test-Path -Path $Path) {
+    # path already exists
+  } else {
+    New-Item -ItemType Directory -Path $Path
+  }
+}
+
+function Create-FileIfNotExists(
+  [string]$Path
+) {
+  if ([System.IO.Path]::GetExtension($Path)) {
+    $dir = [System.IO.Path]::GetDirectoryName($Path)
+    Create-DirectoryIfNotExists -Path $Dir
+    if (Test-Path -Path $Path) {
+      # path already exists
+    } else {
+      New-Item -ItemType File -Path $Path
+    }
+  } else {
+    Create-DirectoryIfNotExists -Path $Path
+  }
+}
+
+################################################################################
+
 function Log-Timestamp(
   [string]$Path,
   [string]$Value

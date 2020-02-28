@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 
   Contributed by Nick Maludy (@nmaludy)
 
+* Fixed inconsistent documentation for result file location, proper location is: `C:/ProgramData/patching/log/patching.json`. (Bug Fix) #28
+
+  Contributed by Nick Maludy (@nmaludy)
+
 * Added documentation for patching with PE and `pcp` timeouts. (Documentation) #28
 
   Contributed by Nick Maludy (@nmaludy)
