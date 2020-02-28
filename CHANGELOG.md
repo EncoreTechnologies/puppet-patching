@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+
+## Release 1.0.0 (2020-02-28)
+
 * **BREAKING CHANGE** 
   Converted from `nodes` to `targets` for all plans and tasks. This is in support of Bolt `2.0`.
   Any calling plans or CLI will need to use the `targets` parameter to pass in the hosts
