@@ -3,10 +3,10 @@
 # Online checks are done querying for the node's Puppet version using the
 # <code>puppet_agent::version</code> task.
 # This plan is designed to be used ad-hoc as a quick health check of your inventory.
-# It is the intention of this plan to be used as "first pass" when onboarding new nodes
+# It is the intention of this plan to be used as "first pass" when onboarding new targets
 # into a Bolt rotation.
-# One would build their inventory file of all nodes from their trusted data sources.
-# Then take the inventory files and run this plan against them to isolate problem nodes
+# One would build their inventory file of all targets from their trusted data sources.
+# Then take the inventory files and run this plan against them to isolate problem targets
 # and remediate them.
 # Once this plan runs successfuly on your inventory, you know that Bolt can connect
 # and can begin the patching proces.
@@ -24,20 +24,20 @@
 #      The idea here is to give the end-user a easily digestible summary so that action
 #      can be taken to remediate these hosts.
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 #
 # @example CLI - Basic usage
 #   bolt plan run patching::check_online
 #
 plan patching::check_online (
-  TargetSpec $nodes,
+  TargetSpec $targets,
 ) {
-  $targets = get_targets($nodes)
-  ## This will check all nodes to verify online by checking their Puppet agent version
-  $targets_version = run_task('puppet_agent::version', $targets,
+  $_targets = get_targets($targets)
+  ## This will check all targets to verify online by checking their Puppet agent version
+  $targets_version = run_task('puppet_agent::version', $_targets,
                               _catch_errors => true)
-  # if we're filtering out offline nodes, then only accept the ok_set from the task above
+  # if we're filtering out offline targets, then only accept the ok_set from the task above
   if !$targets_version.error_set.empty() {
     $errors_array = Array($targets_version.error_set)
     $sorted_errors = $errors_array.sort|$a, $b| {
@@ -61,6 +61,6 @@ plan patching::check_online (
     fail_plan('Unable to connect to the targets above!')
   }
   else {
-    out::message('All nodes succeeded!')
+    out::message('All targets succeeded!')
   }
 }

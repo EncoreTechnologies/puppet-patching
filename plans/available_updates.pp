@@ -1,4 +1,4 @@
-# @summary Checks all nodes for available updates reported by their Operating System.
+# @summary Checks all targets for available updates reported by their Operating System.
 #
 # This uses the <code>patching::available_updates</code> task to query each Target's
 # Operating System for available updates. The results from the OS are parsed and formatted
@@ -13,7 +13,7 @@
 #    - Chocolatey: If installed, runs <code>choco outdated</code>.
 #      If not installed, Chocolatey is ignored.
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 # @param [Enum['none', 'pretty', 'csv']] format
 #   Output format for printing user-friendly information during the plan run.
@@ -31,27 +31,25 @@
 #   In this case, noop mode has no effect.
 #
 # @example CLI - Basic Usage
-#   bolt plan run patching::available_updates --nodes linux_hosts
+#   bolt plan run patching::available_updates --targets linux_hosts
 #
 # @example CLI - Get available update information in CSV format for creating reports
-#   bolt plan run patching::available_updates --nodes linux_hosts format=csv
+#   bolt plan run patching::available_updates --targets linux_hosts format=csv
 #
 # @example Plan - Basic Usage
-#   run_plan('patching::available_updates',
-#            nodes => $linux_hosts)
+#   run_plan('patching::available_updates', $linux_hosts)
 #
 # @example Plan - Get available update information in CSV format for creating reports
-#   run_plan('patching::available_updates',
-#            nodes  => $linux_hosts,
+#   run_plan('patching::available_updates', $linux_hosts,
 #            format => 'csv')
 #
 plan patching::available_updates (
-  TargetSpec $nodes,
+  TargetSpec $targets,
   # TODO JSON
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
   Boolean                       $noop   = false,
 ) {
-  $available_results = run_task('patching::available_updates', $nodes,
+  $available_results = run_task('patching::available_updates', $targets,
                                 _noop => $noop)
   case $format {
     'none': {
@@ -74,7 +72,7 @@ plan patching::available_updates (
     'csv': {
       $csv_header = 'hostname,num_updates,name,version (linux only),kbs (windows only)\n'
       $csv = $available_results.reduce($csv_header) |$res_memo, $res| {
-        $hostname = $res.target.host
+        $hostname = $res.target.name
         $num_updates = $res['updates'].length
         $host_updates = $res['updates'].reduce('') |$up_memo, $up| {
           $name = $up['name']
