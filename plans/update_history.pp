@@ -54,8 +54,11 @@ plan patching::update_history (
       $header = sprintf($row_format, 'host', 'upgraded', 'installed')
       $divider = '-----------------------------------------------------'
       $output = $_history.map|$hist| {
-        $num_upgraded = $hist['upgraded'].size
-        $num_installed = $hist['installed'].size
+        # in case history doesn't contain any updates
+        $upgraded = pick($hist['upgraded'], [])
+        $installed = pick($hist['installed'], [])
+        $num_upgraded = $upgraded.size
+        $num_installed = $installed.size
         $row_format = '%-30s | %-8s | %-8s'
         $message = sprintf($row_format, $hist.target.name, $num_upgraded, $num_installed)
         $message
@@ -68,8 +71,10 @@ plan patching::update_history (
       $csv_header = "host,action,name,version,kb (windows only)\n"
       $report = $_history.reduce($csv_header) |$res_memo, $res| {
         $hostname = $res.target.name
-        $num_updates = $res['upgraded'].length
-        $host_updates = $res['upgraded'].reduce('') |$up_memo, $up| {
+        # in case history doesn't contain any updates
+        $upgraded = pick($res['upgraded'], [])
+        $num_updates = $upgraded.length
+        $host_updates = $upgraded.reduce('') |$up_memo, $up| {
           $name = $up['name']
           $version = ('version' in $up) ? {
             true    => $up['version'],
