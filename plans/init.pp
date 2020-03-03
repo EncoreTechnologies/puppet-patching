@@ -253,7 +253,7 @@ plan patching (
 
   ## Collect summary report
   run_plan('patching::update_history', $_targets,
-            format => 'none')
+            format => 'pretty')
 
   ## Display final status
   return()
