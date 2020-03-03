@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* use 'name' instead of 'host' to better represent targets in inventory
+
+  Contributed by Vadym Chepkov (@vchepkov)
+
+## Release 1.0.0 (2020-02-28)
+
+* **BREAKING CHANGE** 
+  Converted from `nodes` to `targets` for all plans and tasks. This is in support of Bolt `2.0`.
+  Any calling plans or CLI will need to use the `targets` parameter to pass in the hosts
+  to be patched. (Feature)
+
+  Contributed by Nick Maludy (@nmaludy)
+
+* Fixed inconsistent documentation for result file location, proper location is: `C:/ProgramData/patching/log/patching.json`. (Bug Fix) #28
+
+  Contributed by Nick Maludy (@nmaludy)
+
+* Added documentation for patching with PE and `pcp` timeouts. (Documentation) #28
+
+  Contributed by Nick Maludy (@nmaludy)
+  
+* PDK sync to 1.17.0 template (Enhancement)
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 0.5.0 (2020-02-20)
 

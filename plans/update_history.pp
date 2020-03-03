@@ -11,7 +11,7 @@
 # plan and we will skip retrieving the history from the targets and simply use
 # that data.
 #
-# @param [TargetSpec] nodes
+# @param [TargetSpec] targets
 #   Set of targets to run against.
 #
 # @param [Optional[ResultSet]] history
@@ -28,20 +28,20 @@
 # @return [String] Data string formatting in the method requested
 #
 plan patching::update_history (
-  TargetSpec          $nodes,
+  TargetSpec          $targets,
   Optional[ResultSet] $history     = undef,
   Optional[String]    $report_file = 'patching_report.csv',
   # TODO JSON outputs
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
 ) {
-  $targets = run_plan('patching::get_targets', nodes => $nodes)
+  $_targets = run_plan('patching::get_targets', $targets)
 
   ## Collect update history
   if $history {
     $_history = $history
   }
   else {
-    $_history = run_task('patching::update_history', $targets)
+    $_history = run_task('patching::update_history', $_targets)
   }
 
   ## Format the report
@@ -67,7 +67,7 @@ plan patching::update_history (
     'csv': {
       $csv_header = "host,action,name,version,kb (windows only)\n"
       $report = $_history.reduce($csv_header) |$res_memo, $res| {
-        $hostname = $res.target.host
+        $hostname = $res.target.name
         $num_updates = $res['upgraded'].length
         $host_updates = $res['upgraded'].reduce('') |$up_memo, $up| {
           $name = $up['name']
