@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 
   Contributed by Vadym Chepkov (@vchepkov)
 
+* Fixed a bug where if `patching::update_history` task was called and no results were returned
+  the `patching::update_history` plan would fail. Now, we default to an empty array so a 0
+  is displayed.
+
+  Contributed by Nick Maludy (@nmaludy)
+
 ## Release 1.0.0 (2020-02-28)
 
 * **BREAKING CHANGE** 
