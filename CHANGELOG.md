@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
-* Ensure the patching.json file exists by creating a blank file if it was previously missing.
+
+## Release 1.0.1 (2020-03-04)
+
+* Ensure the `patching.json` file exists on Windows by creating a blank file if it was previously missing.
 
   Contributed by Bill Sirinek (@sirinek)
 
-* use 'name' instead of 'host' to better represent targets in inventory
+* use `name` instead of `host` to better represent targets in inventory
 
   Contributed by Vadym Chepkov (@vchepkov)
 
