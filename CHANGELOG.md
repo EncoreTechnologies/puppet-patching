@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 
 Contributed by Michael Surato (@msurato)
 
+* Add `hostname` as a choice for patching::snapshot_vmware::target_name_property
+  It can be used in cases where target discovery uses fully qualified domain names
+  and VM names don't have domain name component
+
+  Contributed by Vadym Chepkov (@vchepkov)
+
 ## Release 1.0.1 (2020-03-04)
 
 * Ensure the `patching.json` file exists on Windows by creating a blank file if it was previously missing.
