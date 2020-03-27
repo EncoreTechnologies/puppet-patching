@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+
+## Release 1.0.1 (2020-03-04)
+
+* Ensure the `patching.json` file exists on Windows by creating a blank file if it was previously missing.
+
+  Contributed by Bill Sirinek (@sirinek)
+
+* use `name` instead of `host` to better represent targets in inventory
+
+  Contributed by Vadym Chepkov (@vchepkov)
+
+* Fixed a bug where if `patching::update_history` task was called and no results were returned
+  the `patching::update_history` plan would fail. Now, we default to an empty array so a 0
+  is displayed.
+
+  Contributed by Nick Maludy (@nmaludy)
+
+## Release 1.0.0 (2020-02-28)
+
 * **BREAKING CHANGE** 
   Converted from `nodes` to `targets` for all plans and tasks. This is in support of Bolt `2.0`.
   Any calling plans or CLI will need to use the `targets` parameter to pass in the hosts
@@ -11,6 +30,17 @@ All notable changes to this project will be documented in this file.
 
   Contributed by Nick Maludy (@nmaludy)
 
+* Fixed inconsistent documentation for result file location, proper location is: `C:/ProgramData/patching/log/patching.json`. (Bug Fix) #28
+
+  Contributed by Nick Maludy (@nmaludy)
+
+* Added documentation for patching with PE and `pcp` timeouts. (Documentation) #28
+
+  Contributed by Nick Maludy (@nmaludy)
+  
+* PDK sync to 1.17.0 template (Enhancement)
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 0.5.0 (2020-02-20)
 

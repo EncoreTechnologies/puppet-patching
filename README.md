@@ -13,28 +13,32 @@
 
 - [Description](#description)
 - [Setup](#setup)
-  - [Setup Requirements](#setup-requirements)
-  - [Getting started](#getting-started)
+    - [Setup Requirements](#setup-requirements)
+    - [Quick Start](#quick-start)
 - [Architecture](#architecture)
 - [Design](#design)
 - [Patching Workflow](#patching-workflow)
 - [Usage](#usage)
-  - [Check for available updates](#check-for-available-updates)
-  - [Create snapshots](#create-snapshots)
-  - [Perform pre-patching checks and actions](#perform-pre-patching-checks-and-actions)
-  - [Run a the full patching workflow end-to-end](#run-a-the-full-patching-workflow-end-to-end)
+    - [Check for available updates](#check-for-available-updates)
+    - [Disable monitoring](#disable-monitoring)
+    - [Create snapshots](#create-snapshots)
+    - [Perform pre-patching checks and actions](#perform-pre-patching-checks-and-actions)
+    - [Deploying pre/post patching scripts](#deploying-prepost-patching-scripts)
+    - [Run a the full patching workflow end-to-end](#run-a-the-full-patching-workflow-end-to-end)
+    - [Patching with Puppet Enterprise (PE)](#patching-with-puppet-enterprise-pe)
 - [Configuration Options](#configuration-options)
 - [Reference](#reference)
 - [Limitations](#limitations)
 - [Development](#development)
 - [Contributors](#contributors)
 
+
 ## Description
 
 A framework for building patching workflows. This module is designed to be used as building
 blocks for complex patching environments of Windows and Linux (RHEL, Ubuntu) systems.
 
-No Puppet agent is required on the end nodes. The node executing the patching will need to 
+No Puppet agent is required on the end targets. The node executing the patching will need to 
 have `bolt` installed.
 
 ## Setup
@@ -62,7 +66,7 @@ mod 'encore/patching'
 EOF
 
 bolt puppetfile install
-bolt plan run patching::available_updates --nodes group_a
+bolt plan run patching::available_updates --targets group_a
 
 # install rbvmomi for VMware snapshot support
 /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
@@ -73,9 +77,9 @@ bolt plan run patching::available_updates --nodes group_a
 This module is designed to work in enterprise patching environments.
 
 Assumptions:
-* RHEL nodes are registered to Satellite / Foreman or the internet
-* Ubuntu nodes are registered to Landscape or the internet
-* Windows nodes are registered to WSUS and Chocolatey (optional)
+* RHEL targets are registered to Satellite / Foreman or the internet
+* Ubuntu targets are registered to Landscape or the internet
+* Windows targets are registered to WSUS and Chocolatey (optional)
 
 Registration to a central patching server is preferred for speed of software downloads 
 and control of phased patching promotions.
@@ -90,7 +94,7 @@ these central patching server tools.
 `patching` is designed around `bolt` tasks and plans. 
 
 Individual tasks have been written to accomplish targeted steps in the patching process.
-Examples: `patching::available_updates` is used to check for available updates on target nodes.
+Examples: `patching::available_updates` is used to check for available updates on targets.
 
 Plans are then used to pretty up output and tie tasks together.
 
@@ -125,14 +129,14 @@ This workflow consists of the following phases:
 
 ### Check for available updates
 
-This will reach out to all nodes in `group_a` in your inventory and check for any available
+This will reach out to all targets in `group_a` in your inventory and check for any available
 updates through the system's package manager:
 * RHEL = yum
 * Ubuntu = apt
 * Windows = Windows Update + Chocolatey (if installed)
 
 ``` shell
-bolt plan run patching::available_updates --nodes group_a
+bolt plan run patching::available_updates --targets group_a
 ```
 
 ### Disable monitoring
@@ -144,7 +148,7 @@ This plan/task utilizes the `remote` transport []
 
 
 ``` shell
-bolt plan run patching::monitoring_solarwinds --nodes group_a action=disable' monitoring_target=solarwinds
+bolt plan run patching::monitoring_solarwinds --targets group_a action=disable' monitoring_target=solarwinds
 ```
 
 ### Create snapshots
@@ -155,7 +159,7 @@ be the `uri` of the node the inventory file.
 ``` shell
 /opt/puppetlabs/bolt/bin/gem install rbvmomi
 
-bolt plan run patching::snapshot_vmware --nodes group_a action='create' vsphere_host='vsphere.domain.tld' vsphere_username='xyz' vsphere_password='abc123' vsphere_datacenter='dctr1'
+bolt plan run patching::snapshot_vmware --targets group_a action='create' vsphere_host='vsphere.domain.tld' vsphere_username='xyz' vsphere_password='abc123' vsphere_datacenter='dctr1'
 ```
 
 ### Perform pre-patching checks and actions
@@ -168,10 +172,10 @@ Best practice is to define and distribute these scripts as part of your normal P
 as part of othe role for that node.
 
 ``` shell
-bolt plan run patching::pre_update --nodes group_a
+bolt plan run patching::pre_update --targets group_a
 ```
 
-By default this executes the following scripts (nodes where the script doesn't exist are ignored):
+By default this executes the following scripts (targets where the script doesn't exist are ignored):
 * Linux = `/opt/patching/bin/pre_update.sh`
 * Windows = `C:\ProgramData\patching\pre_update.ps1`
 
@@ -232,8 +236,37 @@ Then, for each group:
 * `patching::snapshot_vmware action='delete'`
 
 ``` shell
-bolt plan run patching --nodes group_a
+bolt plan run patching --targets group_a
 ```
+
+### Patching with Puppet Enterprise (PE)
+
+When executing patching with Puppet Enterprise Bolt will use the `pcp` transport.
+This transport has a default timeout of `1000` seconds. Windows patching is MUCH
+slower than this and the timeouts will need to be increased. 
+
+If you do not modify this default timeout, you may experience the following error
+in the `patching::update` task or any other long running task:
+
+``` yaml
+Starting: task patching::update on windowshost.company.com
+Finished: task patching::update with 1 failure in 1044.63 sec
+The following hosts failed during update:
+[{"target":"windowshost.company.com","action":"task","object":"patching::update","status":"failure","result":{"_output":"null","_error":{"kind":"puppetlabs.tasks/task-error","issue_code":"TASK_ERROR","msg":"The task failed with exit code unknown","details":{"exit_code":"unknown"}}},"node":"windowshost.company.com"}]
+```
+
+Below is an example `bolt.yaml` with the settings modified:
+
+``` yaml
+---
+pcp:
+  # 2 hours = 120 minutes = 7,200 seconds
+  job-poll-timeout: 7200
+```
+
+For a complete reference of the available settings for the `pcp` transport see 
+[bolt configuration reference](https://puppet.com/docs/bolt/latest/bolt_configuration_reference.html)
+documentation.
 
 ## Configuration Options
 
@@ -242,7 +275,7 @@ in the inventory file.
 
 For details on all of the available configuration options, see [REFERENCE_CONFIGURATION.md](REFERENCE_CONFIGURATION.md)
 
-Example: Let's say we want to prevent some nodes from rebooting during patching.
+Example: Let's say we want to prevent some targets from rebooting during patching.
 This can be customized with the `patching_reboot_strategy` variable in inventory:
 
 ``` yaml
