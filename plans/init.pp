@@ -218,9 +218,10 @@ plan patching (
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required', $update_ok_targets,
-                strategy => $reboot_strategy_group,
-                message  => $reboot_message_group,
-                noop     => $noop)
+                strategy    => $reboot_strategy_group,
+                message     => $reboot_message_group,
+                reboot_wait => $reboot_wait,
+                noop        => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
