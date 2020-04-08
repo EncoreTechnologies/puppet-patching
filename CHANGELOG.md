@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Fixed a bug with a hard coded wait for reboot. (Bug Fix)
+
+Contributed by Michael Surato (@msurato)
 
 ## Release 1.0.1 (2020-03-04)
 
