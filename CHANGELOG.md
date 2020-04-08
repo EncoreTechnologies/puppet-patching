@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Added new plans `patching::get_facts` to retrieve a set of facts from a list of targets
+  and `patching::set_facts` to set facts on a list of targets. This is used to assign
+  the `patching_group` fact so that we can query PuppetDB for group information in dynamic
+  Bolt inventories.
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 1.0.1 (2020-03-04)
 
