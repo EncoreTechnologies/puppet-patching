@@ -31,10 +31,11 @@
 #    - `resultset` : results from the `reboot` plan for the attempted hosts (potentially an empty `ResultSet`)
 #
 plan patching::reboot_required (
-  TargetSpec $targets,
+  TargetSpec        $targets,
   Enum['only_required', 'never', 'always'] $strategy = 'only_required',
-  String $message = 'NOTICE: This system is currently being updated.',
-  Boolean $noop   = false,
+  String            $message     = 'NOTICE: This system is currently being updated.',
+  Boolean           $noop        = false,
+  Optional[Integer] $reboot_wait = 300,
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
@@ -62,7 +63,7 @@ plan patching::reboot_required (
         if !$targets_reboot_required.empty() {
           $targets_reboot_attempted = $targets_reboot_required
           $reboot_resultset = run_plan('reboot', $targets_reboot_required,
-                                        reconnect_timeout => 300,
+                                        reconnect_timeout => $reboot_wait,
                                         message           => $_message,
                                         _catch_errors     => true)
         }
@@ -74,7 +75,7 @@ plan patching::reboot_required (
       'always': {
         $targets_reboot_attempted = $targets
         $reboot_resultset = run_plan('reboot', $targets,
-                                      reconnect_timeout => 300,
+                                      reconnect_timeout => $reboot_wait,
                                       message           => $_message,
                                       _catch_errors     => true)
       }
