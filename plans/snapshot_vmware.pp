@@ -19,7 +19,7 @@
 #     - `create` creates a new snapshot
 #     - 'delete' deletes snapshots by matching the `snapshot_name` passed in.
 #
-# @param [Optional[Enum['name', 'uri']]] target_name_property
+# @param [Optional[Enum['hostname', 'name', 'uri']]] target_name_property
 #   Determines what property on the Target object will be used as the VM name when
 #   mapping the Target to a VM in vSphere.
 #
@@ -28,6 +28,8 @@
 #       list is set as the `uri` and not the `name`, in this case `name` will be `undef`.
 #    - `name` : use the `name` property on the Target, this is not preferred because
 #       `name` is usually a short name or nickname.
+#    - `hostname`: use the `hostname` value to use host component of `uri` property on the Target
+#      this can be useful if VM name doesn't include domain name
 #
 # @param [String[1]] vsphere_host
 #   Hostname of the vSphere server that we're going to use to create snapshots via the API.
@@ -63,7 +65,7 @@
 plan patching::snapshot_vmware (
   TargetSpec $targets,
   Enum['create', 'delete'] $action,
-  Optional[Enum['name', 'uri']] $target_name_property = undef,
+  Optional[Enum['hostname', 'name', 'uri']] $target_name_property = undef,
   String[1] $vsphere_host       = get_targets($targets)[0].vars['vsphere_host'],
   String[1] $vsphere_username   = get_targets($targets)[0].vars['vsphere_username'],
   String[1] $vsphere_password   = get_targets($targets)[0].vars['vsphere_password'],
