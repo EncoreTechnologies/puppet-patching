@@ -113,6 +113,6 @@ plan patching::monitoring_solarwinds (
     return run_task('patching::monitoring_solarwinds', $monitoring_target,
                     targets       => $target_names,
                     action        => $action,
-                    name_property => $monitoring_name_property)
+                    name_property => $_monitoring_name_property)
   }
 }
