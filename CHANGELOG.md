@@ -25,7 +25,12 @@ All notable changes to this project will be documented in this file.
   config value wasn't being honored. (Bug Fix)
 
   Contributed by Nick Maludy (@nmaludy)
-  
+
+* Fixed a bug in `patching::update` task on RHEL where errors in the `yum` command we're
+  being reported due to the use of a `|`. Now we check `$PIPESTATUS[0]` instead of `$?`. (Bug Fix)
+
+  Contributed by Nick Maludy (@nmaludy)
+
 * Added new configuration options:
   * `patching_reboot_wait`: Parameter controls the `reboot_wait` option for the number of seconds
     to wait between reboots. Default = 300
