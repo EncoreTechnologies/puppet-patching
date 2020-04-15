@@ -33,6 +33,9 @@
 # @param [Optional[String]] post_update_plan
 #   Name of the plan to use for executing the post-update step of the workflow.
 #
+# @param [Optional[String]] reboot_message
+#   Message displayed to the user prior to the system rebooting
+#
 # @param [Optional[Enum['only_required', 'never', 'always']]] reboot_strategy
 #   Determines the reboot strategy for the run.
 #
@@ -40,8 +43,15 @@
 #    - 'never' never reboots the hosts
 #    - 'always' will reboot the host no matter what
 #
-# @param [Optional[String]] reboot_message
-#   Message displayed to the user prior to the system rebooting
+# @param [Optional[Integer]] reboot_wait
+#   Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
+#   of the groups affects the availability of a previous group.
+#   Two use cases here:
+#    1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
+#       VMs to go offline and we need to wait for those child VMs to come back up before
+#       collecting history metrics.
+#    2. A later group is a linux router. In this instance maybe the patching of the linux router
+#       affects the reachability of previous hosts.
 #
 # @param [Optional[String]] snapshot_plan
 #   Name of the plan to use for executing snaphot creation and deletion steps of the workflow
@@ -62,15 +72,14 @@
 #   In this case you can run with `snapshot_delete=false` and then a few hours later
 #   you can run the `patching::snapshot_vmware action=delete` sometime in the future.
 #
-# @param [Optional[Integer]] reboot_wait
-#   Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
-#   of the groups affects the availability of a previous group.
-#   Two use cases here:
-#    1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
-#       VMs to go offline and we need to wait for those child VMs to come back up before
-#       collecting history metrics.
-#    2. A later group is a linux router. In this instance maybe the patching of the linux router
-#       affects the reachability of previous hosts.
+# @param [Optional[Enum['none', 'pretty', 'csv']]] report_format
+#   The method of formatting the report data.
+#
+# @param [Optional[String]] report_file
+#   Path of the filename where the report should be written. Default = 'patching_report.csv'.
+#   If you would like to disable writing the report file, specify a value of 'disabled'.
+#   NOTE: If you're running PE, then you'll need to disable writing reports because it will
+#   fail when running from the console.
 #
 # @param [Boolean] noop
 #   Flag to enable noop mode for the underlying plans and tasks.
@@ -102,10 +111,12 @@ plan patching (
   Optional[String]  $post_update_plan     = undef,
   Optional[Enum['only_required', 'never', 'always']] $reboot_strategy = undef,
   Optional[String]  $reboot_message       = undef,
+  Optional[Integer] $reboot_wait          = undef,
   Optional[String]  $snapshot_plan        = undef,
   Optional[Boolean] $snapshot_create      = undef,
   Optional[Boolean] $snapshot_delete      = undef,
-  Optional[Integer] $reboot_wait          = 300,
+  Optional[Enum['none', 'pretty', 'csv']] $report_format = undef,
+  Optional[String]  $report_file          = undef,
   Boolean           $noop                 = false,
 ) {
   ## Filter offline targets
@@ -113,6 +124,18 @@ plan patching (
                                   filter_offline_targets => $filter_offline_targets)
   # use all targets, both with and without puppet
   $_targets = $check_puppet_result['all']
+
+  # read variables for plan-level settings
+  $plan_vars = $_targets[0].vars
+  $reboot_wait_plan = pick($reboot_wait,
+                            $plan_vars['patching_reboot_wait'],
+                            300)
+  $report_format_plan = pick($report_format,
+                              $plan_vars['patching_report_format'],
+                              'pretty')
+  $report_file_plan = pick($report_file,
+                            $plan_vars['patching_report_file'],
+                            'patching_report.csv')
 
   ## Group all of the targets based on their 'patching_order' var
   $ordered_groups = run_plan('patching::ordered_groups', $_targets)
@@ -142,6 +165,9 @@ plan patching (
     $reboot_message_group = pick($reboot_message,
                                   $group_vars['patching_reboot_message'],
                                   'NOTICE: This system is currently being updated.')
+    $reboot_wait_group = pick($reboot_wait,
+                              $group_vars['patching_reboot_wait'],
+                              300)
     $pre_update_plan_group = pick($pre_update_plan,
                                   $group_vars['patching_pre_update_plan'],
                                   'patching::pre_update')
@@ -218,10 +244,10 @@ plan patching (
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required', $update_ok_targets,
-                strategy    => $reboot_strategy_group,
-                message     => $reboot_message_group,
-                reboot_wait => $reboot_wait,
-                noop        => $noop)
+                strategy => $reboot_strategy_group,
+                message  => $reboot_message_group,
+                wait     => $reboot_wait_group,
+                noop     => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
@@ -250,11 +276,12 @@ plan patching (
   #     collecting history metrics.
   #  2. A later group is a linux router. In this instance maybe the patching of the linux router
   #     affects the reachability of previous hosts.
-  wait_until_available($_targets, wait_time => $reboot_wait)
+  wait_until_available($_targets, wait_time => $reboot_wait_plan)
 
   ## Collect summary report
   run_plan('patching::update_history', $_targets,
-            format => 'pretty')
+            format      => $report_format_plan,
+            report_file => $report_file_plan)
 
   ## Display final status
   return()
