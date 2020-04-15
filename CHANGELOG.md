@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+## Release 1.1.0 (2020-04-15)
+
 * Added new plans `patching::get_facts` to retrieve a set of facts from a list of targets
   and `patching::set_facts` to set facts on a list of targets. This is used to assign
   the `patching_group` fact so that we can query PuppetDB for group information in dynamic
