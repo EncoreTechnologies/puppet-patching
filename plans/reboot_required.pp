@@ -16,8 +16,20 @@
 #    - 'only_required' only reboots hosts that require it based on info reported from the OS
 #    - 'never' never reboots the hosts
 #    - 'always' will reboot the host no matter what
+#
 # @param [String] message
 #   Message displayed to the user prior to the system rebooting
+#
+# @param [Integer] wait
+#   Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
+#   of the groups affects the availability of a previous group.
+#   Two use cases here:
+#    1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
+#       VMs to go offline and we need to wait for those child VMs to come back up before
+#       collecting history metrics.
+#    2. A later group is a linux router. In this instance maybe the patching of the linux router
+#       affects the reachability of previous hosts.
+#
 # @param [Boolean] noop
 #   Flag to determine if this should be a noop operation or not.
 #   If this is a noop, no hosts will ever be rebooted, however the "reboot required" information
@@ -31,16 +43,17 @@
 #    - `resultset` : results from the `reboot` plan for the attempted hosts (potentially an empty `ResultSet`)
 #
 plan patching::reboot_required (
-  TargetSpec        $targets,
+  TargetSpec  $targets,
   Enum['only_required', 'never', 'always'] $strategy = 'only_required',
-  String            $message     = 'NOTICE: This system is currently being updated.',
-  Boolean           $noop        = false,
-  Optional[Integer] $reboot_wait = 300,
+  String     $message = 'NOTICE: This system is currently being updated.',
+  Integer    $wait    = 300,
+  Boolean    $noop    = false,
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   $_strategy = pick($group_vars['patching_reboot_strategy'], $strategy)
   $_message = pick($group_vars['patching_reboot_message'], $message)
+  $_wait = pick($group_vars['patching_reboot_wait'], $wait)
 
   ## Check if reboot required.
   $reboot_results = run_task('patching::reboot_required', $_targets)
@@ -63,7 +76,7 @@ plan patching::reboot_required (
         if !$targets_reboot_required.empty() {
           $targets_reboot_attempted = $targets_reboot_required
           $reboot_resultset = run_plan('reboot', $targets_reboot_required,
-                                        reconnect_timeout => $reboot_wait,
+                                        reconnect_timeout => $_wait,
                                         message           => $_message,
                                         _catch_errors     => true)
         }
@@ -75,7 +88,7 @@ plan patching::reboot_required (
       'always': {
         $targets_reboot_attempted = $targets
         $reboot_resultset = run_plan('reboot', $targets,
-                                      reconnect_timeout => $reboot_wait,
+                                      reconnect_timeout => $_wait,
                                       message           => $_message,
                                       _catch_errors     => true)
       }
