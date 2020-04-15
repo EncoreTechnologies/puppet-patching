@@ -25,6 +25,11 @@ All notable changes to this project will be documented in this file.
   config value wasn't being honored. (Bug Fix)
 
   Contributed by Nick Maludy (@nmaludy)
+  
+* Fixed a bug in `patching::update` task on RHEL where errors in the `yum` command we're
+  being reported due to the use of a `|`. Now we check `$PIPESTATUS[0]` instead of `$?`. (Bug Fix)
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 1.0.1 (2020-03-04)
 
