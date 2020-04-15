@@ -52,6 +52,7 @@
 * [`patching::check_online`](#patchingcheck_online): Checks each node to see they're online.
 * [`patching::check_puppet`](#patchingcheck_puppet): Checks each node to see if Puppet is installed, then gather Facts on all targets.
 * [`patching::deploy_scripts`](#patchingdeploy_scripts): 
+* [`patching::get_facts`](#patchingget_facts): Sets patching facts on targets
 * [`patching::get_targets`](#patchingget_targets): <code>get_targets()</code> except it also performs online checks and gathers facts in one step.
 * [`patching::monitoring_solarwinds`](#patchingmonitoring_solarwinds): Creates or deletes VM snapshots on targets in VMware.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
@@ -60,6 +61,7 @@
 * [`patching::pre_update`](#patchingpre_update): Executes a custom pre-update script on each node.
 * [`patching::puppet_facts`](#patchingpuppet_facts): Plan thatr runs 'puppet facts' on the targets and sets them as facts on the Target objects.
 * [`patching::reboot_required`](#patchingreboot_required): Querys a targets operating system to determine if a reboot is required and then reboots the targets that require rebooting.
+* [`patching::set_facts`](#patchingset_facts): Sets patching facts on targets
 * [`patching::snapshot_vmware`](#patchingsnapshot_vmware): Creates or deletes VM snapshots on targets in VMware.
 * [`patching::update_history`](#patchingupdate_history): Collect update history from the results JSON file on the targets
 
@@ -382,7 +384,7 @@ Type: Puppet Language
 
 Returns an array of names, one for each target, based on the $name_property
 
-#### `patching::target_names(TargetSpec $targets, Enum['name', 'uri'] $name_property)`
+#### `patching::target_names(TargetSpec $targets, Enum['hostname', 'name', 'uri'] $name_property)`
 
 The patching::target_names function.
 
@@ -396,7 +398,7 @@ List of targets to extract the name from
 
 ##### `name_property`
 
-Data type: `Enum['name', 'uri']`
+Data type: `Enum['hostname', 'name', 'uri']`
 
 Property in the Target to use as the name
 
@@ -842,6 +844,14 @@ Name of the plan to use for executing the post-update step of the workflow.
 
 Default value: `undef`
 
+##### `reboot_message`
+
+Data type: `Optional[String]`
+
+Message displayed to the user prior to the system rebooting
+
+Default value: `undef`
+
 ##### `reboot_strategy`
 
 Data type: `Optional[Enum['only_required', 'never', 'always']]`
@@ -854,11 +864,18 @@ Determines the reboot strategy for the run.
 
 Default value: `undef`
 
-##### `reboot_message`
+##### `reboot_wait`
 
-Data type: `Optional[String]`
+Data type: `Optional[Integer]`
 
-Message displayed to the user prior to the system rebooting
+Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
+of the groups affects the availability of a previous group.
+Two use cases here:
+ 1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
+    VMs to go offline and we need to wait for those child VMs to come back up before
+    collecting history metrics.
+ 2. A later group is a linux router. In this instance maybe the patching of the linux router
+    affects the reachability of previous hosts.
 
 Default value: `undef`
 
@@ -896,20 +913,24 @@ you can run the `patching::snapshot_vmware action=delete` sometime in the future
 
 Default value: `undef`
 
-##### `reboot_wait`
+##### `report_format`
 
-Data type: `Optional[Integer]`
+Data type: `Optional[Enum['none', 'pretty', 'csv']]`
 
-Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
-of the groups affects the availability of a previous group.
-Two use cases here:
- 1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
-    VMs to go offline and we need to wait for those child VMs to come back up before
-    collecting history metrics.
- 2. A later group is a linux router. In this instance maybe the patching of the linux router
-    affects the reachability of previous hosts.
+The method of formatting the report data.
 
-Default value: 300
+Default value: `undef`
+
+##### `report_file`
+
+Data type: `Optional[String]`
+
+Path of the filename where the report should be written. Default = 'patching_report.csv'.
+If you would like to disable writing the report file, specify a value of 'disabled'.
+NOTE: If you're running PE, then you'll need to disable writing reports because it will
+fail when running from the console.
+
+Default value: `undef`
 
 ##### `noop`
 
@@ -1196,6 +1217,42 @@ Data type: `Optional[String]`
 
 
 Default value: `undef`
+
+### patching::get_facts
+
+Sets patching facts on targets
+
+#### Examples
+
+##### Get the patching_group fact (default)
+
+```puppet
+bolt plan run patching::get_facts --targets xxx
+```
+
+##### Get different facts
+
+```puppet
+bolt plan run patching::get_facts --targets xxx names='["fact1", "fact2"]'
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::get_facts` plan.
+
+##### `targets`
+
+Data type: `TargetSpec`
+
+Set of targets to run against.
+
+##### `names`
+
+Data type: `Variant[String, Array[String]]`
+
+Name or list of fact names to retrieve from the targets
+
+Default value: ['patching_group']
 
 ### patching::get_targets
 
@@ -1733,6 +1790,21 @@ Message displayed to the user prior to the system rebooting
 
 Default value: 'NOTICE: This system is currently being updated.'
 
+##### `wait`
+
+Data type: `Integer`
+
+Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
+of the groups affects the availability of a previous group.
+Two use cases here:
+ 1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
+    VMs to go offline and we need to wait for those child VMs to come back up before
+    collecting history metrics.
+ 2. A later group is a linux router. In this instance maybe the patching of the linux router
+    affects the reachability of previous hosts.
+
+Default value: 300
+
 ##### `noop`
 
 Data type: `Boolean`
@@ -1742,6 +1814,74 @@ If this is a noop, no hosts will ever be rebooted, however the "reboot required"
 will still be queried and returned.
 
 Default value: `false`
+
+### patching::set_facts
+
+For Linux targets the facts will be written to <code>/etc/facter/facts.d/patching.yaml</code>.
+For Windows targets the facts will be written to <code>'C:/ProgramData/PuppetLabs/facter/facts.d/patching.yaml'</code>.
+
+The contents of the <code>patching.yaml</code> file will be overwritten by this plan.
+TODO: Provide an option to merge with existing facts.
+
+Once the facts are written, by default, the facts will be ran and uploaded to PuppetDB.
+If you wish to disable this, simply set <code>upload=false</code>
+
+#### Examples
+
+##### Set the patching_group fact
+
+```puppet
+bolt plan run patching::set_facts --targets xxx patching_group=tuesday_night
+```
+
+##### Set the custom facts
+
+```puppet
+bolt plan run patching::set_facts --targets xxx custom_facts='{"fact1": "blah"}'
+```
+
+##### Don't upload facts to PuppetDB
+
+```puppet
+bolt plan run patching::set_facts --targets xxx patching_group=tuesday_night upload=false
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::set_facts` plan.
+
+##### `targets`
+
+Data type: `TargetSpec`
+
+Set of targets to run against.
+
+##### `patching_group`
+
+Data type: `Optional[String]`
+
+Name of the patching group that the targets are a member of. This will be the value for the
+<code>patching_group</code> fact.
+
+Default value: `undef`
+
+##### `custom_facts`
+
+Data type: `Hash`
+
+Hash of custom facts that will be set on these targets. This can be anything you like
+and will merged with the other facts above.
+
+Default value: {}
+
+##### `upload`
+
+Data type: `Boolean`
+
+After setting the facts, perform a <code>puppet facts upload</code> so the new
+facts are stored in PuppetDB.
+
+Default value: `true`
 
 ### patching::snapshot_vmware
 
@@ -1776,7 +1916,7 @@ What action to perform on the snapshots:
 
 ##### `target_name_property`
 
-Data type: `Optional[Enum['name', 'uri']]`
+Data type: `Optional[Enum['hostname', 'name', 'uri']]`
 
 Determines what property on the Target object will be used as the VM name when
 mapping the Target to a VM in vSphere.
@@ -1786,6 +1926,8 @@ mapping the Target to a VM in vSphere.
     list is set as the `uri` and not the `name`, in this case `name` will be `undef`.
  - `name` : use the `name` property on the Target, this is not preferred because
     `name` is usually a short name or nickname.
+ - `hostname`: use the `hostname` value to use host component of `uri` property on the Target
+   this can be useful if VM name doesn't include domain name
 
 Default value: `undef`
 
@@ -1883,6 +2025,14 @@ You can pass the ResultSet from that task into the `history` parameter of this
 plan and we will skip retrieving the history from the targets and simply use
 that data.
 
+By default the report is also written to a file `patching_report.csv`.
+If you would like to disable this you can pass in `undef` or `'disabled'` to
+`report_file` parameter. You can also customize this as by specifying the
+`patching_report_file` var on the target or group.
+
+Patching format can also be customized using the inventory var `patching_report_format`
+on the target or group.
+
 #### Parameters
 
 The following parameters are available in the `patching::update_history` plan.
@@ -1907,7 +2057,9 @@ Default value: `undef`
 Data type: `Optional[String]`
 
 Optional filename to save the formatted repot into.
-If `undef` is passed, then no report file will be written.
+If `undef` or `'disabled'` are passed, then no report file will be written.
+NOTE: If you're running PE, then you'll need to disable writing reports because it will
+fail when running from the console.
 
 Default value: 'patching_report.csv'
 
