@@ -11,7 +11,7 @@
 
 #### Table of Contents
 
-- [Description](#description)
+- [Module description](#module-description)
 - [Setup](#setup)
     - [Setup Requirements](#setup-requirements)
     - [Quick Start](#quick-start)
@@ -33,7 +33,7 @@
 - [Contributors](#contributors)
 
 
-## Description
+## Module description
 
 A framework for building patching workflows. This module is designed to be used as building
 blocks for complex patching environments of Windows and Linux (RHEL, Ubuntu) systems.
