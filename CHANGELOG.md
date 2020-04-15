@@ -25,10 +25,30 @@ All notable changes to this project will be documented in this file.
   config value wasn't being honored. (Bug Fix)
 
   Contributed by Nick Maludy (@nmaludy)
-  
+
 * Fixed a bug in `patching::update` task on RHEL where errors in the `yum` command we're
   being reported due to the use of a `|`. Now we check `$PIPESTATUS[0]` instead of `$?`. (Bug Fix)
 
+  Contributed by Nick Maludy (@nmaludy)
+
+* Added new configuration options:
+  * `patching_reboot_wait`: Parameter controls the `reboot_wait` option for the number of seconds
+    to wait between reboots. Default = 300
+  * `paching_report_file`: Customize the name of the report file to write to disk. You 
+    can disable writing the report files by specifying this as `'disabled'`.
+    NOTE: for PE users writing files to disk throws an error, so you'll be happy you can
+    now disable writing these files!
+    Default = `patching_report.csv`
+  * `patching_report_format`: Customize the format of the reports written to the report file.
+    Default = `pretty`
+
+  (Enhancement)
+  
+  Contributed by Nick Maludy (@nmaludy)
+  
+* To support the new configuration options above, the `patching::reboot_required` plan
+  had its parameter `reboot_wait` renamed to `wait`.  (Enhancement)
+  
   Contributed by Nick Maludy (@nmaludy)
 
 ## Release 1.0.1 (2020-03-04)

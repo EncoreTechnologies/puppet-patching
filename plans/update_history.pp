@@ -11,6 +11,14 @@
 # plan and we will skip retrieving the history from the targets and simply use
 # that data.
 #
+# By default the report is also written to a file `patching_report.csv`.
+# If you would like to disable this you can pass in `undef` or `'disabled'` to
+# `report_file` parameter. You can also customize this as by specifying the
+# `patching_report_file` var on the target or group.
+#
+# Patching format can also be customized using the inventory var `patching_report_format`
+# on the target or group.
+#
 # @param [TargetSpec] targets
 #   Set of targets to run against.
 #
@@ -20,7 +28,9 @@
 #
 # @param [Optional[String]] report_file
 #   Optional filename to save the formatted repot into.
-#   If `undef` is passed, then no report file will be written.
+#   If `undef` or `'disabled'` are passed, then no report file will be written.
+#   NOTE: If you're running PE, then you'll need to disable writing reports because it will
+#   fail when running from the console.
 #
 # @param [Enum['none', 'pretty', 'csv']] format
 #   The method of formatting to use for the data.
@@ -35,6 +45,9 @@ plan patching::update_history (
   Enum['none', 'pretty', 'csv'] $format = 'pretty',
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
+  $group_vars = $_targets[0].vars
+  $_format = pick($group_vars['patching_report_format'], $format)
+  $_report_file = pick($group_vars['patching_report_file'], $report_file)
 
   ## Collect update history
   if $history {
@@ -45,7 +58,7 @@ plan patching::update_history (
   }
 
   ## Format the report
-  case $format {
+  case $_format {
     'none': {
       return($_history)
     }
@@ -102,15 +115,15 @@ plan patching::update_history (
       }
     }
     default: {
-      fail_plan("unknown format: ${format}")
+      fail_plan("unknown format: ${_format}")
     }
   }
 
   out::message($report)
 
   ## Write report to file
-  if $report_file {
-    file::write($report_file, $report)
+  if $_report_file and $_report_file != 'disabled' {
+    file::write($_report_file, $report)
   }
   return($report)
 }
