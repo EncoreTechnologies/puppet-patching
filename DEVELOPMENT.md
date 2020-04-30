@@ -3,7 +3,7 @@
 ## Quick start
 
 ```shell
-ln -s ../ site-modules/patching
+mkdir site-modules && ln -s ../ site-modules/patching
 vagrant up centos
 bolt task run facts --targets vagrant_centos
 ```
