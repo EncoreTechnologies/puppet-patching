@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Fixed header line for CSV
+
+  Contributed by Haroon Rafique
+
 * Fixed trivial bug with useless use of cat
 
   Contributed by Haroon Rafique
