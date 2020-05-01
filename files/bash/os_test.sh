@@ -1,11 +1,11 @@
 #!/bin/bash
 
 if [ -e /etc/os-release ]; then
-  export OS_RELEASE=$(cat /etc/os-release  | sed -n -e "/^ID=/p" | sed -e 's~\(.*\)=\(.*\)~\U\2~g' -e 's~"~~g')
+  export OS_RELEASE=$(sed -n -e "/^ID=/p" /etc/os-release | sed -e 's~\(.*\)=\(.*\)~\U\2~g' -e 's~"~~g')
 else
 # fall back to older methods for OS that do not use systemd
   export OS_TEST_DEB=$(lsb_release -a 2> /dev/null | grep Distributor | awk '{print $3}')
-  export OS_TEST_RH=$(cat /etc/redhat-release 2> /dev/null | sed -e "s~\(.*\)release.*~\1~g")
+  export OS_TEST_RH=$(sed -e "s~\(.*\)release.*~\1~g" /etc/redhat-release 2> /dev/null)
 
   if [[ -n "$OS_TEST_RH" ]]; then
     export OS_RELEASE='RHEL'
