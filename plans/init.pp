@@ -166,6 +166,9 @@ plan patching (
     $reboot_message_group = pick($reboot_message,
                                   $group_vars['patching_reboot_message'],
                                   'NOTICE: This system is currently being updated.')
+    $update_provider_group = pick($update_provider,
+                              $group_vars['update_provider'],
+                              undef)
     $reboot_wait_group = pick($reboot_wait,
                               $group_vars['patching_reboot_wait'],
                               300)
@@ -220,7 +223,7 @@ plan patching (
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
-                              provider       => $update_provider,
+                              provider       => $update_provider_group,
                               _catch_errors  => true,
                               _noop          => $noop)
 
