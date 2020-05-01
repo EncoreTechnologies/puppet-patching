@@ -108,6 +108,7 @@ plan patching (
   Optional[Boolean] $monitoring_enabled   = undef,
   Optional[String]  $monitoring_plan      = undef,
   Optional[String]  $pre_update_plan      = undef,
+  Optional[String]  $update_provider      = undef,
   Optional[String]  $post_update_plan     = undef,
   Optional[Enum['only_required', 'never', 'always']] $reboot_strategy = undef,
   Optional[String]  $reboot_message       = undef,
@@ -219,6 +220,7 @@ plan patching (
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
+                              provider       => $update_provider,
                               _catch_errors  => true,
                               _noop          => $noop)
 
