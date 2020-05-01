@@ -9,8 +9,11 @@
 - [patching_monitoring_name_property](#patching_monitoring_name_property)
 - [patching_monitoring_plan](#patching_monitoring_plan)
 - [patching_monitoring_target_name_property](#patching_monitoring_target_name_property)
-- [patching_reboot_strategy](#patching_reboot_strategy)
 - [patching_reboot_message](#patching_reboot_message)
+- [patching_reboot_strategy](#patching_reboot_strategy)
+- [patching_reboot_wait](#patching_reboot_wait)
+- [patching_report_file](#patching_report_file)
+- [patching_report_format](#patching_report_format)
 - [patching_pre_update_plan](#patching_pre_update_plan)
 - [patching_pre_update_script_linux](#patching_pre_update_script_linux)
 - [patching_pre_update_script_windows](#patching_pre_update_script_windows)
@@ -203,6 +206,15 @@ groups:
         name: CITRIX01
 ```
 
+### patching_reboot_message
+
+``` yaml
+type: String
+default: 'NOTICE: This system is currently being updated.'
+```
+
+Message to display on any nodes that are rebooted during patching.
+
 ### patching_reboot_strategy
 
 ``` yaml
@@ -229,15 +241,49 @@ Determines the way we handle reboots on nodes during the patching process.
   about if a reboot is required or not. Also, on Windows many updates don't run
   through their post-install process until a reboot is performed.
 
+### patching_reboot_wait
 
-### patching_reboot_message
+``` yaml
+type: Integer
+default: 300
+```
+
+Time in seconds that the plan waits before continuing after a reboot. This is necessary in case one
+of the groups affects the availability of a previous group.
+Two use cases here:
+ 1. A later group is a hypervisor. In this instance the hypervisor will reboot causing the
+    VMs to go offline and we need to wait for those child VMs to come back up before
+    collecting history metrics.
+ 2. A later group is a linux router. In this instance maybe the patching of the linux router
+    affects the reachability of previous hosts.
+
+### patching_report_file
 
 ``` yaml
 type: String
-default: 'NOTICE: This system is currently being updated.'
+default: 'patching_report.csv'
 ```
 
-Message to display on any nodes that are rebooted during patching.
+Path of the filename where the report should be written. Default = 'patching_report.csv'.
+If you would like to disable writing the report file, specify a value of 'disabled'.
+NOTE: If you're running PE, then you'll need to disable writing reports because it will
+fail when running from the console.
+
+### patching_report_format
+
+``` yaml
+type: Enum
+values:
+ - 'none'
+ - 'pretty'
+ - 'csv'
+default: 'pretty'
+```
+
+Format to use when writing the update report.
+ - `'none'` Formats the report in the raw JSON returned from the `update` task.
+ - `'pretty'` Formats the report in a tabular format showing a summary of number of updates.
+ - `'csv'` Formats the report in a CSV format showing things like number of updates along with KBs installed (Windows only).
 
 ### patching_pre_update_plan
 

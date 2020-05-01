@@ -3,16 +3,19 @@
 # @param [TargetSpec] targets
 #   List of targets to extract the name from
 #
-# @param [Enum['name', 'uri']] name_property
+# @param [Enum['hostname', 'name', 'uri']] name_property
 #   Property in the Target to use as the name
 #
 # @return [Array[String]] Array of names, one for each target
 function patching::target_names(
   TargetSpec          $targets,
-  Enum['name', 'uri'] $name_property,
+  Enum['hostname', 'name', 'uri'] $name_property,
 ) >> Array[String] {
   $targets.map |$n| {
     case $name_property {
+      'hostname': {
+        regsubst($n.uri, '^([^.]+).*','\1')
+      }
       'name': {
         $n.name
       }
