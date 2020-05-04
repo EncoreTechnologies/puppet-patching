@@ -29,6 +29,12 @@
 # @param [Boolean] noop
 #   Run this plan in noop mode, meaning no changes will be made to end systems.
 #   In this case, noop mode has no effect.
+# @param [Optional[String]] provider
+#   What update provider to use. For Linux (RHEL, Debian, SUSE, etc.) this parameter
+#   is not used. For Windows the available values are: 'windows', 'chocolatey', 'all'
+#   (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all'
+#   is passed and Chocolatey isn't installed then Chocolatey will simply be skipped.
+#   If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.
 #
 # @example CLI - Basic Usage
 #   bolt plan run patching::available_updates --targets linux_hosts
@@ -46,11 +52,13 @@
 plan patching::available_updates (
   TargetSpec $targets,
   # TODO JSON
-  Enum['none', 'pretty', 'csv'] $format = 'pretty',
-  Boolean                       $noop   = false,
+  Enum['none', 'pretty', 'csv'] $format   = 'pretty',
+  Boolean                       $noop     = false,
+  Optional[String]              $provider = undef,
 ) {
   $available_results = run_task('patching::available_updates', $targets,
-                                _noop => $noop)
+                                provider => $provider,
+                                _noop    => $noop)
   case $format {
     'none': {
       return($available_results)
