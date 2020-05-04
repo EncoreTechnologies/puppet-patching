@@ -28,6 +28,7 @@
 - [patching_snapshot_description](#patching_snapshot_description)
 - [patching_snapshot_memory](#patching_snapshot_memory)
 - [patching_snapshot_quiesce](#patching_snapshot_quiesce)
+- [patching_update_provider](#patching_update_provider)
 - [vsphere_host](#vsphere_host)
 - [vsphere_username](#vsphere_username)
 - [vsphere_password](#vsphere_password)
@@ -565,6 +566,14 @@ default: true
 ```
 
 Enable or disable quiescing the VM's filesystem when creating snapshots during patching.
+
+### patching_update_provider
+
+``` yaml
+type: String
+default: <none>
+```
+
 
 ### vsphere_host
 
