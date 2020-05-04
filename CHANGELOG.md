@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 
   Contributed by Haroon Rafique
 
+* Added new configuration option:
+  * `patching_update_provider`: Parameter sets the provider in the update tasks. 
+
+  Contributed by Bill Sirinek (@sirinek)
+
 ## Release 1.1.0 (2020-04-15)
 
 * Added new plans `patching::get_facts` to retrieve a set of facts from a list of targets
