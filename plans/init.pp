@@ -27,6 +27,13 @@
 #   Name of the plan to use for disabling/enabling monitoring steps of the workflow.
 #   To configure this globally, use the `patching_monitoring_plan` var.
 #
+# @param [Optional[String]] update_provider
+#   What update provider to use. For Linux (RHEL, Debian, SUSE, etc.) this parameter
+#   is not used. For Windows the available values are: 'windows', 'chocolatey', 'all'
+#   (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all'
+#   is passed and Chocolatey isn't installed then Chocolatey will simply be skipped.
+#   If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.
+#
 # @param [Optional[String]] pre_update_plan
 #   Name of the plan to use for executing the pre-update step of the workflow.
 #
@@ -196,8 +203,9 @@ plan patching (
 
     ## Check for updates on hosts
     $available_results = run_plan('patching::available_updates', $ordered_targets,
-                                  format  => 'pretty',
-                                  noop    => $noop)
+                                  provider => $update_provider_group, 
+                                  format   => 'pretty',
+                                  noop     => $noop)
     $update_targets = $available_results['has_updates']
     if $update_targets.empty {
       next()
