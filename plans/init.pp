@@ -203,7 +203,7 @@ plan patching (
 
     ## Check for updates on hosts
     $available_results = run_plan('patching::available_updates', $ordered_targets,
-                                  provider => $update_provider_group, 
+                                  provider => $update_provider_group,
                                   format   => 'pretty',
                                   noop     => $noop)
     $update_targets = $available_results['has_updates']
