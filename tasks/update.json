@@ -20,7 +20,7 @@
   "parameters": {
     "provider": {
       "description": "What update provider to use. For Linux (RHEL, Debian, etc) this parameter is not used. For Windows the available values are: 'windows', 'chocolatey', 'all' (both 'windows' and 'chocolatey'). The default value for Windows is 'all'. If 'all' is passed and Chocolatey isn't installed then Chocolatey will simply be skipped. If 'chocolatey' is passed and Chocolatey isn't installed, then this will error.",
-      "type": "Optional[String[1]]"
+      "type": "Optional[String]"
     },
     "names": {
       "description": "Name of the package(s) to update. If nothing is passed then all packages will be updated. Note: this currently only works for Linux, Windows support will be added in the future for both Windows Update and Chocolatey (TODO)",
