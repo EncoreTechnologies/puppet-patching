@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+## Release 1.1.1 (2020-06-09)
+
 * Fixed header line for CSV
 
   Contributed by Haroon Rafique
