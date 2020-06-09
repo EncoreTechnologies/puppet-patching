@@ -73,7 +73,14 @@ function AvailableUpdates-Chocolatey([bool]$choco_required) {
     # output is in the format:
     # package name|current version|available version|pinned?
     foreach ($line in $output) {
-      $parts = $line.split('|')
+      $parts = @($line.split('|'))
+      if ($parts.Length -lt 4) {
+        return @{
+          'result' = $output;
+          'exit_code' = 102;
+          'error' = '"choco outdated" command returned data in an unknown format (couldnt find at least 4x "|" characters). Check the "result" parameter for the raw output from the command. Guessing there was some unexpected error and "choco outdated" still returned an exit code of 0.';
+        }
+      }
       $updateList += @{
         'name' = $parts[0];
         'version_old' = $parts[1];
@@ -101,13 +108,22 @@ if ($provider -eq '') {
 $exit_code = 0
 if ($provider -eq 'windows') {
   $data_windows = AvailableUpdates-Windows
-  $result = @{"updates" = @($data_windows['result'])}
   $exit_code = $data_windows['exit_code']
+  if ($exit_code -eq 0) {
+    $result = @{"updates" = @($data_windows['result'])}
+  }
+  else {
+    $result = @{'error_windows' = $data_windows}
+  }
 } elseif ($provider -eq 'chocolatey') {
   $data_chocolatey = AvailableUpdates-Chocolatey($True)
-  Write-Output $data_chocolatey
-  $result = @{"updates" = @($data_chocolatey['result'])}
   $exit_code = $data_chocolatey['exit_code']
+  if ($exit_code -eq 0) {
+    $result = @{"updates" = @($data_chocolatey['result'])}
+  }
+  else {
+    $result = @{'error_chocolatey' = $data_chocolatey}
+  }
 } elseif ($provider -eq 'all') {
   $result = @{"updates" = @()}
   $exit_code = 0
