@@ -16,6 +16,14 @@ All notable changes to this project will be documented in this file.
   * `patching_update_provider`: Parameter sets the provider in the update tasks. 
 
   Contributed by Bill Sirinek (@sirinek)
+  
+* Fixed bug in `patching::available_updates_windows` where if `choco outdated` printed an
+  error, but returned a `0` exit status our output parsing code was throwing an exception
+  causing a unhelpful error to be printed. Now, we check for this condition and if we
+  can't successfully parse the output of `choco outdated` we explicitly fail the task
+  and return the raw output from the command.
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 1.1.0 (2020-04-15)
 
