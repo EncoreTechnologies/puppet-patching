@@ -33,4 +33,3 @@
 bolt.log
 Puppetfile.lock
 modules
-site-modules
