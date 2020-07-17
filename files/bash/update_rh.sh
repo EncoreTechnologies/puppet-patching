@@ -75,8 +75,13 @@ STATUS=0
 # from the $PIPESTATUS array to get access to the `yum` command's return value.
 # Now, the exit status for the $() will be whatever the exit status is for `yum` instead
 # of the exit status of `tee`.
-YUM_UPDATE=$(yum -y update $PACKAGES | tee -a "$LOG_FILE"; exit ${PIPESTATUS[0]})
+YUM_UPDATE=$(yum -y update $PACKAGES 2>&1 | tee -a "$LOG_FILE"; exit ${PIPESTATUS[0]})
 STATUS=$?
+if [[ $STATUS -ne 0 ]]; then
+  echo "ERROR: yum -y update failed, raw output is below:"
+  echo "$YUM_UPDATE"
+  exit $STATUS
+fi
 
 # check if packages were updated or not
 if echo "$YUM_UPDATE" | grep -q "No packages marked for"; then
@@ -88,8 +93,8 @@ if echo "$YUM_UPDATE" | grep -q "No packages marked for"; then
 EOF
 else
   ## Collect yum history if update was performed.
-  YUM_HISTORY_LAST_ID=$(yum history list | grep -Em 1 '^ *[0-9]' | awk '{ print $1 }')
-  YUM_HISTORY_FULL=$(yum history info "$YUM_HISTORY_LAST_ID" | tee -a "$LOG_FILE")
+  YUM_HISTORY_LAST_ID=$(yum history list 2>&1 | grep -Em 1 '^ *[0-9]' | awk '{ print $1 }')
+  YUM_HISTORY_FULL=$(yum history info "$YUM_HISTORY_LAST_ID" 2>&1 | tee -a "$LOG_FILE")
   
   # Yum history contains a section called "Packages Altered:" that has details
   # of all of the things that changed during the yum transaction. This is what
