@@ -103,6 +103,8 @@ plan patching::reboot_required (
   }
   else {
     out::message('Noop specified, skipping all reboots.')
+    $targets_reboot_attempted = []
+    $reboot_resultset = ResultSet([])
   }
 
   # return our results
