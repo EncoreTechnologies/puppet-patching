@@ -103,7 +103,6 @@ plan patching::monitoring_prometheus_puppet (
 
     # Run the query script and write the result to the given targets file in Prometheus
     $script_args = ['--server', $_puppetdb_server, '--port', $_puppetdb_port, '--ssl-dir', $_puppet_ssl_dir, '--monitoring-fact', $_monitoring_puppet_fact]
-    #$script_args = ["--server ${_puppetdb_server}", "--port ${_puppetdb_port}", "--ssl-dir ${_puppet_ssl_dir}", "--monitoring-fact ${_monitoring_puppet_fact}"]
     $prom_targets = run_script('patching/python/puppetdb-query-nodes.py', $targets, 'arguments' => $script_args)
 
     # The write_file command creates a file with 600 permissions and the prometheus service will throw an error that it can't
