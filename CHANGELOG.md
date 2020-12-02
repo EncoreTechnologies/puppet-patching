@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+## Release 1.2.1 (2020-12-02)
+
+* Added monitoring_prometheus_puppet bolt plan to optionally disable monitoring for a server
+  in Prometheus but updating a given Puppet fact
+
+  Contributed by John Schoewe (@jschoewe)
+
 ## Release 1.1.1 (2020-06-09)
 
 * Fixed header line for CSV
