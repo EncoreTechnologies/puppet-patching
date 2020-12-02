@@ -6,10 +6,10 @@ import requests
 import socket
 
 # The puppet server is expected to have the following alt name defined in its cert
-PUPPETDB_SERVER='puppetdb1'
-PUPPETDB_PORT=80811
-SSL_DIR='/etc/puppetlabs/puppet/ssl1'
-MONITORING_FACT='monitoring_enabled1'
+PUPPETDB_SERVER='puppetdb'
+PUPPETDB_PORT=8081
+SSL_DIR='/etc/puppetlabs/puppet/ssl'
+MONITORING_FACT='monitoring_enabled'
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__))
