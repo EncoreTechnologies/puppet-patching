@@ -28,6 +28,7 @@
 #
 # @example Remote target definition for $monitoring_target
 #   vars:
+#     patching_monitoring_plan: 'patching::monitoring_prometheus_puppet'
 #     patching_monitoring_target: 'prometheus'
 #     patching_monitoring_puppet_fact: 'monitoring_enabled'
 #     prometheus_targets_file: '/etc/prometheus/file_sd_config.d/targets.json'
