@@ -1,0 +1,29 @@
+{
+  "description": "Enable or disable monitoring alerts on hosts in SolarWinds.",
+  "remote": true,
+  "supports_noop": true,
+  "files": ["python_task_helper/files/task_helper.py"],
+  "parameters": {
+    "targets": {
+      "type": "Variant[String[1], Array[String[1]]]",
+      "description": "List of hostnames or IP addresses for targets in SolarWinds that will have monitoring alerts either enabled or disabled."
+    },
+    "action": {
+      "type": "Enum['enable', 'disable']",
+      "description": "Action to perform on monitored targets. 'enable' will enable monitoring alerts. 'disable' will disable monitoring alerts on targets."
+    },
+    "prometheus_server": {
+      "type": "String[1]",
+      "description": "FQDN of the Prometheus server to create an alert silence for"
+    },
+    "silence_duration": {
+      "type": "Optional[Integer]",
+      "description": "How long the alert silence will be alive for"
+    },
+    "silence_units": {
+      "type": "Enum['minutes', 'hours', 'days', 'weeks']",
+      "description": "Goes with the silence duration to determine how long the alert silence will be alive for"
+    }
+  }
+}
+
