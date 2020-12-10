@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+- Switch from Travis to GitHub Actions
+
+  Contributed by Nick Maludy (@nmaludy)
+
 ## Release 1.1.1 (2020-06-09)
 
 * Fixed header line for CSV
