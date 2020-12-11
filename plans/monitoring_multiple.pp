@@ -17,7 +17,6 @@
 #     patching_monitoring_plan:
 #       - 'patching::monitoring_solarwinds'
 #       - 'patching::monitoring_prometheus'
-#     patching_monitoring_target: 'solarwinds'
 #
 #   groups:
 #     - name: solarwinds
