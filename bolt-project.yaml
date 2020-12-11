@@ -1,6 +1,7 @@
 # Usage:
 #  bolt puppetfile install
 #  bolt plan run patching::available_updates
+name: patching
 
 # paths are relative to this bolt.yaml file
 modulepath: "./modules:./site-modules"
