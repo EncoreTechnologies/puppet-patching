@@ -1,4 +1,4 @@
-# @summary Disable Prometheus monitoring by Creating a silence for each target
+# @summary Create or remove alert silences for hosts in Prometheus.
 #
 # @param [TargetSpec] targets
 #   Set of targets to run against.
@@ -9,8 +9,11 @@
 #     - `enable` Resumes monitoring alerts
 #     - 'disable' Supresses monitoring alerts
 #
-# @param [Optional[Enum['name', 'uri']]] monitoring_puppet_fact
-#   Name of the Puppet fact the determines whether a VM should be monitored or not
+# @param [Optional[Integer]] monitoring_silence_duration
+#   How long the alert silence will be alive for
+#
+# @param [Optional[Enum['minutes', 'hours', 'days', 'weeks']]] monitoring_silence_units
+#   Goes with the silence duration to determine how long the alert silence will be alive for
 #
 # @param [TargetSpec] monitoring_target
 #   Name or reference to the remote transport target of the Prometheus server.
@@ -43,12 +46,12 @@
 #         - prometheus.domain.tld
 #
 plan patching::monitoring_prometheus (
-  TargetSpec                $targets,
-  Enum['enable', 'disable'] $action,
-  Integer                   $monitoring_silence_duration = get_targets($targets)[0].vars['patching_monitoring_silence_duration'],
-  String[1]                 $monitoring_silence_units = get_targets($targets)[0].vars['patching_monitoring_silence_units'],
-  TargetSpec                $monitoring_target = 'prometheus',
-  Boolean                   $noop = false,
+  TargetSpec                                          $targets,
+  Enum['enable', 'disable']                           $action,
+  Optional[Integer]                                   $monitoring_silence_duration = undef,
+  Optional[Enum['minutes', 'hours', 'days', 'weeks']] $monitoring_silence_units = undef,
+  Optional[TargetSpec]                                $monitoring_target = undef,
+  Boolean                                             $noop = false,
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
@@ -60,6 +63,9 @@ plan patching::monitoring_prometheus (
   $_monitoring_silence_units = pick($monitoring_silence_units,
                                 $group_vars['patching_monitoring_silence_units'],
                                 'hours')
+  $_monitoring_target = pick($monitoring_target,
+                        $group_vars['patching_monitoring_target'],
+                        'prometheus')
 
   # Create array of node names
   $target_names = patching::target_names($_targets, 'name')
@@ -84,10 +90,10 @@ plan patching::monitoring_prometheus (
   }
 
   if !$noop {
-    run_task('patching::monitoring_prometheus', $monitoring_target,
+    run_task('patching::monitoring_prometheus', $_monitoring_target,
       targets           => $target_names,
       action            => $action,
-      prometheus_server => $monitoring_target,
+      prometheus_server => get_target($_monitoring_target).uri,
       silence_duration  => $_monitoring_silence_duration,
       silence_units     => $_monitoring_silence_units,
     )

@@ -6,8 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ## Release 1.2.1 (2020-12-02)
 
-* Added monitoring_prometheus_puppet bolt plan to optionally disable monitoring for a server
-  in Prometheus but updating a given Puppet fact
+* Added monitoring_prometheus bolt plan and task to optionally create/delete silences
+  in Prometheus to suppress alerts for the given targets.
+
+* Added monitoring_multiple bolt plan to enable/disable monitoring for multiple
+  different services at once.
 
   Contributed by John Schoewe (@jschoewe)
 

@@ -29,6 +29,8 @@
 * [`cache_update_linux`](#cache_update_linux): Updates the targets update cache. For RHEL/CentOS this means a `yum clean expire-cache`. For Debian this means a `apt update`.
 * [`cache_update_windows`](#cache_update_windows): Updates the targets update cache. For Windows this means a Windows Update refresh.
 * [`history`](#history): Reads the update history from the JSON 'result_file'.
+* [`monitoring_multiple`](#monitoring_multiple): Enable or disable monitoring alerts for multiple monitoring services at once.
+* [`monitoring_prometheus`](#monitoring_prometheus): Create or remove alert silences for hosts in Prometheus.
 * [`monitoring_solarwinds`](#monitoring_solarwinds): Enable or disable monitoring alerts on hosts in SolarWinds.
 * [`post_update`](#post_update): Run post-update script on target host(s), only if it exists. If the script doesn't exist or isn't executable, then this task succeeds (this a
 * [`pre_post_update_linux`](#pre_post_update_linux): Pre-post-update definition to make bolt not throw a warning. Best to use pre_update or post_update directly.
@@ -54,7 +56,9 @@
 * [`patching::deploy_scripts`](#patchingdeploy_scripts): 
 * [`patching::get_facts`](#patchingget_facts): Sets patching facts on targets
 * [`patching::get_targets`](#patchingget_targets): <code>get_targets()</code> except it also performs online checks and gathers facts in one step.
-* [`patching::monitoring_solarwinds`](#patchingmonitoring_solarwinds): Creates or deletes VM snapshots on targets in VMware.
+* [`patching::monitoring_multiple`](#patchingmonitoring_multiple): Enable or disable monitoring alerts for multiple monitoring services at once.
+* [`patching::monitoring_prometheus`](#patchingmonitoring_prometheus): Create or remove alert silences for hosts in Prometheus.
+* [`patching::monitoring_solarwinds`](#patchingmonitoring_solarwinds): Enable or disable monitoring alerts on hosts in SolarWinds.
 * [`patching::ordered_groups`](#patchingordered_groups): Takes a set of targets then groups and sorts them by the <code>patching_order</code> var set on the target.
 * [`patching::post_update`](#patchingpost_update): Executes a custom post-update script on each node.
 * [`patching::pre_post_update`](#patchingpre_post_update): Common entry point for executing the pre/post update custom scripts
@@ -495,6 +499,44 @@ Reads the update history from the JSON 'result_file'.
 Data type: `Optional[String[1]]`
 
 Log file for patching results. This file will contain the JSON output that is returned from these tasks. This is data that was written by patching::update. If no script name is passed on Linux hosts a default is used: /var/log/patching.json. If no script name is passed  on Windows hosts a default is used: C:/ProgramData/PuppetLabs/patching/patching.json
+
+### monitoring_prometheus
+
+Create or remove alert silences for hosts in Prometheus.
+
+**Supports noop?** true
+
+#### Parameters
+
+##### `targets`
+
+Data type: `Variant[String[1], Array[String[1]]]`
+
+List of hostnames or IP addresses for targets in SolarWinds that will have monitoring alerts either enabled or disabled.
+
+##### `action`
+
+Data type: `Enum['enable', 'disable']`
+
+Action to perform on monitored targets. 'enable' will enable monitoring alerts. 'disable' will disable monitoring alerts on targets.
+
+##### `prometheus_server`
+
+Data type: `String[1]`
+
+FQDN of the Prometheus server to create an alert silence for
+
+##### `silence_duration`
+
+Data type: `Optional[Integer]`
+
+How long the alert silence will be alive for
+
+##### `silence_units`
+
+Data type: `Optional[Enum['minutes', 'hours', 'days', 'weeks']]`
+
+Goes with the silence duration to determine how long the alert silence will be alive for
 
 ### monitoring_solarwinds
 
@@ -1289,6 +1331,153 @@ The following parameters are available in the `patching::get_targets` plan.
 Data type: `TargetSpec`
 
 Set of targets to run against.
+
+### patching::monitoring_multiple
+
+Disable monitoring for targets in multiple services
+
+#### Examples
+
+##### Remote target definition for $monitoring_target
+
+```puppet
+vars:
+  patching_monitoring_plan:
+    - 'patching::monitoring_solarwinds'
+    - 'patching::monitoring_prometheus'
+
+groups:
+  - name: solarwinds
+    config:
+      transport: remote
+      remote:
+        port: 17778
+        username: 'domain\svc_bolt_sw'
+        password:
+          _plugin: pkcs7
+          encrypted_value: >
+            ENC[PKCS7,xxx]
+    targets:
+      - solarwinds.domain.tld
+
+  - name: prometheus
+    config:
+      transport: remote
+      remote:
+        username: 'domain\prom_user'
+        password:
+          _plugin: pkcs7
+          encrypted_value: >
+            ENC[PKCS7,xxx]
+    targets:
+      - prometheus.domain.tld
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::monitoring_multiple` plan.
+
+##### `targets`
+
+Data type: `TargetSpec`
+
+Set of targets to run against.
+
+##### `action`
+
+Data type: `Enum['enable', 'disable']`
+
+What action to perform on the monitored targets:
+
+  - `enable` Resumes monitoring alerts
+  - 'disable' Supresses monitoring alerts
+
+##### `monitoring_plan`
+
+Data type: `Array`
+
+List of monitoring plans to run if multiple monitoring services need to be enabled/disabled.
+
+Default value: `.vars['patching_monitoring_target']`
+
+##### `noop`
+
+Data type: `Boolean`
+
+Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
+
+Default value: `false`
+
+### patching::monitoring_prometheus
+
+Create or remove alert silences for hosts in Prometheus.
+
+#### Examples
+
+##### Remote target definition for $monitoring_target
+
+```puppet
+vars:
+  patching_monitoring_target: 'prometheus'
+  patching_monitoring_silence_duration: 24
+  patching_monitoring_silence_units: 'hours'
+
+groups:
+  - name: prometheus
+    config:
+      transport: remote
+      remote:
+        username: 'domain\prom_user'
+        password:
+          _plugin: pkcs7
+          encrypted_value: >
+            ENC[PKCS7,xxx]
+    targets:
+      - prometheus.domain.tld
+```
+
+#### Parameters
+
+The following parameters are available in the `patching::monitoring_prometheus` plan.
+
+##### `targets`
+
+Data type: `TargetSpec`
+
+Set of targets to run against.
+
+##### `action`
+
+Data type: `Enum['enable', 'disable']`
+
+What action to perform on the monitored targets:
+
+  - `enable` Resumes monitoring alerts
+  - 'disable' Supresses monitoring alerts
+
+##### `monitoring_silence_duration`
+
+Data type: `Optional[Integer]`
+
+How long the alert silence will be alive for
+
+Default Value: `.vars['patching_monitoring_silence_duration']`
+
+##### `monitoring_silence_units`
+
+Data type: `Optional[Enum['minutes', 'hours', 'days', 'weeks']]`
+
+Goes with the silence duration to determine how long the alert silence will be alive for
+
+Default Value: `.vars['patching_monitoring_silence_units']`
+
+##### `noop`
+
+Data type: `Boolean`
+
+Flag to enable noop mode. When noop mode is enabled no snapshots will be created or deleted.
+
+Default value: `false`
 
 ### patching::monitoring_solarwinds
 

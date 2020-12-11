@@ -1,12 +1,15 @@
 {
-  "description": "Enable or disable monitoring alerts on hosts in SolarWinds.",
+  "description": "Create or remove alert silences for hosts in Prometheus.",
   "remote": true,
   "supports_noop": true,
-  "files": ["python_task_helper/files/task_helper.py"],
+  "files": [
+    "patching/lib/puppet_x/encore/patching/http_helper.rb",
+    "ruby_task_helper/files/task_helper.rb"
+  ],
   "parameters": {
     "targets": {
       "type": "Variant[String[1], Array[String[1]]]",
-      "description": "List of hostnames or IP addresses for targets in SolarWinds that will have monitoring alerts either enabled or disabled."
+      "description": "List of hostnames for targets in Prometheus that will have monitoring alerts either enabled or disabled."
     },
     "action": {
       "type": "Enum['enable', 'disable']",
@@ -21,7 +24,7 @@
       "description": "How long the alert silence will be alive for"
     },
     "silence_units": {
-      "type": "Enum['minutes', 'hours', 'days', 'weeks']",
+      "type": "Optional[Enum['minutes', 'hours', 'days', 'weeks']]",
       "description": "Goes with the silence duration to determine how long the alert silence will be alive for"
     }
   }
