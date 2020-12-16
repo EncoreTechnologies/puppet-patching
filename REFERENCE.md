@@ -1344,8 +1344,10 @@ Disable monitoring for targets in multiple services
 vars:
   patching_monitoring_plan: 'patching::monitoring_multiple'
   patching_monitoring_plan_multiple:
-    - 'patching::monitoring_solarwinds'
-    - 'patching::monitoring_prometheus'
+    - plan: 'patching::monitoring_solarwinds'
+      target: 'solarwinds'
+    - plan: 'patching::monitoring_prometheus'
+      target: 'prometheus'
 
 groups:
   - name: solarwinds
