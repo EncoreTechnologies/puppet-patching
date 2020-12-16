@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
-## Release 1.2.1 (2020-12-02)
+## Release 1.2.0 (2020-12-02)
 
 * Added monitoring_prometheus bolt plan and task to optionally create/delete silences
   in Prometheus to suppress alerts for the given targets.

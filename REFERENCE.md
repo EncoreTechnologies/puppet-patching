@@ -1342,7 +1342,8 @@ Disable monitoring for targets in multiple services
 
 ```puppet
 vars:
-  patching_monitoring_plan:
+  patching_monitoring_plan: 'patching::monitoring_multiple'
+  patching_monitoring_plan_multiple:
     - 'patching::monitoring_solarwinds'
     - 'patching::monitoring_prometheus'
 

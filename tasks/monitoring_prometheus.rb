@@ -85,5 +85,4 @@ class MonitoringPrometheusTask < TaskHelper
   end
 end
 
-#MonitoringPrometheusTask.run if $PROGRAM_NAME == __FILE__
 MonitoringPrometheusTask.run if $PROGRAM_NAME == __FILE__

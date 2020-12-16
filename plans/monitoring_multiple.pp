@@ -14,7 +14,8 @@
 #
 # @example Remote target definition for $monitoring_target
 #   vars:
-#     patching_monitoring_plan:
+#     patching_monitoring_plan: 'patching::monitoring_multiple'
+#     patching_monitoring_plan_multiple:
 #       - 'patching::monitoring_solarwinds'
 #       - 'patching::monitoring_prometheus'
 #
@@ -47,7 +48,7 @@
 plan patching::monitoring_multiple (
   TargetSpec                $targets,
   Enum['enable', 'disable'] $action,
-  Array                     $monitoring_plan = get_targets($targets)[0].vars['patching_monitoring_plan'],
+  Array                     $monitoring_plan = get_targets($targets)[0].vars['patching_monitoring_plan_multiple'],
   Boolean                   $noop = false,
 ) {
 
