@@ -18,6 +18,8 @@ appveyor.yml:
 Gemfile:
   required:
     ':development':
+      - gem: 'puppet-blacksmith'
+        version: '>= 5.0.0'
       - gem: 'puppet-lint-absolute_template_path'
         version: '>= 1.0.1'
       - gem: 'puppet-lint-alias-check'
@@ -52,8 +54,15 @@ Gemfile:
 #   extras:
 #     - "# exclude plans because puppet-syntax doesn't support them yet: https://github.com/voxpupuli/puppet-syntax/issues/95"
 #     - 'PuppetSyntax.exclude_paths = ["plans/**/*", "vendor/**/*"]'
+spec/spec_helper.rb:
+  mock_with: ':rspec'
 .travis.yml:
-  deploy_to_forge:
-    enabled: true
-  user: encore
-  secure: "dAqckSD7HGROLA3AMl7CT5Mrw1NLqYBMRUMlR44dNuuFcUfigdW0VnIQrwotip304zJ68bWNpN2xi9QBfB1MDa8tymEQ35apaxvltJlTdKazlMnukl8TVp5WvtTBrwziwMfb99JZFLNMuReqZh+JHkfQjyjtLAglEf+QtNgmOzcXihUMl1kbV5XnrGQ7UDbc65ReT3khTIfZu6iCXqY/3JHOHLBd+EYc01EfOA/JQb1V/gIAf0zNSum4LZ4HoWrPXjts+w8pigJcCM0jxwpBFAex3uKSOTGC2lUG/xTwZXKT8lXWqZlbpAoahDDuH3CsvAA9FnnWQoXGIwryeZ2W0IVwYJvOvYtoepyd3//Tsvtma6wJuzqxlggpVCcb7Pm9IKXiUCXMnbQ4HP6YR/Mk5yt/+1Xl2RwJCve4fII9mo8OG657JyOio8BO+mznGJiZ5fCpQwtt3J8nlhnP5fDumNiggfhh2pzzZmSRp/LlsmVyJvWwweNskbX69F1g6r2NvEmiFedLjAg2jeOcRI7YiOsNsXwn4F/87RG6rOKw469MIcH74Td6oYYgSjaOMnLz07ZqL8YNxTwXhH7kc1MB92J+0GYX0iM38WpJFr30o/fu+wJzitKBSiFB2fQ1av1akBGFrBMX1GQIAj6USMQSpcIvVcCzCNcSS9cNUqTw7gI="
+  # we've converted over to GitHub actions
+  unmanaged: true
+# .travis.yml:
+#   deploy_to_forge:
+#     enabled: true
+#   user: encore
+#   secure: "rSxtW5opNBOGqj0iWgLV2t9tWJvFgBRUVeH25Wi9XqVkl3O+Yki0xsBAkrtG4UXrtbkYm5plF8GnwbsahH6XA/91ydl6uQkI/Xhn7EbC2FXTeWdNadPc/kQWDkRxgJ1ChWscS6WRoWApTDWadjQCNMzl4CgzYHyz8H9YBHFa/isPxBdGmoZYJ3/qPPxdjUSexeLxZf8gxVTJHJwe5VJik0CQ1eOu31//WDXUo6Erm0OuivWC5C3OnnrezH3vW27mqp4MCr1Uv6kw7NETM6seEHQdDKl1itOcXpayOMlw/nxTVBas03M7CfCz3CC2d9qzWjb5J2KxSjwO3RJo/oX8MaTrJDQ+ydcPC9T6uO7dX/Wm9hzHTBah4MzzMHtHfNBCS8Rmpson8BCfZVolRaWRjBRwSB54H2jOgBvclqgR2skVWhuvpFKhxAhH2et5HdYf81L8TgW24tjfbBsf4hYSrqG/sM0yzt/cY4u0N4SVN+6P86DRuvbdTKH+KpAPRRtTgHw0i+3E9wce4XFs6B5JrSSjjHR3sWXdZMb8bVkugHJXyQgTQKf94aNyRfu5tt6174SaBBSOLLR+CDtb8MP1egYfCRXWqA2OQhNcB/2/XhrE01e5CGCj8jepJ8APHfwTLZWVPlHETQr1iFqYZsGjPMaoB1SR4hUN5BaZ2n0g77A="
+
+
