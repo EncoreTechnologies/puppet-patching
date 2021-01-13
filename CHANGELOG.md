@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+- Switch from Travis to GitHub Actions
+
+  Contributed by Nick Maludy (@nmaludy)
+
 ## Release 1.2.0 (2020-12-02)
 
 * Added monitoring_prometheus bolt plan and task to optionally create/delete silences
