@@ -6,7 +6,7 @@ require 'json'
 
 # Bolt task for enabling/disabling monitoring alerts in SolarWinds
 class MonitoringPrometheusTask < TaskHelper
-  def initialize()
+  def initialize
     @http_helper = PuppetX::Patching::HTTPHelper.new(ssl: false, ssl_verify: false)
   end
 
@@ -17,26 +17,26 @@ class MonitoringPrometheusTask < TaskHelper
     when 'hours'
       offset = 3600
     when 'days'
-      offset = 86400
+      offset = 86_400
     when 'weeks'
-      offset = 604800
+      offset = 604_800
     end
 
-    return (Time.now.utc + duration * offset ).iso8601
+    (Time.now.utc + duration * offset).iso8601
   end
 
-  # Create a silence for every target that starts now and ends after the given duration                                                                                                                           
+  # Create a silence for every target that starts now and ends after the given duration
   def create_silences(targets, duration, units, prometheus_server)
     silence_ids = []
-    for target in targets
+    targets.each do |target|
       payload = {
-        matchers: [{name: 'alias', value: target, isRegex: false}],
+        matchers: [{ name: 'alias', value: target, isRegex: false }],
         startsAt: Time.now.utc.iso8601,
         endsAt: get_end_timestamp(duration, units),
         comment: "Silencing alerts on #{target} for patching",
-        createdBy: 'patching'
+        createdBy: 'patching',
       }
-      headers = {'Content-Type' => 'application/json'}
+      headers = { 'Content-Type' => 'application/json' }
       res = @http_helper.post("http://#{prometheus_server}:9093/api/v2/silences",
                               body: payload.to_json,
                               headers: headers)
@@ -44,7 +44,7 @@ class MonitoringPrometheusTask < TaskHelper
       silence_ids.push((JSON.parse res.body)['silenceID'])
     end
 
-    return silence_ids
+    silence_ids
   end
 
   # Remove all silences for targets that were created by 'patching'
@@ -52,14 +52,13 @@ class MonitoringPrometheusTask < TaskHelper
     res = @http_helper.get("http://#{prometheus_server}:9093/api/v2/silences")
     silences = res.body
 
-    for silence in JSON.parse silences
+    (JSON.parse silences).each do |silence|
       # Verify that the current silence is for one of the given targets
       # All silences created by this task will have exactly one matcher
-      if silence['matchers'][0]['name'] == 'alias' && targets.include?(silence['matchers'][0]['value'])
-        # Remove only silences that are active and were created by 'patching'                                                                                                                                   
-        if silence['status']['state'] == 'active' && silence['createdBy'] == 'patching'
-          @http_helper.delete("http://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
-        end
+      next if silence['matchers'][0]['name'] != 'alias' || !targets.include?(silence['matchers'][0]['value'])
+      # Remove only silences that are active and were created by 'patching'
+      if silence['status']['state'] == 'active' && silence['createdBy'] == 'patching'
+        @http_helper.delete("http://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
       end
     end
   end
@@ -70,7 +69,7 @@ class MonitoringPrometheusTask < TaskHelper
            prometheus_server: nil,
            silence_duration: nil,
            silence_units: nil,
-           **kwargs)
+           **_kwargs)
     # targets can be either an array or a string with a single target
     # Check if a single target was given and convert it to an array if it was
     if targets.is_a? String
