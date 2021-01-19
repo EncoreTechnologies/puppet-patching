@@ -1,12 +1,4 @@
-# @summary Creates or deletes VM snapshots on targets in VMware.
-#
-# Communicates to the vSphere API from the local Bolt control node using
-# the [rbvmomi](https://github.com/vmware/rbvmomi) Ruby gem.
-#
-# To install the rbvmomi gem on the bolt control node:
-# ```shell
-#   /opt/puppetlabs/bolt/bin/gem install --user-install rbvmomi
-# ```
+# @summary Enable or disable monitoring alerts on hosts in SolarWinds.
 #
 # TODO config variables
 #
@@ -74,9 +66,9 @@ plan patching::monitoring_solarwinds (
   TargetSpec                    $targets,
   Enum['enable', 'disable']     $action,
   Optional[Enum['name', 'uri']] $target_name_property = undef,
-  TargetSpec $monitoring_target = get_targets($targets)[0].vars['patching_monitoring_target'],
-  Optional[String[1]] $monitoring_name_property = undef,
-  Boolean    $noop              = false,
+  Optional[TargetSpec]          $monitoring_target = undef,
+  Optional[String[1]]           $monitoring_name_property = undef,
+  Boolean                       $noop = false,
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
@@ -86,6 +78,9 @@ plan patching::monitoring_solarwinds (
   $_monitoring_name_property = pick($monitoring_name_property,
                                     $group_vars['patching_monitoring_name_property'],
                                     'DNS')
+  $_monitoring_target = pick($monitoring_target,
+                              $group_vars['patching_monitoring_target'],
+                              'solarwinds')
 
   # Create array of node names
   $target_names = patching::target_names($_targets, $_target_name_property)
@@ -110,7 +105,7 @@ plan patching::monitoring_solarwinds (
   }
 
   if !$noop {
-    return run_task('patching::monitoring_solarwinds', $monitoring_target,
+    return run_task('patching::monitoring_solarwinds', $_monitoring_target,
                     targets       => $target_names,
                     action        => $action,
                     name_property => $_monitoring_name_property)

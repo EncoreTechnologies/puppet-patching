@@ -8,6 +8,16 @@ All notable changes to this project will be documented in this file.
 
   Contributed by Nick Maludy (@nmaludy)
 
+## Release 1.2.0 (2020-12-02)
+
+* Added monitoring_prometheus bolt plan and task to optionally create/delete silences
+  in Prometheus to suppress alerts for the given targets.
+
+* Added monitoring_multiple bolt plan to enable/disable monitoring for multiple
+  different services at once.
+
+  Contributed by John Schoewe (@jschoewe)
+
 ## Release 1.1.1 (2020-06-09)
 
 * Fixed header line for CSV

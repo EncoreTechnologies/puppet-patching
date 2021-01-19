@@ -74,5 +74,9 @@ module PuppetX::Patching
     def post(url, body: nil, headers: @headers)
       execute('post', url, body: body, headers: headers, redirect_limit: @redirect_limit)
     end
+
+    def delete(url, body: nil, headers: @headers)
+      execute('delete', url, body: body, headers: headers, redirect_limit: @redirect_limit)
+    end
   end
 end
