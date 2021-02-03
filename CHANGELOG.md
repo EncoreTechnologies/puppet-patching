@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+- Fixed issue where agruments for reboot strategy are being overridden by
+  inventory file.
+
+  Contributed by Bradley Bishop (@bishopbm1)
+
 - Switch from Travis to GitHub Actions
 
   Contributed by Nick Maludy (@nmaludy)
@@ -29,10 +34,10 @@ All notable changes to this project will be documented in this file.
   Contributed by Haroon Rafique
 
 * Added new configuration option:
-  * `patching_update_provider`: Parameter sets the provider in the update tasks. 
+  * `patching_update_provider`: Parameter sets the provider in the update tasks.
 
   Contributed by Bill Sirinek (@sirinek)
-  
+
 * Fixed bug in `patching::available_updates_windows` where if `choco outdated` printed an
   error, but returned a `0` exit status our output parsing code was throwing an exception
   causing a unhelpful error to be printed. Now, we check for this condition and if we
@@ -73,7 +78,7 @@ All notable changes to this project will be documented in this file.
 * Added new configuration options:
   * `patching_reboot_wait`: Parameter controls the `reboot_wait` option for the number of seconds
     to wait between reboots. Default = 300
-  * `paching_report_file`: Customize the name of the report file to write to disk. You 
+  * `paching_report_file`: Customize the name of the report file to write to disk. You
     can disable writing the report files by specifying this as `'disabled'`.
     NOTE: for PE users writing files to disk throws an error, so you'll be happy you can
     now disable writing these files!
@@ -82,12 +87,12 @@ All notable changes to this project will be documented in this file.
     Default = `pretty`
 
   (Enhancement)
-  
+
   Contributed by Nick Maludy (@nmaludy)
-  
+
 * To support the new configuration options above, the `patching::reboot_required` plan
   had its parameter `reboot_wait` renamed to `wait`.  (Enhancement)
-  
+
   Contributed by Nick Maludy (@nmaludy)
 
 ## Release 1.0.1 (2020-03-04)

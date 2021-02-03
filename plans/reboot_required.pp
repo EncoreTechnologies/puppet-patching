@@ -44,16 +44,22 @@
 #
 plan patching::reboot_required (
   TargetSpec  $targets,
-  Enum['only_required', 'never', 'always'] $strategy = 'only_required',
-  String     $message = 'NOTICE: This system is currently being updated.',
-  Integer    $wait    = 300,
+  Enum['only_required', 'never', 'always'] $strategy = undef,
+  String     $message = undef,
+  Integer    $wait    = undef,
   Boolean    $noop    = false,
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
-  $_strategy = pick($group_vars['patching_reboot_strategy'], $strategy)
-  $_message = pick($group_vars['patching_reboot_message'], $message)
-  $_wait = pick($group_vars['patching_reboot_wait'], $wait)
+  $_strategy = pick($strategy,
+                    $group_vars['patching_reboot_strategy'],
+                    'only_required')
+  $_message = pick($message,
+                    $group_vars['patching_reboot_message'],
+                    'NOTICE: This system is currently being updated.')
+  $_wait = pick($wait,
+                $group_vars['patching_reboot_wait'],
+                300)
 
   ## Check if reboot required.
   $reboot_results = run_task('patching::reboot_required', $_targets)
