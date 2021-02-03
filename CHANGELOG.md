@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+## Release 1.2.1 (2021-02-02)
+
 - Fixed issue where agruments for reboot strategy are being overridden by
   inventory file.
 
