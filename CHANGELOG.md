@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+- Fixed issue where puppet facts were not in the expected spot causing
+  puppet_facts plan to fail. We added a conditional to check for the facts
+  in both places
+
+  Contributed by Bradley Bishop (@bishopbm1)
+
 ## Release 1.2.1 (2021-02-02)
 
 - Fixed issue where agruments for reboot strategy are being overridden by
