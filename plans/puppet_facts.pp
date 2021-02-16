@@ -23,7 +23,14 @@ plan patching::puppet_facts(
   #
   # We only want to set the "values" as facts on the node
   $result_set.each |$result| {
-    add_facts($result.target, $result.value['values'])
+    # Debian systems to not have values param they are just in the value return
+    if 'values' in $result.value {
+      $target_fact_values = $result.value['values']
+    } else {
+      $target_fact_values = $result.value
+    }
+
+    add_facts($result.target, $target_fact_values)
   }
   return $result_set
 }
