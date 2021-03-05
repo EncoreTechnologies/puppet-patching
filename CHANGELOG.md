@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+- Bumped module `puppetlabs/puppet_agent` to `< 5.0.0`
+- Added module `puppetlabs/reboot` to `>= 3.0.0 < 5.0.0`
+- Bumped `puppet` requirement to `< 8.0.0` to support Puppet 7
+
+
 ## Release 1.2.1 (2021-02-02)
 
 - Fixed issue where agruments for reboot strategy are being overridden by
