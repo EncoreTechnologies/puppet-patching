@@ -7,6 +7,7 @@ require 'json'
 # Bolt task for enabling/disabling monitoring alerts in SolarWinds
 class MonitoringPrometheusTask < TaskHelper
   def initialize
+    super()
     @http_helper = PuppetX::Patching::HTTPHelper.new(ssl: false, ssl_verify: false)
   end
 
