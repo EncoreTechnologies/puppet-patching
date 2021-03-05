@@ -1,6 +1,6 @@
 {
   "name": "encore-patching",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "author": "Encore Technologies",
   "summary": "Implements OS patching workflows using Bolt tasks and plans.",
   "license": "Apache-2.0",
@@ -10,7 +10,11 @@
   "dependencies": [
     {
       "name": "puppetlabs/puppet_agent",
-      "version_requirement": ">= 2.2.0 < 3.0.0"
+      "version_requirement": ">= 2.2.0 < 7.0.0"
+    },
+    {
+      "name": "puppetlabs/reboot",
+      "version_requirement": ">= 3.0.0"
     },
     {
       "name": "puppetlabs/stdlib",
