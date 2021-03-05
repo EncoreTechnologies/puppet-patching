@@ -15,7 +15,7 @@
     {
       "name": "puppetlabs/reboot",
       "version_requirement": ">= 3.0.0"
-    }
+    },
     {
       "name": "puppetlabs/stdlib",
       "version_requirement": ">= 4.13.1 < 7.0.0"
