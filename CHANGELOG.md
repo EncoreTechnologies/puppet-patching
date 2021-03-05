@@ -4,11 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
-- Bumped module `puppetlabs/puppet_agent` to `< 5.0.0`
+* Fixed issue where puppet facts were not in the expected spot causing
+  puppet_facts plan to fail. We added a conditional to check for the facts
+  in both places
+
+  Contributed by Bradley Bishop (@bishopbm1)
+
+* Bumped module `puppetlabs/puppet_agent` to `< 5.0.0`
 
   Contributed by @fetzerms
 
-- Added module `puppetlabs/reboot` to `>= 3.0.0 < 5.0.0`
+* Added module `puppetlabs/reboot` to `>= 3.0.0 < 5.0.0`
 
   Contributed by @fetzerms
 
