@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+
+## Release 1.3.0 (2021-03-05)
+
 * Fixed issue where puppet facts were not in the expected spot causing
   puppet_facts plan to fail. We added a conditional to check for the facts
   in both places
