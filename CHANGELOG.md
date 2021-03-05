@@ -4,14 +4,39 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+- Bumped module `puppetlabs/puppet_agent` to `< 5.0.0`
+
+  Contributed by @fetzerms
+
+- Added module `puppetlabs/reboot` to `>= 3.0.0 < 5.0.0`
+
+  Contributed by @fetzerms
+
+* Bumped `puppet` requirement to `< 8.0.0` to support Puppet 7
+
+  Contributed by Nick Maludy (@nmaludy)
+
+* PDK update to `2.0.0`
+
+  Contributed by Nick Maludy (@nmaludy)
+
+* Remove tests for Puppet `5`.
+  **NOTICE** Puppet 5 support will be removed in next major version.
+
+  Contributed by Nick Maludy (@nmaludy)
+
+* Added tests for Puppet `7`
+
+  Contributed by Nick Maludy (@nmaludy)
+
 ## Release 1.2.1 (2021-02-02)
 
-- Fixed issue where agruments for reboot strategy are being overridden by
+* Fixed issue where agruments for reboot strategy are being overridden by
   inventory file.
 
   Contributed by Bradley Bishop (@bishopbm1)
 
-- Switch from Travis to GitHub Actions
+* Switch from Travis to GitHub Actions
 
   Contributed by Nick Maludy (@nmaludy)
 

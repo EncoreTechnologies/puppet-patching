@@ -20,16 +20,16 @@ jobs:
       matrix:
         include:
           # note: actions/setup-ruby only allows using a major.minor release of ruby
-          - ruby: '2.5'
-            puppet: "6.0"
+          - ruby: '2.7'
+            puppet: "7.0"
             check: "check:symlinks check:git_ignore check:dot_underscore check:test_file rubocop syntax lint metadata_lint"
             name: 'static'
-          - ruby: '2.4'
-            puppet: "5.0"
-            check: "parallel_spec"
-            name: 'spec'
           - ruby: '2.5'
             puppet: "6.0"
+            check: "parallel_spec"
+            name: 'spec'
+          - ruby: '2.7'
+            puppet: "7.0"
             check: "parallel_spec"
             name: 'spec'
     env:
@@ -83,8 +83,8 @@ jobs:
       matrix:
         include:
           # note: actions/setup-ruby only allows using a major.minor release of ruby
-          - ruby: '2.5'
-            puppet: "6.0"
+          - ruby: '2.7'
+            puppet: "7.0"
     env:
       PUPPET_GEM_VERSION: '~> ${{ matrix.puppet }}'
       # lock to 2.1.0 because 2.2.0 is causing issues during builds
