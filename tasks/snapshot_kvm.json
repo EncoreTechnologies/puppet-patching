@@ -1,0 +1,39 @@
+{
+  "description": "Creates or deletes snapshots on a set of KVM/Libvirt hypervisors",
+  "supports_noop": true,
+  "implementations": [
+    {
+      "name": "snapshot_kvm.sh",
+      "requirements": ["shell"]
+    }
+  ],
+  "parameters": {
+    "vm_names": {
+      "type": "Variant[String[1], Array[String[1]]]",
+      "description": "List of VM names, in KVM/Libvirt these are called domains."
+    },
+    "snapshot_name": {
+      "type": "Optional[String[1]]",
+      "default": "Bolt Snapshot",
+      "description": "Name of the snapshot"
+    },
+    "snapshot_description": {
+      "type": "Optional[String[1]]",
+      "description": "Description of the snapshot"
+    },
+    "snapshot_memory": {
+      "type": "Optional[Boolean]",
+      "default": false,
+      "description": "Snapshot the VMs memory"
+    },
+    "snapshot_quiesce": {
+      "type": "Optional[Boolean]",
+      "default": false,
+      "description": "Quiesce the filesystem during the snapshot, can be a PITA."
+    },
+    "action": {
+      "type": "Enum['create', 'delete']",
+      "description": "Action to perform on the snapshots. 'create' will create new snapshots on the VMs. 'delete' will delete snapshots on the VMs."
+    }
+  }
+}
