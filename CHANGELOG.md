@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Added a new plan and task `patching::snapshot_kvm` for creating/deleting
+  snapshots on KVM/libvirt.
+
+  Contributed by Nick Maludy (@nmaludy)
 
 ## Release 1.3.0 (2021-03-05)
 
