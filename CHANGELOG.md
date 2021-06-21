@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## Development
 
 
+## Release 1.5.0 (2021-06-20)
+
+* Added disconnect_wait input to be passed to the reboot plan so that
+  there can be controls around when the plan checks if the server has
+  rebooted.
+
+  Contributed by Bradley Bishop (@bishopbm1)
+
 ## Release 1.4.0 (2021-04-30)
 
 * Added a new plan and task `patching::snapshot_kvm` for creating/deleting
