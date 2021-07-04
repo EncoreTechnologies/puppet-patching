@@ -5,7 +5,7 @@ source "${PT__installdir}/patching/files/bash/os_test.sh"
 
 case $OS_RELEASE in
 ################################################################################  
-  RHEL | CENTOS | FEDORA)
+  RHEL | CENTOS | FEDORA | ROCKY)
     # RedHat variant
     # clean yum cache
     OUTPUT=$(yum clean all 2>&1)

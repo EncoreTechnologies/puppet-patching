@@ -8,7 +8,7 @@ export REBOOT_REQUIRED="false"
 
 case $OS_RELEASE in
 ################################################################################  
-  RHEL | CENTOS | FEDORA)
+  RHEL | CENTOS | FEDORA | ROCKY)
     # RedHat variant
     source "${PT__installdir}/patching/files/bash/reboot_required_rh.sh"
     ;;

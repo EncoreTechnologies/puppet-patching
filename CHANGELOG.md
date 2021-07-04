@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Added support for Rocky Linux. (Enhancement)
+
+  Contributed by Vadym Chepkov (@vchepkov)
 
 * Fixed a bug with a hard coded wait for reboot. (Bug Fix)
 
