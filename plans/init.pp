@@ -60,6 +60,8 @@
 #    2. A later group is a linux router. In this instance maybe the patching of the linux router
 #       affects the reachability of previous hosts.
 #
+# @param [Integer] disconnect_wait How long (in seconds) to wait before checking whether the server has rebooted. Defaults to 10.
+#
 # @param [Optional[String]] snapshot_plan
 #   Name of the plan to use for executing snaphot creation and deletion steps of the workflow
 #   You can also pass `'disabled'` or `undef'` as an easy way to disable both creation and deletion.
@@ -120,6 +122,7 @@ plan patching (
   Optional[Enum['only_required', 'never', 'always']] $reboot_strategy = undef,
   Optional[String]  $reboot_message       = undef,
   Optional[Integer] $reboot_wait          = undef,
+  Optional[Integer] $disconnect_wait      = undef,
   Optional[String]  $snapshot_plan        = undef,
   Optional[Boolean] $snapshot_create      = undef,
   Optional[Boolean] $snapshot_delete      = undef,
@@ -194,6 +197,9 @@ plan patching (
     $snapshot_delete_group = pick($snapshot_delete,
                                   $group_vars['patching_snapshot_delete'],
                                   true)
+    $disconnect_wait_group = pick($disconnect_wait,
+                                  $group_vars['patching_disconnect_wait'],
+                                  10)
 
     # do normal patching
 
@@ -257,10 +263,11 @@ plan patching (
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required', $update_ok_targets,
-                strategy => $reboot_strategy_group,
-                message  => $reboot_message_group,
-                wait     => $reboot_wait_group,
-                noop     => $noop)
+                strategy        => $reboot_strategy_group,
+                message         => $reboot_message_group,
+                wait            => $reboot_wait_group,
+                disconnect_wait => $disconnect_wait_group,
+                noop            => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {

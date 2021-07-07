@@ -30,6 +30,8 @@
 #    2. A later group is a linux router. In this instance maybe the patching of the linux router
 #       affects the reachability of previous hosts.
 #
+# @param [Integer] disconnect_wait How long (in seconds) to wait before checking whether the server has rebooted. Defaults to 10.
+#
 # @param [Boolean] noop
 #   Flag to determine if this should be a noop operation or not.
 #   If this is a noop, no hosts will ever be rebooted, however the "reboot required" information
@@ -47,6 +49,7 @@ plan patching::reboot_required (
   Enum['only_required', 'never', 'always'] $strategy = undef,
   String     $message = undef,
   Integer    $wait    = undef,
+  Integer    $disconnect_wait = undef,
   Boolean    $noop    = false,
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
@@ -60,6 +63,9 @@ plan patching::reboot_required (
   $_wait = pick($wait,
                 $group_vars['patching_reboot_wait'],
                 300)
+  $_disconnect_wait = pick($disconnect_wait,
+                          $group_vars['patching_disconnect_wait'],
+                          10)
 
   ## Check if reboot required.
   $reboot_results = run_task('patching::reboot_required', $_targets)
@@ -83,6 +89,7 @@ plan patching::reboot_required (
           $targets_reboot_attempted = $targets_reboot_required
           $reboot_resultset = run_plan('reboot', $targets_reboot_required,
                                         reconnect_timeout => $_wait,
+                                        disconnect_wait   => $_disconnect_wait,
                                         message           => $_message,
                                         _catch_errors     => true)
         }
@@ -95,6 +102,7 @@ plan patching::reboot_required (
         $targets_reboot_attempted = $targets
         $reboot_resultset = run_plan('reboot', $targets,
                                       reconnect_timeout => $_wait,
+                                      disconnect_wait   => $_disconnect_wait,
                                       message           => $_message,
                                       _catch_errors     => true)
       }
