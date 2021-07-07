@@ -3,18 +3,18 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
-* Added support for Rocky Linux. (Enhancement)
 
-  Contributed by Vadym Chepkov (@vchepkov)
-
-
-## Release 1.5.0 (2021-06-20)
+## Release 1.5.0 (2021-07-07)
 
 * Added disconnect_wait input to be passed to the reboot plan so that
   there can be controls around when the plan checks if the server has
   rebooted.
 
   Contributed by Bradley Bishop (@bishopbm1)
+
+* Added support for Rocky Linux. (Enhancement)
+
+  Contributed by Vadym Chepkov (@vchepkov)
 
 ## Release 1.4.0 (2021-04-30)
 
