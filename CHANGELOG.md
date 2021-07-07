@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Added support for Rocky Linux. (Enhancement)
+
+  Contributed by Vadym Chepkov (@vchepkov)
 
 
 ## Release 1.4.0 (2021-04-30)
