@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* remove unused hiera configuration
+
+  Contributed by Vadym Chepkov (@vchepkov)
+
 ## Release 1.5.0 (2021-07-07)
 
 * Added disconnect_wait input to be passed to the reboot plan so that
