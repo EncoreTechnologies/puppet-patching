@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+* Added support for Oracle Linux.
+
+  Contributed by Sean Millichamp (@seanmil)
+
 ## Release 1.5.1 (2021-07-08)
 
 * remove unused hiera configuration

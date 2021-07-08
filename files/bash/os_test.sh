@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -e /etc/os-release ]; then
-  export OS_RELEASE=$(sed -n -e "/^ID=/p" /etc/os-release | sed -e 's~\(.*\)=\(.*\)~\U\2~g' -e 's~"~~g')
+  export OS_RELEASE=$(sed -n -e "/^ID=/p" /etc/os-release | sed -e 's~\(.*\)=\(.*\)~\U\2~g' -e 's~[" ]~~g')
 else
 # fall back to older methods for OS that do not use systemd
   export OS_TEST_DEB=$(lsb_release -a 2> /dev/null | grep Distributor | awk '{print $3}')

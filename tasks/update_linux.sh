@@ -24,7 +24,7 @@ STATUS=0
 
 case $OS_RELEASE in
 ################################################################################  
-  RHEL | CENTOS | FEDORA | ROCKY)
+  RHEL | CENTOS | FEDORA | ROCKY | OL)
     # RedHat variant
     source "${PT__installdir}/patching/files/bash/update_rh.sh"
     STATUS=$?
