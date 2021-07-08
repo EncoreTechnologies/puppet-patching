@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+
+## Release 1.6.0 (2021-07-08)
+
 * Added support for Oracle Linux.
 
   Contributed by Sean Millichamp (@seanmil)
