@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+## Release 1.5.1 (2021-07-08)
+
 * remove unused hiera configuration
 
   Contributed by Vadym Chepkov (@vchepkov)
