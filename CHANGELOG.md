@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Added support for AlmaLinux. (Enhancement)
+
+  Contributed by Vadym Chepkov (@vchepkov)
 
 * Fixing issue where the update history was not being reported
   back on RHEL8 systems.
