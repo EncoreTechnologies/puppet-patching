@@ -3,7 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+* Added support for AlmaLinux. (Enhancement)
 
+  Contributed by Vadym Chepkov (@vchepkov)
 
 ## Release 1.6.0 (2021-07-08)
 
