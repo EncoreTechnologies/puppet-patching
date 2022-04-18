@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
 
   Contributed by Vadym Chepkov (@vchepkov)
 
+* Fixing issue where the update history was not being reported
+  back on RHEL8 systems.
+
+  Contributed by Bradley Bishop (@bishopbm1)
+
 ## Release 1.6.0 (2021-07-08)
 
 * Added support for Oracle Linux.

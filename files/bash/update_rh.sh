@@ -101,7 +101,9 @@ else
   # Installed   <package>  <repo>
   # example:
   #     Installed     rpm-4.11.3-35.el7.x86_64       @base
-  LAST_INSTALL=$(echo "$YUM_HISTORY" | grep "Installed\|Dep-Install")
+  # example RHEL 8:
+  #     Install     rpm-4.11.3-35.el7.x86_64       @base
+  LAST_INSTALL=$(echo "$YUM_HISTORY" | grep "Install\|Installed\|Dep-Install")
   tee -a "${RESULT_FILE}" <<EOF
 {
   "installed": [
@@ -145,7 +147,10 @@ EOF
   # Example:
   #     Updated puppet-bolt-1.25.0-1.el7.x86_64 @puppet6
   #     Update              1.26.0-1.el7.x86_64 @puppet6
-  LAST_UPGRADE=$(echo "$YUM_HISTORY" | grep "Updated \| Update ")
+  # Example RHEL 8:
+  #     Upgrade   st2-3.6.0-3.x86_64 @StackStorm_stable
+  #     Upgraded  st2-3.5.0-1.x86_64 @@System
+  LAST_UPGRADE=$(echo "$YUM_HISTORY" | grep "Upgraded \| Upgrade \| Updated \| Update ")
   tee -a "${RESULT_FILE}" <<EOF
   "upgraded": [
 EOF
