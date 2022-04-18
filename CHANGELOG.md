@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## Development
+
+
+## Release 1.7.0 (2022-04-18)
+
 * Added support for AlmaLinux. (Enhancement)
 
   Contributed by Vadym Chepkov (@vchepkov)
