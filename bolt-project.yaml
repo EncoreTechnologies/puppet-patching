@@ -11,4 +11,4 @@ log:
     level: debug
     append: true
   console:
-    level: notice
+    level: info
