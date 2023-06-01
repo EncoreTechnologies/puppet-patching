@@ -49,7 +49,7 @@ plan patching::set_facts (
   # merge our facts
   # the explicitly defined facts always win
   $_facts = $custom_facts + {'patching_group' => $patching_group}
-  $_facts_yaml = to_yaml($_facts)
+  $_facts_yaml = stdlib::to_yaml($_facts)
   out::message('============= writing facts.d/patching.yaml =============')
   out::message($_facts_yaml)
 
