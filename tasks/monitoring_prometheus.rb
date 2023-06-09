@@ -38,7 +38,7 @@ class MonitoringPrometheusTask < TaskHelper
         createdBy: 'patching',
       }
       headers = { 'Content-Type' => 'application/json' }
-      res = @http_helper.post("http://#{prometheus_server}:9093/api/v2/silences",
+      res = @http_helper.post("https://#{prometheus_server}:9093/api/v2/silences",
                               body: payload.to_json,
                               headers: headers)
 
@@ -50,7 +50,7 @@ class MonitoringPrometheusTask < TaskHelper
 
   # Remove all silences for targets that were created by 'patching'
   def remove_silences(targets, prometheus_server)
-    res = @http_helper.get("http://#{prometheus_server}:9093/api/v2/silences")
+    res = @http_helper.get("https://#{prometheus_server}:9093/api/v2/silences")
     silences = res.body
 
     (JSON.parse silences).each do |silence|
@@ -59,7 +59,7 @@ class MonitoringPrometheusTask < TaskHelper
       next if silence['matchers'][0]['name'] != 'alias' || !targets.include?(silence['matchers'][0]['value'])
       # Remove only silences that are active and were created by 'patching'
       if silence['status']['state'] == 'active' && silence['createdBy'] == 'patching'
-        @http_helper.delete("http://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
+        @http_helper.delete("https://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
       end
     end
   end
