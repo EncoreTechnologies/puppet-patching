@@ -6,11 +6,6 @@ require 'json'
 
 # Bolt task for enabling/disabling monitoring alerts in SolarWinds
 class MonitoringPrometheusTask < TaskHelper
-  def initialize
-    super()
-    @http_helper = PuppetX::Patching::HTTPHelper.new(ssl: ssl_verify, ca_file: ssl_verify ? ssl_cert : nil)
-  end
-
   def get_end_timestamp(duration, units)
     case units
     when 'minutes'
@@ -27,7 +22,7 @@ class MonitoringPrometheusTask < TaskHelper
   end
 
   # Create a silence for every target that starts now and ends after the given duration
-  def create_silences(targets, duration, units, prometheus_server)
+  def create_silences(targets, duration, units, prometheus_server, http_helper)
     silence_ids = []
     targets.each do |target|
       payload = {
@@ -38,7 +33,7 @@ class MonitoringPrometheusTask < TaskHelper
         createdBy: 'patching',
       }
       headers = { 'Content-Type' => 'application/json' }
-      res = @http_helper.post("https://#{prometheus_server}:9093/api/v2/silences",
+      res = http_helper.post("https://#{prometheus_server}:9093/api/v2/silences",
                               body: payload.to_json,
                               headers: headers)
 
@@ -49,8 +44,8 @@ class MonitoringPrometheusTask < TaskHelper
   end
 
   # Remove all silences for targets that were created by 'patching'
-  def remove_silences(targets, prometheus_server)
-    res = @http_helper.get("https://#{prometheus_server}:9093/api/v2/silences")
+  def remove_silences(targets, prometheus_server, http_helper)
+    res = http_helper.get("https://#{prometheus_server}:9093/api/v2/silences")
     silences = res.body
 
     (JSON.parse silences).each do |silence|
@@ -59,7 +54,7 @@ class MonitoringPrometheusTask < TaskHelper
       next if silence['matchers'][0]['name'] != 'alias' || !targets.include?(silence['matchers'][0]['value'])
       # Remove only silences that are active and were created by 'patching'
       if silence['status']['state'] == 'active' && silence['createdBy'] == 'patching'
-        @http_helper.delete("https://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
+        http_helper.delete("https://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
       end
     end
   end
@@ -70,8 +65,8 @@ class MonitoringPrometheusTask < TaskHelper
            prometheus_server: nil,
            silence_duration: nil,
            silence_units: nil,
-           ssl_cert: false,
-           ssl_verify: nil,
+           ssl_cert: nil,
+           ssl_verify: false,
            **_kwargs)
     # targets can be either an array or a string with a single target
     # Check if a single target was given and convert it to an array if it was
@@ -79,10 +74,12 @@ class MonitoringPrometheusTask < TaskHelper
       targets = [targets]
     end
 
+    http_helper = PuppetX::Patching::HTTPHelper.new(ssl: ssl_verify, ca_file: ssl_verify ? ssl_cert : nil)
+
     if action == 'disable'
-      create_silences(targets, silence_duration, silence_units, prometheus_server)
+      create_silences(targets, silence_duration, silence_units, prometheus_server, http_helper)
     elsif action == 'enable'
-      remove_silences(targets, prometheus_server)
+      remove_silences(targets, prometheus_server, http_helper)
     end
   end
 end
