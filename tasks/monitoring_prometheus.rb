@@ -70,6 +70,8 @@ class MonitoringPrometheusTask < TaskHelper
            prometheus_server: nil,
            silence_duration: nil,
            silence_units: nil,
+           ssl_cert: false,
+           ssl_verify: nil,
            **_kwargs)
     # targets can be either an array or a string with a single target
     # Check if a single target was given and convert it to an array if it was
