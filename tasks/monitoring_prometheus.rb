@@ -8,7 +8,7 @@ require 'json'
 class MonitoringPrometheusTask < TaskHelper
   def initialize
     super()
-    @http_helper = PuppetX::Patching::HTTPHelper.new(ssl: false, ssl_verify: false)
+    @http_helper = PuppetX::Patching::HTTPHelper.new(ssl: ssl_verify, ca_file: ssl_verify ? ssl_cert : nil)
   end
 
   def get_end_timestamp(duration, units)

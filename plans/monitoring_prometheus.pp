@@ -52,6 +52,8 @@ plan patching::monitoring_prometheus (
   Optional[Enum['minutes', 'hours', 'days', 'weeks']] $monitoring_silence_units = undef,
   Optional[TargetSpec]                                $monitoring_target = undef,
   Boolean                                             $noop = false,
+  Boolean                                             $ssl_verify = get_targets($targets)[0].vars['patching_monitoring_ssl'],
+  String                                              $ssl_cert = get_targets($targets)[0].vars['patching_monitoring_ssl_cert'],
 ) {
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
@@ -96,6 +98,8 @@ plan patching::monitoring_prometheus (
       prometheus_server => get_target($_monitoring_target).uri,
       silence_duration  => $_monitoring_silence_duration,
       silence_units     => $_monitoring_silence_units,
+      ssl_verify        => $ssl_verify,
+      ssl_cert          => $ssl_cert,
     )
   }
 }
