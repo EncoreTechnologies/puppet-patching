@@ -220,8 +220,8 @@ plan patching (
     ## Disable monitoring
     if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
       run_plan($monitoring_plan_group, $update_targets,
-                action     => 'disable',
-                noop       => $noop)
+                action => 'disable',
+                noop   => $noop)
     }
 
     ## Create VM snapshots
