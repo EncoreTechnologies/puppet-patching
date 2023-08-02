@@ -26,6 +26,14 @@
     "silence_units": {
       "type": "Optional[Enum['minutes', 'hours', 'days', 'weeks']]",
       "description": "Goes with the silence duration to determine how long the alert silence will be alive for"
+    },
+    "ssl_cert": {
+      "type": "Optional[String]",
+      "description": "Optional CA File to specify for SSL requests"
+    },
+    "ssl_verify": {
+      "type": "Optional[Boolean]",
+      "description": "Whether or not to use SSL"
     }
   }
 }

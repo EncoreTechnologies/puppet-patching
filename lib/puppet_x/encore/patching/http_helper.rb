@@ -7,14 +7,14 @@ module PuppetX::Patching
   class HTTPHelper
     def initialize(username: nil,
                    password: nil,
-                   ssl: true,
-                   ssl_verify: OpenSSL::SSL::VERIFY_NONE,
+                   ssl: false,
+                   ca_file: nil,
                    redirect_limit: 10,
                    headers: {})
       @username = username
       @password = password
       @ssl = ssl
-      @ssl_verify = ssl_verify
+      @ca_file = ca_file
       @redirect_limit = redirect_limit
       @headers = headers
     end
@@ -26,7 +26,17 @@ module PuppetX::Patching
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = @ssl
-      http.verify_mode = @ssl_verify
+
+      # Configure SSL context if SSL is enabled
+      if @ssl
+        if @ca_file
+          http.cert_store = OpenSSL::X509::Store.new
+          http.cert_store.set_default_paths
+          http.cert_store.add_file(@ca_file)
+        end
+
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+      end
 
       # create our request
       req = net_http_request_class(method).new(uri)

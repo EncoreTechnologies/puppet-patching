@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Development
 
+## Release 1.8.0 (2022-04-18)
+
+* Added support for overriding ssl and the cert used
+  during prometheus connections. (Enhancement)
+
+  Contributed by Alex Chrystal (@asktheaxis)
 
 ## Release 1.7.0 (2022-04-18)
 
