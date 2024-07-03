@@ -59,23 +59,23 @@ plan patching::snapshot_kvm (
   $group_vars = $_targets[0].vars
   # Order: CLI > Config > Default
   $_target_name_property = pick($target_name_property,
-                                $group_vars['patching_snapshot_target_name_property'],
-                                'uri')
+    $group_vars['patching_snapshot_target_name_property'],
+  'uri')
   $_snapshot_name = pick($snapshot_name,
-                          $group_vars['patching_snapshot_name'],
-                          'Bolt Patching Snapshot')
+    $group_vars['patching_snapshot_name'],
+  'Bolt Patching Snapshot')
   $_snapshot_description = pick_default($snapshot_description,
-                                        $group_vars['patching_snapshot_description'],
-                                        'Bolt Patching Snapshot')
+    $group_vars['patching_snapshot_description'],
+  'Bolt Patching Snapshot')
   $_snapshot_memory = pick($snapshot_memory,
-                            $group_vars['patching_snapshot_memory'],
-                            false)
+    $group_vars['patching_snapshot_memory'],
+  false)
   $_snapshot_quiesce = pick($snapshot_quiesce,
-                            $group_vars['patching_snapshot_quiesce'],
-                            false)
+    $group_vars['patching_snapshot_quiesce'],
+  false)
   $_hypervisor_targets = pick($hypervisor_targets,
-                              $group_vars['patching_snapshot_kvm_hypervisor_targets'],
-                              'kvm_hypervisors')
+    $group_vars['patching_snapshot_kvm_hypervisor_targets'],
+  'kvm_hypervisors')
 
   # Create array of node names
   $vm_names = patching::target_names($_targets, $_target_name_property)
@@ -95,11 +95,11 @@ plan patching::snapshot_kvm (
 
   if !$noop {
     return(run_task('patching::snapshot_kvm', $_hypervisor_targets,
-                    vm_names => $vm_names,
-                    snapshot_name => $_snapshot_name,
-                    snapshot_description => $_snapshot_description,
-                    snapshot_memory => $_snapshot_memory,
-                    snapshot_quiesce => $_snapshot_quiesce,
-                    action => $action))
+        vm_names => $vm_names,
+        snapshot_name => $_snapshot_name,
+        snapshot_description => $_snapshot_description,
+        snapshot_memory => $_snapshot_memory,
+        snapshot_quiesce => $_snapshot_quiesce,
+    action => $action))
   }
 }

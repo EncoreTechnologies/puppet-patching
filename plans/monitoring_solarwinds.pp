@@ -73,14 +73,14 @@ plan patching::monitoring_solarwinds (
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   $_target_name_property = pick($target_name_property,
-                                $group_vars['patching_monitoring_target_name_property'],
-                                'uri')
+    $group_vars['patching_monitoring_target_name_property'],
+  'uri')
   $_monitoring_name_property = pick($monitoring_name_property,
-                                    $group_vars['patching_monitoring_name_property'],
-                                    'DNS')
+    $group_vars['patching_monitoring_name_property'],
+  'DNS')
   $_monitoring_target = pick($monitoring_target,
-                              $group_vars['patching_monitoring_target'],
-                              'solarwinds')
+    $group_vars['patching_monitoring_target'],
+  'solarwinds')
 
   # Create array of node names
   $target_names = patching::target_names($_targets, $_target_name_property)
@@ -106,8 +106,8 @@ plan patching::monitoring_solarwinds (
 
   if !$noop {
     return run_task('patching::monitoring_solarwinds', $_monitoring_target,
-                    targets       => $target_names,
-                    action        => $action,
-                    name_property => $_monitoring_name_property)
+      targets       => $target_names,
+      action        => $action,
+    name_property => $_monitoring_name_property)
   }
 }

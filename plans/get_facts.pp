@@ -29,7 +29,7 @@ plan patching::get_facts (
 
   $_results = $_targets.map |$t| {
     $target_facts = $_names.reduce({}) |$memo, $n| {
-      $memo + {$n => facts($t)[$n]}
+      $memo + { $n => facts($t)[$n] }
     }
     Result($t, $target_facts)
   }

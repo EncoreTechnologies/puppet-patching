@@ -25,15 +25,16 @@ default_fact_files.each do |f|
   next unless File.exist?(f) && File.readable?(f) && File.size?(f)
 
   begin
-    default_facts.merge!(YAML.safe_load(File.read(f), [], [], true))
-  rescue => e
+    require 'deep_merge'
+    default_facts.deep_merge!(YAML.safe_load(File.read(f), permitted_classes: [], permitted_symbols: [], aliases: true))
+  rescue StandardError => e
     RSpec.configuration.reporter.message "WARNING: Unable to load #{f}: #{e}"
   end
 end
 
 # read default_facts and merge them over what is provided by facterdb
 default_facts.each do |fact, value|
-  add_custom_fact fact, value
+  add_custom_fact fact, value, merge_facts: true
 end
 
 RSpec.configure do |c|
@@ -46,6 +47,19 @@ RSpec.configure do |c|
   end
   c.filter_run_excluding(bolt: true) unless ENV['GEM_BOLT']
   c.after(:suite) do
+    RSpec::Puppet::Coverage.report!(0)
+  end
+
+  # Filter backtrace noise
+  backtrace_exclusion_patterns = [
+    %r{spec_helper},
+    %r{gems},
+  ]
+
+  if c.respond_to?(:backtrace_exclusion_patterns)
+    c.backtrace_exclusion_patterns = backtrace_exclusion_patterns
+  elsif c.respond_to?(:backtrace_clean_patterns)
+    c.backtrace_clean_patterns = backtrace_exclusion_patterns
   end
 end
 

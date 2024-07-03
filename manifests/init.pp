@@ -60,25 +60,25 @@ class patching (
 ) inherits patching::params {
   if $patching_dir {
     ensure_resource('file', $patching_dir, {
-      ensure => directory,
-      owner  => $owner,
-      group  => $group,
+        ensure => directory,
+        owner  => $owner,
+        group  => $group,
     })
   }
 
   if $bin_dir {
     ensure_resource('file', $bin_dir, {
-      ensure => directory,
-      owner  => $owner,
-      group  => $group,
+        ensure => directory,
+        owner  => $owner,
+        group  => $group,
     })
   }
 
   if $log_dir {
     ensure_resource('file', $log_dir, {
-      ensure => directory,
-      owner  => $owner,
-      group  => $group,
+        ensure => directory,
+        owner  => $owner,
+        group  => $group,
     })
   }
 

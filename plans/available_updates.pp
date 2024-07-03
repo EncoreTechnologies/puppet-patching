@@ -57,8 +57,8 @@ plan patching::available_updates (
   Optional[String]              $provider = undef,
 ) {
   $available_results = run_task('patching::available_updates', $targets,
-                                provider => $provider,
-                                _noop    => $noop)
+    provider => $provider,
+  _noop    => $noop)
   case $format {
     'none': {
       return($available_results)
@@ -73,8 +73,8 @@ plan patching::available_updates (
         out::message(" ${symbol} ${res.target.name} [${num_updates}]")
       }
       return({
-        'has_updates' => $has_updates,
-        'no_updates'  => $no_updates,
+          'has_updates' => $has_updates,
+          'no_updates'  => $no_updates,
       })
     }
     'csv': {
@@ -95,7 +95,6 @@ plan patching::available_updates (
           $csv_line = "${hostname},${num_updates},${name},${version},${kb_ids}"
           out::message($csv_line)
           "${up_memo}${csv_line}\n"
-
         }
         "${res_memo}${host_updates}"
       }
@@ -107,5 +106,4 @@ plan patching::available_updates (
       fail_plan("unknown format: ${format}")
     }
   }
-
 }
