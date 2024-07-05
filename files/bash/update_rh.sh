@@ -94,6 +94,8 @@ else
   ## Look for failures first
   # Extract the return code
   return_code=$(echo "$YUM_HISTORY_FULL" | grep "Return-Code" | awk '{print $4}')
+  YUM_HISTORY=$(echo "$YUM_HISTORY_FULL" | tac | sed '/Packages Altered:/q' | tac)
+  LAST_UPGRADE=$(echo "$YUM_HISTORY" | grep "Upgrade \| Update ")
 
   # Check if the return code is not 0 (which means there was a failure)
   if [ "$return_code" -ne 0 ]; then
@@ -128,7 +130,7 @@ EOF
     echo "      \"repo\": \"${repo}\"" | tee -a "${RESULT_FILE}"
     echo -n "    }" | tee -a "${RESULT_FILE}"
     comma=','
-  done <<< "$FAILED_PACKAGES"
+  done <<< "$LAST_UPGRADE"
   tee -a "${RESULT_FILE}" <<EOF
 
   ],
