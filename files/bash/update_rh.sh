@@ -100,6 +100,7 @@ else
   # Check if the return code is not 0 (which means there was a failure)
   if [ "$return_code" -ne 0 ]; then
   tee -a "${RESULT_FILE}" <<EOF
+{
   "failed": [
 EOF
   comma=''
@@ -107,8 +108,8 @@ EOF
     if [ -z "$line" ]; then
       continue
     fi
-    pkg_name=$(echo "$line" | awk '{print $2}')
-    repo=$(echo "$line" | awk '{print $3}')
+    pkg_name=$(echo "$line" | awk '{print $3}')
+    repo=$(echo "$line" | awk '{print $4}')
     
     pkg_name_split=$(rpm_name_split "$pkg_name")
     name=$(echo "$pkg_name_split" | grep '^name=' | awk -F'=' '{print $2}')
@@ -133,7 +134,8 @@ EOF
   done <<< "$LAST_UPGRADE"
   tee -a "${RESULT_FILE}" <<EOF
 
-  ],
+  ]
+}
 EOF
    exit $STATUS
 fi
