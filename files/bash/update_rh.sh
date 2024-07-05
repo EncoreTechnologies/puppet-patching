@@ -90,6 +90,51 @@ else
   ## Collect yum history if update was performed.
   YUM_HISTORY_LAST_ID=$(yum history list | grep -Em 1 '^ *[0-9]' | awk '{ print $1 }')
   YUM_HISTORY_FULL=$(yum history info "$YUM_HISTORY_LAST_ID" | tee -a "$LOG_FILE")
+
+  ## Look for failures first
+  # Extract the return code
+  return_code=$(echo "$YUM_HISTORY_FULL" | grep "Return-Code" | awk '{print $4}')
+
+  # Check if the return code is not 0 (which means there was a failure)
+  if [ "$return_code" -ne 0 ]; then
+  tee -a "${RESULT_FILE}" <<EOF
+  "failed": [
+EOF
+  comma=''
+  while read -r line; do
+    if [ -z "$line" ]; then
+      continue
+    fi
+    pkg_name=$(echo "$line" | awk '{print $2}')
+    repo=$(echo "$line" | awk '{print $3}')
+    
+    pkg_name_split=$(rpm_name_split "$pkg_name")
+    name=$(echo "$pkg_name_split" | grep '^name=' | awk -F'=' '{print $2}')
+    version=$(echo "$pkg_name_split" | grep '^version=' | awk -F'=' '{print $2}')
+    release=$(echo "$pkg_name_split" | grep '^release=' | awk -F'=' '{print $2}')
+    epoch=$(echo "$pkg_name_split" | grep '^epoch=' | awk -F'=' '{print $2}')
+    arch=$(echo "$pkg_name_split" | grep '^arch=' | awk -F'=' '{print $2}')
+    
+    if [ -n $comma ]; then
+      echo "$comma" | tee -a "${RESULT_FILE}"
+    fi
+    echo "    {" | tee -a "${RESULT_FILE}"
+    echo "      \"full\": \"${pkg_name}\"," | tee -a "${RESULT_FILE}"
+    echo "      \"name\": \"${name}\"," | tee -a "${RESULT_FILE}"
+    echo "      \"version\": \"${version}\"," | tee -a "${RESULT_FILE}"
+    echo "      \"release\": \"${release}\"," | tee -a "${RESULT_FILE}"
+    echo "      \"epoch\": \"${epoch}\"," | tee -a "${RESULT_FILE}"
+    echo "      \"arch\": \"${arch}\"," | tee -a "${RESULT_FILE}"
+    echo "      \"repo\": \"${repo}\"" | tee -a "${RESULT_FILE}"
+    echo -n "    }" | tee -a "${RESULT_FILE}"
+    comma=','
+  done <<< "$FAILED_PACKAGES"
+  tee -a "${RESULT_FILE}" <<EOF
+
+  ],
+EOF
+   exit $STATUS
+fi
   
   # Yum history contains a section called "Packages Altered:" that has details
   # of all of the things that changed during the yum transaction. This is what
