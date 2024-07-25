@@ -24,6 +24,9 @@ class MonitoringPrometheusTask < TaskHelper
   # Create a silence for every target that starts now and ends after the given duration
   def create_silences(targets, duration, units, prometheus_server, http_helper)
     silence_ids = []
+    ok_targets = []
+    failed_targets = {}
+
     targets.each do |target|
       payload = {
         matchers: [{ name: 'alias', value: target, isRegex: false }],
@@ -33,30 +36,44 @@ class MonitoringPrometheusTask < TaskHelper
         createdBy: 'patching',
       }
       headers = { 'Content-Type' => 'application/json' }
-      res = http_helper.post("https://#{prometheus_server}:9093/api/v2/silences",
-                              body: payload.to_json,
-                              headers: headers)
+      begin
+        res = http_helper.post("https://#{prometheus_server}:9093/api/v2/silences",
+                                body: payload.to_json,
+                                headers: headers)
 
-      silence_ids.push((JSON.parse res.body)['silenceID'])
+        ok_targets.push(target) if res.code == '200'
+      rescue => e
+        failed_targets[target] = e.message
+      end
     end
 
-    silence_ids
+    { ok_targets: ok_targets, failed_targets: failed_targets }
   end
 
   # Remove all silences for targets that were created by 'patching'
   def remove_silences(targets, prometheus_server, http_helper)
+    ok_targets = []
+    failed_targets = {}
     res = http_helper.get("https://#{prometheus_server}:9093/api/v2/silences")
     silences = res.body
 
     (JSON.parse silences).each do |silence|
+      target = silence['matchers'][0]['value']
       # Verify that the current silence is for one of the given targets
       # All silences created by this task will have exactly one matcher
       next if silence['matchers'][0]['name'] != 'alias' || !targets.include?(silence['matchers'][0]['value'])
       # Remove only silences that are active and were created by 'patching'
       if silence['status']['state'] == 'active' && silence['createdBy'] == 'patching'
-        http_helper.delete("https://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
+        begin
+          res = http_helper.delete("https://#{prometheus_server}:9093/api/v2/silence/#{silence['id']}")
+          ok_targets.push(target) if res.code == '200'
+        rescue => e
+          failed_targets[target] = e.message
+        end
       end
     end
+
+    { ok_targets: ok_targets, failed_targets: failed_targets }
   end
 
   # This will either enable or disable monitoring
@@ -76,11 +93,18 @@ class MonitoringPrometheusTask < TaskHelper
 
     http_helper = PuppetX::Patching::HTTPHelper.new(ssl: ssl_verify, ca_file: ssl_verify ? ssl_cert : nil)
 
+    result = { ok_targets: [], failed_results: {} }
+
     if action == 'disable'
-      create_silences(targets, silence_duration, silence_units, prometheus_server, http_helper)
+      silences_result = create_silences(targets, silence_duration, silence_units, prometheus_server, http_helper)
     elsif action == 'enable'
-      remove_silences(targets, prometheus_server, http_helper)
+      silences_result = remove_silences(targets, prometheus_server, http_helper)
     end
+
+    result[:ok_targets].concat(silences_result[:ok_targets])
+    result[:failed_results].merge!(silences_result[:failed_targets]) { |key, old_val, new_val| old_val + ', ' + new_val }
+
+    result
   end
 end
 

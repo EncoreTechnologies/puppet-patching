@@ -151,9 +151,9 @@ plan patching (
   ## Group all of the targets based on their 'patching_order' var
   $ordered_groups = run_plan('patching::ordered_groups', $_targets)
 
-  # we can now use the $ordered_keys array above to index into our $ordered_hash
-  # pretty cool huh?
-  $ordered_groups.each |$group_hash| {
+  ## Loop through each group and patch
+  ## If a group fails, we will collect the failed targets and fail the plan at the end
+  $update_failed_targets = $ordered_groups.reduce({}) |$failed_targets, $group_hash| {
     $ordered_targets = $group_hash['targets']
     if $ordered_targets.empty {
       fail_plan("Targets not assigned the var: 'patching_order'")
@@ -201,91 +201,116 @@ plan patching (
       $group_vars['patching_disconnect_wait'],
     10)
 
+    $tasks_plans = patching::build_workflow(
+      $update_provider_group,
+      $monitoring_enabled_group,
+      $monitoring_plan_group,
+      $snapshot_create_group,
+      $snapshot_delete_group,
+      $snapshot_plan_group,
+      $pre_update_plan_group,
+      $post_update_plan_group,
+      $reboot_strategy_group,
+      $reboot_message_group,
+      $reboot_wait_group,
+      $disconnect_wait_group,
+      $noop
+    )
+
+    # Hash of tasks/plans to run
+    # $tasks_plans = [
+    #   ## Update patching cache (yum update, apt-get update, etc)
+    #   { 'name' => 'patching::cache_update', 'type' => 'task', 'params' => { '_noop' => $noop, '_catch_errors' => true } },
+    #   ## Check for available updates
+    #   { 'name' => 'patching::available_updates', 'type' => 'plan', 'params' => { 'provider' => $update_provider_group, 'format' => 'pretty', 'noop' => $noop } },
+    #   ## Disable monitoring
+    #   { 'name' => $monitoring_plan_group, 'type' => 'plan', 'params' => { 'action' => 'disable', 'noop' => $noop } },
+    #   ## Create VM snapshots
+    #   { 'name' => $snapshot_plan_group, 'type' => 'plan', 'params' => { 'action' => 'create', 'noop' => $noop } },
+    #   ## Run pre-patching script
+    #   { 'name' => $pre_update_plan_group, 'type' => 'plan', 'params' => { 'noop' => $noop } },
+    #   ## Run package updates
+    #   { 'name' => 'patching::update', 'type' => 'task', 'params' => { 'provider' => $update_provider_group, '_catch_errors' => true, 'noop' => $noop } },
+    #   ## Run post-patching script
+    #   { 'name' => $post_update_plan_group, 'type' => 'plan', 'params' => { 'noop' => $noop } },
+    #   ## Check if reboot required
+    #   { 'name' => 'patching::reboot_required', 'type' => 'plan', 'params' => { 'strategy' => $reboot_strategy_group, 'message' => $reboot_message_group, 'wait' => $reboot_wait_group, 'disconnect_wait' => $disconnect_wait_group, 'noop' => $noop } },
+    #   ## Remove VM snapshots
+    #   { 'name' => $snapshot_plan_group, 'type' => 'plan', 'params' => { 'action' => 'delete', 'noop' => $noop } },
+    #   ## Enable monitoring
+    #   { 'name' => $monitoring_plan_group, 'type' => 'plan', 'params' => { 'action' => 'enable', 'noop' => $noop } },
+    # ]
+
     # do normal patching
 
-    ## Update patching cache (yum update, apt-get update, etc)
-    run_task('patching::cache_update', $ordered_targets,
-    _noop => $noop)
-
-    ## Check for updates on hosts
-    $available_results = run_plan('patching::available_updates', $ordered_targets,
-      provider => $update_provider_group,
-      format   => 'pretty',
-    noop     => $noop)
-    $update_targets = $available_results['has_updates']
-    if $update_targets.empty {
-      next()
+    $results_hash = {
+      'failed_results' => {},
+      'remaining_targets' => $ordered_targets,
+      'no_updates' => [],
+      'monitoring_disabled' => false,
+      'monitoring_enable' => [],
     }
 
-    ## Disable monitoring
-    if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
-      run_plan($monitoring_plan_group, $update_targets,
-        action => 'disable',
-      noop   => $noop)
-    }
+    # run each task/plan in the workflow and return a hash of results matching the $results_hash
+    $patching_results = $tasks_plans.reduce($results_hash) |$acc, $task_plan| {
+      # if no remaining targets (ie all targets have failed), break out of loop
+      if $acc['remaining_targets'].empty {
+        out::message('No remaining targets to run against')
+        break()
+      }
 
-    ## Create VM snapshots
-    if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
-      run_plan($snapshot_plan_group, $update_targets,
-        action => 'create',
-      noop   => $noop)
-    }
+      $remaining_targets = $acc['remaining_targets']
 
-    ## Run pre-patching script.
-    run_plan($pre_update_plan_group, $update_targets,
-    noop => $noop)
+      out::message("Targets to run against: ${remaining_targets}")
+      if $task_plan['type'] == 'task' {
+        $result = run_task($task_plan['name'], $remaining_targets, $task_plan['params'])
+      } else {
+        $result = run_plan($task_plan['name'], $remaining_targets, $task_plan['params'])
+      }
 
-    ## Run package update.
-    $update_result = run_task('patching::update', $update_targets,
-      provider       => $update_provider_group,
-      _catch_errors  => true,
-    _noop          => $noop)
+      $filtered_results = patching::handle_errors($result, $task_plan['name'])
 
-    ## Collect list of successful updates
-    $update_ok_targets = $update_result.ok_set.targets
-    ## Collect list of failed updates
-    $update_errors = $update_result.error_set
+      $task_result = {
+        'failed_results' => $acc['failed_results'],
+        'remaining_targets' => $filtered_results['ok_targets'],
+        'no_updates' => $acc['no_updates'] + $filtered_results['no_updates'],
+        'monitoring_disabled' => $acc['monitoring_disabled'],
+        'monitoring_enable' => $acc['monitoring_enable'],
+      }
 
-    ## Check if any hosts with failed updates.
-    if $update_errors.empty {
-      $status = 'OK: No errors detected.'
-    } else {
-      # TODO print out the full error message for each of these
-      alert('The following hosts failed during update:')
-      alert($update_errors)
-      $status = 'WARNING: Errors detected during update.'
-    }
+      # if using monitoring plan, once disabled we need to re-enable monitoring at the end
+      if $task_plan['name'] == $monitoring_plan_group and !$acc['monitoring_disabled'] {
+        $monitoring_flag = { 'monitoring_disabled' => true }
+      } elsif $acc['monitoring_disabled'] {
+        $monitoring_flag = { 'monitoring_disabled' => true }
+      } else {
+        $monitoring_flag = { 'monitoring_disabled' => false }
+      }
 
-    if !$update_ok_targets.empty {
-      ## Run post-patching script.
-      run_plan($post_update_plan_group, $update_ok_targets,
-      noop => $noop)
-
-      ## Check if reboot required and reboot if true.
-      run_plan('patching::reboot_required', $update_ok_targets,
-        strategy        => $reboot_strategy_group,
-        message         => $reboot_message_group,
-        wait            => $reboot_wait_group,
-        disconnect_wait => $disconnect_wait_group,
-      noop            => $noop)
-
-      ## Remove VM snapshots
-      if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
-        run_plan($snapshot_plan_group, $update_ok_targets,
-          action => 'delete',
-        noop   => $noop)
+      if !$filtered_results['failed_results'].empty {
+        # track hosts that need monitoring re-enabled when monitoring is disabled
+        if $acc['monitoring_disabled'] {
+          $failed_results = {
+            'monitoring_enable' => $filtered_results['failed_results'].keys + $acc['monitoring_enable'],
+            'failed_results' => $filtered_results['failed_results'] + $acc['failed_results'],
+          }
+        } else {
+          $failed_results = $acc['failed_results'] + { 'failed_results' => $filtered_results['failed_results'] }
+        }
+        # merge the results of the task with the failed results and monitoring flag
+        $task_result + $failed_results + $monitoring_flag
+      } else {
+        $failed_results = {}
+        $task_result + $failed_results + $monitoring_flag
       }
     }
-    # else {
-    #   # TODO should we break here?
-    # }
 
-    ## enable monitoring
-    if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
-      run_plan($monitoring_plan_group, $update_targets,
-        action => 'enable',
-      noop   => $noop)
+    # if targets failed with monitoring turned off we need to re-enable
+    if !$patching_results['monitoring_enable'].empty {
+      out::message('ENABLING MONITORING ON FAILED HOSTS!!!!!!!!!!!')
+      run_plan($monitoring_plan_group, $patching_results['monitoring_enable'], action => 'enable', noop => $noop)
     }
+    $patching_results
   }
 
   ## Re-establish all targets availability after reboot
@@ -302,6 +327,11 @@ plan patching (
   run_plan('patching::update_history', $_targets,
     format      => $report_format_plan,
   report_file => $report_file_plan)
+
+  if !$update_failed_targets['failed_results'].empty {
+    $message = patching::process_errors($update_failed_targets)
+    fail_plan($message)
+  }
 
   ## Display final status
   return()

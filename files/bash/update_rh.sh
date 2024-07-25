@@ -7,7 +7,23 @@
 function rpm_name_split() {
   rpm_name="$1"
   # if this host is a Red Hat host with Yum, it will have Python because
-  # Yum/dnf is written in python.
+  # Yum/dnf is written in python but we need to check if it's python 2 or 3
+  # Check if alternative exists
+  if command -v python &>/dev/null
+  then
+      PYTHON_CMD=python
+  # Check if python3 exists
+  elif command -v python3 &>/dev/null
+  then
+      PYTHON_CMD=python3
+  # Check if python2 exists
+  elif command -v python2 &>/dev/null
+  then
+      PYTHON_CMD=python2
+  else
+      echo "Python is not installed on this system."
+      exit 1
+  fi
   PYTHON_SCRIPT=$(cat <<EOF
 import sys
 # copied: from rpmUtils.miscutils import splitFilename
@@ -58,13 +74,14 @@ print('epoch={}'.format(e))
 print('arch={}'.format(a))
 EOF
                )
-  rpm_name_split=$(echo "${rpm_name}" | python -c "${PYTHON_SCRIPT}")
+  rpm_name_split=$(echo "${rpm_name}" | $PYTHON_CMD -c "${PYTHON_SCRIPT}")
   echo "${rpm_name_split}"
 }
 
 ################################################################################
 
 STATUS=0
+YUM_OUTPUT=''
 
 ## Yum package manager
 #
@@ -95,15 +112,18 @@ else
   # Extract the return code
   return_code=$(echo "$YUM_HISTORY_FULL" | grep "Return-Code" | awk '{print $4}')
   YUM_HISTORY=$(echo "$YUM_HISTORY_FULL" | tac | sed '/Packages Altered:/q' | tac)
-  LAST_UPGRADE=$(echo "$YUM_HISTORY" | grep "Upgrade \| Update ")
+  YUM_OUTPUT=$(echo "$YUM_HISTORY_FULL" | tac | sed '/Scriptlet output:/q' | tac)
+  FAILED_PKGS=$(echo "$YUM_HISTORY" | grep -E -e '\*' -e '\*\*' -e '#' -e '##')
 
-  # Check if the return code is not 0 (which means there was a failure)
-  if [ "$return_code" -ne 0 ]; then
   tee -a "${RESULT_FILE}" <<EOF
 {
   "failed": [
 EOF
+
+  # Check if the return code is not 0 (which means there was a failure)
+  if [ "$return_code" -ne 0 ]; then
   comma=''
+  pkg_name_old=''
   while read -r line; do
     if [ -z "$line" ]; then
       continue
@@ -113,6 +133,11 @@ EOF
     
     pkg_name_split=$(rpm_name_split "$pkg_name")
     name=$(echo "$pkg_name_split" | grep '^name=' | awk -F'=' '{print $2}')
+
+    if [ "$name" == "$pkg_name_old" ]; then
+      continue
+    fi
+    pkg_name_old="$name"
     version=$(echo "$pkg_name_split" | grep '^version=' | awk -F'=' '{print $2}')
     release=$(echo "$pkg_name_split" | grep '^release=' | awk -F'=' '{print $2}')
     epoch=$(echo "$pkg_name_split" | grep '^epoch=' | awk -F'=' '{print $2}')
@@ -131,14 +156,12 @@ EOF
     echo "      \"repo\": \"${repo}\"" | tee -a "${RESULT_FILE}"
     echo -n "    }" | tee -a "${RESULT_FILE}"
     comma=','
-  done <<< "$LAST_UPGRADE"
+  done <<< "$FAILED_PKGS"
+  fi
   tee -a "${RESULT_FILE}" <<EOF
 
-  ]
-}
+  ],
 EOF
-   exit $STATUS
-fi
   
   # Yum history contains a section called "Packages Altered:" that has details
   # of all of the things that changed during the yum transaction. This is what
@@ -152,9 +175,8 @@ fi
   #     Installed     rpm-4.11.3-35.el7.x86_64       @base
   # example RHEL 8:
   #     Install     rpm-4.11.3-35.el7.x86_64       @base
-  LAST_INSTALL=$(echo "$YUM_HISTORY" | grep "Install\|Installed\|Dep-Install")
+  LAST_INSTALL=$(echo "$YUM_HISTORY" | grep "Install\|Installed\|Dep-Install" | grep -v -E '\*|\*\*|#|##')
   tee -a "${RESULT_FILE}" <<EOF
-{
   "installed": [
 EOF
   comma=''
@@ -199,7 +221,7 @@ EOF
   # Example RHEL 8:
   #     Upgrade   st2-3.6.0-3.x86_64 @StackStorm_stable
   #     Upgraded  st2-3.5.0-1.x86_64 @@System
-  LAST_UPGRADE=$(echo "$YUM_HISTORY" | grep "Upgraded \| Upgrade \| Updated \| Update ")
+  LAST_UPGRADE=$(echo "$YUM_HISTORY" | grep "Upgraded \| Upgrade \| Updated \| Update " | grep -v -E '\*|\*\*|#|##')
   tee -a "${RESULT_FILE}" <<EOF
   "upgraded": [
 EOF
@@ -263,5 +285,17 @@ EOF
 }
 EOF
 fi
-                         
-exit $STATUS
+
+if [ $STATUS -ne 0 ]; then
+  # echo '{
+  #   "_error": {
+  #     "msg": "Task exited 1:\n'"$YUM_OUTPUT"'",
+  #     "kind": "puppetlabs.tasks/task-error",
+  #     "details": { "exitcode": 1 }
+  #   }
+  # }'
+  echo "Task exited 1: $YUM_OUTPUT"
+  exit $STATUS
+else                   
+  exit $STATUS
+fi

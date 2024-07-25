@@ -67,6 +67,7 @@ plan patching::available_updates (
       out::message("Host update status: ('+' has available update; '-' no update) [num updates]")
       $has_updates = $available_results.filter_set|$res| { !$res['updates'].empty() }.targets
       $no_updates = $available_results.filter_set|$res| { $res['updates'].empty() }.targets
+      $filtered_results = patching::handle_errors($available_results, 'patching::available_updates')
       $available_results.each|$res| {
         $num_updates = $res['updates'].size
         $symbol = ($num_updates > 0) ? { true => '+' , default => '-' }
@@ -74,7 +75,9 @@ plan patching::available_updates (
       }
       return({
           'has_updates' => $has_updates,
+          # hash: { 'hostname' => 'No updates available' }
           'no_updates'  => $no_updates,
+          'failed_results' => $filtered_results['failed_results'],
       })
     }
     'csv': {
