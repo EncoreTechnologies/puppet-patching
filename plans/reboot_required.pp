@@ -70,7 +70,8 @@ plan patching::reboot_required (
   ## Check if reboot required.
   $reboot_results = run_task('patching::reboot_required', $_targets)
 
-  $check_filtered = patching::handle_errors($reboot_results, 'patching::reboot_required')
+  ## Check for errors during reboot check
+  $check_filtered = patching::filter_results($reboot_results, 'patching::reboot_required')
 
   # print out pretty message
   out::message("Reboot strategy: ${_strategy}")
@@ -123,20 +124,10 @@ plan patching::reboot_required (
     $reboot_resultset = ResultSet([])
   }
 
-  if $check_filtered['failed_results'] {
-    out::message("Failed targets: ${$check_filtered['failed_results'].keys.join(', ')}")
-  }
+  ## Check for errors during reboot
+  $reboot_filtered = patching::filter_results($reboot_resultset, 'reboot')
 
-  # return our results
-  # return({
-  #     'required'     => $targets_reboot_required,
-  #     'not_required' => $targets_reboot_not_required,
-  #     'attempted'    => $targets_reboot_attempted,
-  #     'resultset'    => $reboot_resultset,
-  # })
-
-  $reboot_filtered = patching::handle_errors($reboot_resultset, 'reboot')
-
+  ## Return both sets of failures and successes (reboot not required/successfully rebooted)
   return({
       'ok_targets'     => $targets_reboot_not_required + $reboot_filtered['ok_targets'],
       'failed_results' => $check_filtered['failed_results'] + $reboot_filtered['failed_results'],

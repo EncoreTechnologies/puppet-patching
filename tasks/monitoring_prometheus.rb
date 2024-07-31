@@ -93,18 +93,13 @@ class MonitoringPrometheusTask < TaskHelper
 
     http_helper = PuppetX::Patching::HTTPHelper.new(ssl: ssl_verify, ca_file: ssl_verify ? ssl_cert : nil)
 
-    result = { ok_targets: [], failed_results: {} }
-
     if action == 'disable'
       silences_result = create_silences(targets, silence_duration, silence_units, prometheus_server, http_helper)
     elsif action == 'enable'
       silences_result = remove_silences(targets, prometheus_server, http_helper)
     end
 
-    result[:ok_targets].concat(silences_result[:ok_targets])
-    result[:failed_results].merge!(silences_result[:failed_targets]) { |key, old_val, new_val| old_val + ', ' + new_val }
-
-    result
+    silences_result
   end
 end
 

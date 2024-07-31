@@ -243,12 +243,14 @@ plan patching (
 
     # do normal patching
 
+    # seed our accumulator with the initial values
     $results_hash = {
       'failed_results' => {},
       'remaining_targets' => $ordered_targets,
       'no_updates' => [],
       'monitoring_disabled' => false,
       'monitoring_enable' => [],
+      'collect_history' => [],
     }
 
     # run each task/plan in the workflow and return a hash of results matching the $results_hash
@@ -258,7 +260,6 @@ plan patching (
         out::message('No remaining targets to run against')
         break()
       }
-
       $remaining_targets = $acc['remaining_targets']
 
       out::message("Targets to run against: ${remaining_targets}")
@@ -268,14 +269,16 @@ plan patching (
         $result = run_plan($task_plan['name'], $remaining_targets, $task_plan['params'])
       }
 
-      $filtered_results = patching::handle_errors($result, $task_plan['name'])
+      $filtered_results = patching::filter_results($result, $task_plan['name'])
 
+      # create a new object with the results of the task and the accumulator
       $task_result = {
         'failed_results' => $acc['failed_results'],
         'remaining_targets' => $filtered_results['ok_targets'],
         'no_updates' => $acc['no_updates'] + $filtered_results['no_updates'],
         'monitoring_disabled' => $acc['monitoring_disabled'],
         'monitoring_enable' => $acc['monitoring_enable'],
+        'collect_history' => $acc['collect_history'],
       }
 
       # if using monitoring plan, once disabled we need to re-enable monitoring at the end
@@ -285,6 +288,14 @@ plan patching (
         $monitoring_flag = { 'monitoring_disabled' => true }
       } else {
         $monitoring_flag = { 'monitoring_disabled' => false }
+      }
+
+      if $task_plan['name'] == 'patching::update' {
+        $collect_history = {
+          'collect_history' => $remaining_targets,
+        }
+      } else {
+        $collect_history = {}
       }
 
       if !$filtered_results['failed_results'].empty {
@@ -297,12 +308,10 @@ plan patching (
         } else {
           $failed_results = $acc['failed_results'] + { 'failed_results' => $filtered_results['failed_results'] }
         }
-        # merge the results of the task with the failed results and monitoring flag
-        $task_result + $failed_results + $monitoring_flag
       } else {
         $failed_results = {}
-        $task_result + $failed_results + $monitoring_flag
       }
+      $task_result + $failed_results + $monitoring_flag + $collect_history
     }
 
     # if targets failed with monitoring turned off we need to re-enable
@@ -323,8 +332,10 @@ plan patching (
   #     affects the reachability of previous hosts.
   wait_until_available($_targets, wait_time => $reboot_wait_plan)
 
+  $summary_targets = $update_failed_targets['collect_history']
+
   ## Collect summary report
-  run_plan('patching::update_history', $_targets,
+  run_plan('patching::update_history', $summary_targets,
     format      => $report_format_plan,
   report_file => $report_file_plan)
 

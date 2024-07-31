@@ -10,14 +10,19 @@
 # We need to filter those out as they screw up the package listing
 PKGS=$(yum -q check-update 2>/dev/null | egrep -v "is broken|^Security:|^Loaded plugins" | awk '/^[[:alnum:]]/ {print $0}' | sort)
 
+# If there are no updates then we need to log the transaction and return an empty list
 if [ -z "$PKGS" ]; then
+  # get the last transaction
   LAST_LOG=$(tac "$RESULT_FILE" | sed '/{/q' | tac)
   LINE_COUNT=$(echo "$LAST_LOG" | wc -l)
+  # If the last transaction included updates (line is greater than one), log a new transaction with no updates
+  # This prevents the last transaction from being repeated in consecutive runs with no updates
   if [ "$LINE_COUNT" -gt 1 ]; then
     echo '{ "failed": [], "installed": [], "upgraded": [] }' >> $RESULT_FILE
   fi
 fi
 
+# return the results in JSON format. an empty list is returned if no updates
 cat <<EOF
 {
   "updates": [

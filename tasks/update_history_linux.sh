@@ -13,9 +13,5 @@ fi
 # Look for the last "{" line and print out everything in the file after that
 # to get our previous transaction.
 LAST_LOG=$(tac "$RESULT_FILE" | sed '/^{$/q' | tac)
-LINE_COUNT=$(echo "$LAST_LOG" | wc -l)
-  if [ "$LINE_COUNT" -gt 1 ]; then
-    echo '{ "failed": [], "installed": [], "upgraded": [] }' >> $RESULT_FILE
-  fi
 echo "$LAST_LOG"
 exit 0

@@ -9,7 +9,7 @@ function patching::process_errors(
     $task = $result[1]['plan_or_task_name']
     $message = $result[1]['message']
     log::info("${host} - ${task}: ${message}")
-    $acc + ["${host} - ${task}"]
+    $acc + ["Host: ${host} - Task: ${task}"]
   }
 
   return $error_messages.join("\n")

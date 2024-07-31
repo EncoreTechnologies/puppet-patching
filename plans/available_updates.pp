@@ -57,8 +57,9 @@ plan patching::available_updates (
   Optional[String]              $provider = undef,
 ) {
   $available_results = run_task('patching::available_updates', $targets,
-    provider => $provider,
-  _noop    => $noop)
+    provider    => $provider,
+    _noop       => $noop,
+  _catch_errors => true)
   case $format {
     'none': {
       return($available_results)
@@ -67,15 +68,16 @@ plan patching::available_updates (
       out::message("Host update status: ('+' has available update; '-' no update) [num updates]")
       $has_updates = $available_results.filter_set|$res| { !$res['updates'].empty() }.targets
       $no_updates = $available_results.filter_set|$res| { $res['updates'].empty() }.targets
-      $filtered_results = patching::handle_errors($available_results, 'patching::available_updates')
+      $filtered_results = patching::filter_results($available_results, 'patching::available_updates')
       $available_results.each|$res| {
-        $num_updates = $res['updates'].size
-        $symbol = ($num_updates > 0) ? { true => '+' , default => '-' }
-        out::message(" ${symbol} ${res.target.name} [${num_updates}]")
+        if $res.value['updates'] {
+          $num_updates = $res['updates'].size
+          $symbol = ($num_updates > 0) ? { true => '+' , default => '-' }
+          out::message(" ${symbol} ${res.target.name} [${num_updates}]")
+        }
       }
       return({
           'has_updates' => $has_updates,
-          # hash: { 'hostname' => 'No updates available' }
           'no_updates'  => $no_updates,
           'failed_results' => $filtered_results['failed_results'],
       })

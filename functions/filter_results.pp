@@ -1,6 +1,6 @@
 # modules/your_module/plans/process_results.pp
 # Function to abstract the processing/error handling of patching results
-function patching::process_results(
+function patching::filter_results(
   Variant[ResultSet, Hash] $results,
   String $task_plan_name
 ) >> Hash {
@@ -55,6 +55,6 @@ function patching::process_results(
     'failed_results' => $failed_results,
   }
 
-  # Return a hash containing the status, ok_targets, and failed_results
+  # Return a hash containing the ok_targets and failed_results
   return $result_set
 }

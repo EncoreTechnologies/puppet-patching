@@ -287,13 +287,6 @@ EOF
 fi
 
 if [ $STATUS -ne 0 ]; then
-  # echo '{
-  #   "_error": {
-  #     "msg": "Task exited 1:\n'"$YUM_OUTPUT"'",
-  #     "kind": "puppetlabs.tasks/task-error",
-  #     "details": { "exitcode": 1 }
-  #   }
-  # }'
   echo "Task exited 1: $YUM_OUTPUT"
   exit $STATUS
 else                   
