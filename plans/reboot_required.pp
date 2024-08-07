@@ -55,17 +55,17 @@ plan patching::reboot_required (
   $_targets = run_plan('patching::get_targets', $targets)
   $group_vars = $_targets[0].vars
   $_strategy = pick($strategy,
-                    $group_vars['patching_reboot_strategy'],
-                    'only_required')
+    $group_vars['patching_reboot_strategy'],
+  'only_required')
   $_message = pick($message,
-                    $group_vars['patching_reboot_message'],
-                    'NOTICE: This system is currently being updated.')
+    $group_vars['patching_reboot_message'],
+  'NOTICE: This system is currently being updated.')
   $_wait = pick($wait,
-                $group_vars['patching_reboot_wait'],
-                300)
+    $group_vars['patching_reboot_wait'],
+  300)
   $_disconnect_wait = pick($disconnect_wait,
-                          $group_vars['patching_disconnect_wait'],
-                          10)
+    $group_vars['patching_disconnect_wait'],
+  10)
 
   ## Check if reboot required.
   $reboot_results = run_task('patching::reboot_required', $_targets)
@@ -88,10 +88,10 @@ plan patching::reboot_required (
         if !$targets_reboot_required.empty() {
           $targets_reboot_attempted = $targets_reboot_required
           $reboot_resultset = run_plan('reboot', $targets_reboot_required,
-                                        reconnect_timeout => $_wait,
-                                        disconnect_wait   => $_disconnect_wait,
-                                        message           => $_message,
-                                        _catch_errors     => true)
+            reconnect_timeout => $_wait,
+            disconnect_wait   => $_disconnect_wait,
+            message           => $_message,
+          _catch_errors     => true)
         }
         else {
           $targets_reboot_attempted = []
@@ -101,10 +101,10 @@ plan patching::reboot_required (
       'always': {
         $targets_reboot_attempted = $targets
         $reboot_resultset = run_plan('reboot', $targets,
-                                      reconnect_timeout => $_wait,
-                                      disconnect_wait   => $_disconnect_wait,
-                                      message           => $_message,
-                                      _catch_errors     => true)
+          reconnect_timeout => $_wait,
+          disconnect_wait   => $_disconnect_wait,
+          message           => $_message,
+        _catch_errors     => true)
       }
       'never': {
         $targets_reboot_attempted = []
@@ -123,9 +123,9 @@ plan patching::reboot_required (
 
   # return our results
   return({
-    'required'     => $targets_reboot_required,
-    'not_required' => $targets_reboot_not_required,
-    'attempted'    => $targets_reboot_attempted,
-    'resultset'    => $reboot_resultset,
+      'required'     => $targets_reboot_required,
+      'not_required' => $targets_reboot_not_required,
+      'attempted'    => $targets_reboot_attempted,
+      'resultset'    => $reboot_resultset,
   })
 }

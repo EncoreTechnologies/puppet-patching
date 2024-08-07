@@ -100,10 +100,10 @@ plan patching::ordered_groups (
     $order = String($order_unknown_type)
     if $order in $memo {
       $ordered_array = $memo[$order] << $t
-      $memo + {$order => $ordered_array}
+      $memo + { $order => $ordered_array }
     }
     else {
-      $memo + {$order => [$t]}
+      $memo + { $order => [$t] }
     }
   }
 
@@ -115,11 +115,11 @@ plan patching::ordered_groups (
   $ordered_keys = sort(keys($ordered_hash))
   out::message("Groups = ${ordered_keys}")
   $ordered_groups = $ordered_keys.map |$o| {
-    $ordered_targets = $ordered_hash[$o].map |$t| {$t.name}
+    $ordered_targets = $ordered_hash[$o].map |$t| { $t.name }
     out::message("Group '${o}' targets = ${ordered_targets}")
     # trust me, we have to assign to a variable here, it's a detail of the puppet
     # language parser that gets mad, but only because there is the loop above
-    $group = {'order' => $o, 'targets' => $ordered_hash[$o]}
+    $group = { 'order' => $o, 'targets' => $ordered_hash[$o] }
     $group
   }
 

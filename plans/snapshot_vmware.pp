@@ -81,20 +81,20 @@ plan patching::snapshot_vmware (
   $group_vars = $_targets[0].vars
   # Order: CLI > Config > Default
   $_target_name_property = pick($target_name_property,
-                                $group_vars['patching_snapshot_target_name_property'],
-                                'uri')
+    $group_vars['patching_snapshot_target_name_property'],
+  'uri')
   $_snapshot_name = pick($snapshot_name,
-                          $group_vars['patching_snapshot_name'],
-                          'Bolt Patching Snapshot')
+    $group_vars['patching_snapshot_name'],
+  'Bolt Patching Snapshot')
   $_snapshot_description = pick_default($snapshot_description,
-                                        $group_vars['patching_snapshot_description'],
-                                        '')
+    $group_vars['patching_snapshot_description'],
+  '')
   $_snapshot_memory = pick($snapshot_memory,
-                            $group_vars['patching_snapshot_memory'],
-                            false)
+    $group_vars['patching_snapshot_memory'],
+  false)
   $_snapshot_quiesce = pick($snapshot_quiesce,
-                            $group_vars['patching_snapshot_quiesce'],
-                            true)
+    $group_vars['patching_snapshot_quiesce'],
+  true)
 
   # Create array of node names
   $vm_names = patching::target_names($_targets, $_target_name_property)
@@ -114,15 +114,15 @@ plan patching::snapshot_vmware (
 
   if !$noop {
     return patching::snapshot_vmware($vm_names,
-                                      $_snapshot_name,
-                                      $vsphere_host,
-                                      $vsphere_username,
-                                      $vsphere_password,
-                                      $vsphere_datacenter,
-                                      $vsphere_insecure,
-                                      $_snapshot_description,
-                                      $_snapshot_memory,
-                                      $_snapshot_quiesce,
-                                      $action)
+      $_snapshot_name,
+      $vsphere_host,
+      $vsphere_username,
+      $vsphere_password,
+      $vsphere_datacenter,
+      $vsphere_insecure,
+      $_snapshot_description,
+      $_snapshot_memory,
+      $_snapshot_quiesce,
+    $action)
   }
 }

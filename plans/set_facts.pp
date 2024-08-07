@@ -48,15 +48,15 @@ plan patching::set_facts (
 
   # merge our facts
   # the explicitly defined facts always win
-  $_facts = $custom_facts + {'patching_group' => $patching_group}
+  $_facts = $custom_facts + { 'patching_group' => $patching_group }
   $_facts_yaml = stdlib::to_yaml($_facts)
   out::message('============= writing facts.d/patching.yaml =============')
   out::message($_facts_yaml)
 
   if !$targets_linux.empty() {
     write_file($_facts_yaml,
-                '/etc/facter/facts.d/patching.yaml',
-                $targets_linux)
+      '/etc/facter/facts.d/patching.yaml',
+    $targets_linux)
     $results_linux = run_command('/opt/puppetlabs/bin/puppet facts upload', $targets_linux)
   }
   else {
@@ -65,8 +65,8 @@ plan patching::set_facts (
 
   if !$targets_windows.empty() {
     write_file($_facts_yaml,
-                'C:/ProgramData/PuppetLabs/facter/facts.d/patching.yaml',
-                $targets_windows)
+      'C:/ProgramData/PuppetLabs/facter/facts.d/patching.yaml',
+    $targets_windows)
     $results_windows =  run_command("& 'C:/Program Files/Puppet Labs/Puppet/bin/puppet' facts upload", $targets_windows)
   }
   else {

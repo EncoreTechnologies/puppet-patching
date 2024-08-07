@@ -36,16 +36,16 @@ plan patching::pre_post_update (
   # run pre-patch scripts
   if !$targets_linux.empty() {
     $results_linux = run_task($task, $targets_linux,
-                              script => $script_linux,
-                              _noop  => $noop).results
+      script => $script_linux,
+    _noop  => $noop).results
   }
   else {
     $results_linux = []
   }
   if !$targets_windows.empty() {
     $results_windows = run_task($task, $targets_windows,
-                                script => $script_windows,
-                                _noop  => $noop).results
+      script => $script_windows,
+    _noop  => $noop).results
   }
   else {
     $results_windows = []

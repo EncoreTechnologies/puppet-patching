@@ -132,21 +132,21 @@ plan patching (
 ) {
   ## Filter offline targets
   $check_puppet_result = run_plan('patching::check_puppet', $targets,
-                                  filter_offline_targets => $filter_offline_targets)
+  filter_offline_targets => $filter_offline_targets)
   # use all targets, both with and without puppet
   $_targets = $check_puppet_result['all']
 
   # read variables for plan-level settings
   $plan_vars = $_targets[0].vars
   $reboot_wait_plan = pick($reboot_wait,
-                            $plan_vars['patching_reboot_wait'],
-                            300)
+    $plan_vars['patching_reboot_wait'],
+  300)
   $report_format_plan = pick($report_format,
-                              $plan_vars['patching_report_format'],
-                              'pretty')
+    $plan_vars['patching_report_format'],
+  'pretty')
   $report_file_plan = pick($report_file,
-                            $plan_vars['patching_report_file'],
-                            'patching_report.csv')
+    $plan_vars['patching_report_file'],
+  'patching_report.csv')
 
   ## Group all of the targets based on their 'patching_order' var
   $ordered_groups = run_plan('patching::ordered_groups', $_targets)
@@ -165,53 +165,53 @@ plan patching (
     $group_vars = $ordered_targets[0].vars
     # Prescedence: CLI > Config > Default
     $monitoring_plan_group = pick($monitoring_plan,
-                                  $group_vars['patching_monitoring_plan'],
-                                  'patching::monitoring_solarwinds')
+      $group_vars['patching_monitoring_plan'],
+    'patching::monitoring_solarwinds')
     $monitoring_enabled_group = pick($monitoring_enabled,
-                                      $group_vars['patching_monitoring_enabled'],
-                                      true)
+      $group_vars['patching_monitoring_enabled'],
+    true)
     $reboot_strategy_group = pick($reboot_strategy,
-                                  $group_vars['patching_reboot_strategy'],
-                                  'only_required')
+      $group_vars['patching_reboot_strategy'],
+    'only_required')
     $reboot_message_group = pick($reboot_message,
-                                  $group_vars['patching_reboot_message'],
-                                  'NOTICE: This system is currently being updated.')
+      $group_vars['patching_reboot_message'],
+    'NOTICE: This system is currently being updated.')
     $update_provider_group = pick_default($update_provider,
-                                          $group_vars['patching_update_provider'],
-                                          undef)
+      $group_vars['patching_update_provider'],
+    undef)
     $reboot_wait_group = pick($reboot_wait,
-                              $group_vars['patching_reboot_wait'],
-                              300)
+      $group_vars['patching_reboot_wait'],
+    300)
     $pre_update_plan_group = pick($pre_update_plan,
-                                  $group_vars['patching_pre_update_plan'],
-                                  'patching::pre_update')
+      $group_vars['patching_pre_update_plan'],
+    'patching::pre_update')
     $post_update_plan_group = pick($post_update_plan,
-                                    $group_vars['patching_post_update_plan'],
-                                    'patching::post_update')
+      $group_vars['patching_post_update_plan'],
+    'patching::post_update')
     $snapshot_plan_group = pick($snapshot_plan,
-                                $group_vars['patching_snapshot_plan'],
-                                'patching::snapshot_vmware')
+      $group_vars['patching_snapshot_plan'],
+    'patching::snapshot_vmware')
     $snapshot_create_group = pick($snapshot_create,
-                                  $group_vars['patching_snapshot_create'],
-                                  true)
+      $group_vars['patching_snapshot_create'],
+    true)
     $snapshot_delete_group = pick($snapshot_delete,
-                                  $group_vars['patching_snapshot_delete'],
-                                  true)
+      $group_vars['patching_snapshot_delete'],
+    true)
     $disconnect_wait_group = pick($disconnect_wait,
-                                  $group_vars['patching_disconnect_wait'],
-                                  10)
+      $group_vars['patching_disconnect_wait'],
+    10)
 
     # do normal patching
 
     ## Update patching cache (yum update, apt-get update, etc)
     run_task('patching::cache_update', $ordered_targets,
-              _noop => $noop)
+    _noop => $noop)
 
     ## Check for updates on hosts
     $available_results = run_plan('patching::available_updates', $ordered_targets,
-                                  provider => $update_provider_group,
-                                  format   => 'pretty',
-                                  noop     => $noop)
+      provider => $update_provider_group,
+      format   => 'pretty',
+    noop     => $noop)
     $update_targets = $available_results['has_updates']
     if $update_targets.empty {
       next()
@@ -220,26 +220,26 @@ plan patching (
     ## Disable monitoring
     if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
       run_plan($monitoring_plan_group, $update_targets,
-                action => 'disable',
-                noop   => $noop)
+        action => 'disable',
+      noop   => $noop)
     }
 
     ## Create VM snapshots
-    if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled'{
+    if $snapshot_create_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
       run_plan($snapshot_plan_group, $update_targets,
-                action => 'create',
-                noop   => $noop)
+        action => 'create',
+      noop   => $noop)
     }
 
     ## Run pre-patching script.
     run_plan($pre_update_plan_group, $update_targets,
-              noop => $noop)
+    noop => $noop)
 
     ## Run package update.
     $update_result = run_task('patching::update', $update_targets,
-                              provider       => $update_provider_group,
-                              _catch_errors  => true,
-                              _noop          => $noop)
+      provider       => $update_provider_group,
+      _catch_errors  => true,
+    _noop          => $noop)
 
     ## Collect list of successful updates
     $update_ok_targets = $update_result.ok_set.targets
@@ -259,21 +259,21 @@ plan patching (
     if !$update_ok_targets.empty {
       ## Run post-patching script.
       run_plan($post_update_plan_group, $update_ok_targets,
-                noop => $noop)
+      noop => $noop)
 
       ## Check if reboot required and reboot if true.
       run_plan('patching::reboot_required', $update_ok_targets,
-                strategy        => $reboot_strategy_group,
-                message         => $reboot_message_group,
-                wait            => $reboot_wait_group,
-                disconnect_wait => $disconnect_wait_group,
-                noop            => $noop)
+        strategy        => $reboot_strategy_group,
+        message         => $reboot_message_group,
+        wait            => $reboot_wait_group,
+        disconnect_wait => $disconnect_wait_group,
+      noop            => $noop)
 
       ## Remove VM snapshots
       if $snapshot_delete_group and $snapshot_plan_group and $snapshot_plan_group != 'disabled' {
         run_plan($snapshot_plan_group, $update_ok_targets,
-                  action => 'delete',
-                  noop   => $noop)
+          action => 'delete',
+        noop   => $noop)
       }
     }
     # else {
@@ -281,10 +281,10 @@ plan patching (
     # }
 
     ## enable monitoring
-    if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled'  {
+    if $monitoring_enabled_group and $monitoring_plan_group and $monitoring_plan_group != 'disabled' {
       run_plan($monitoring_plan_group, $update_targets,
-                action => 'enable',
-                noop   => $noop)
+        action => 'enable',
+      noop   => $noop)
     }
   }
 
@@ -300,8 +300,8 @@ plan patching (
 
   ## Collect summary report
   run_plan('patching::update_history', $_targets,
-            format      => $report_format_plan,
-            report_file => $report_file_plan)
+    format      => $report_format_plan,
+  report_file => $report_file_plan)
 
   ## Display final status
   return()

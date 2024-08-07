@@ -36,7 +36,7 @@ plan patching::check_online (
   $_targets = get_targets($targets)
   ## This will check all targets to verify online by checking their Puppet agent version
   $targets_version = run_task('puppet_agent::version', $_targets,
-                              _catch_errors => true)
+  _catch_errors => true)
   # if we're filtering out offline targets, then only accept the ok_set from the task above
   if !$targets_version.error_set.empty() {
     $errors_array = Array($targets_version.error_set)

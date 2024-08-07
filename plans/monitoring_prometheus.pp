@@ -60,14 +60,14 @@ plan patching::monitoring_prometheus (
 
   # Set the silence to last for 2 hours by default
   $_monitoring_silence_duration = pick($monitoring_silence_duration,
-                                  $group_vars['patching_monitoring_silence_duration'],
-                                  2)
+    $group_vars['patching_monitoring_silence_duration'],
+  2)
   $_monitoring_silence_units = pick($monitoring_silence_units,
-                                $group_vars['patching_monitoring_silence_units'],
-                                'hours')
+    $group_vars['patching_monitoring_silence_units'],
+  'hours')
   $_monitoring_target = pick($monitoring_target,
-                        $group_vars['patching_monitoring_target'],
-                        'prometheus')
+    $group_vars['patching_monitoring_target'],
+  'prometheus')
 
   # Create array of node names
   $target_names = patching::target_names($_targets, 'name')
