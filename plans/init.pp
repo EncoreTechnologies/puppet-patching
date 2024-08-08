@@ -335,9 +335,11 @@ plan patching (
   $summary_targets = $update_failed_targets['collect_history']
 
   ## Collect summary report
-  run_plan('patching::update_history', $summary_targets,
-    format      => $report_format_plan,
-  report_file => $report_file_plan)
+  if !$summary_targets.empty {
+    run_plan('patching::update_history', $summary_targets,
+      format      => $report_format_plan,
+    report_file => $report_file_plan)
+  }
 
   if !$update_failed_targets['failed_results'].empty {
     $message = patching::process_errors($update_failed_targets)

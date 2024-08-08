@@ -70,9 +70,20 @@ plan patching::pre_update (
   $_script_linux = pick($group_vars['patching_pre_update_script_linux'], $script_linux)
   $_script_windows = pick($group_vars['patching_pre_update_script_windows'], $script_windows)
 
-  return run_plan('patching::pre_post_update', $_targets,
+  $result =  run_plan('patching::pre_post_update', $_targets,
     task           => 'patching::pre_update',
     script_linux   => $_script_linux,
     script_windows => $_script_windows,
-  noop           => $noop)
+    noop           => $noop,
+  update_phase   => 'pre')
+
+  $filtered_results = patching::filter_results($result, 'patching::pre_update')
+
+  if !$filtered_results['ok_targets'].empty {
+    $filtered_results['ok_targets'].each |$target| {
+      log::info("Pre-update script ran successfully on ${target}")
+    }
+  }
+
+  return $filtered_results
 }
