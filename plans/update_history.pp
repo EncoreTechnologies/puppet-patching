@@ -63,17 +63,19 @@ plan patching::update_history (
       return($_history)
     }
     'pretty': {
-      $row_format = '%-30s | %-8s | %-8s'
-      $header = sprintf($row_format, 'host', 'upgraded', 'installed')
-      $divider = '-----------------------------------------------------'
+      $row_format = '%-30s | %-8s | %-8s | %-8s'
+      $header = sprintf($row_format, 'host', 'upgraded', 'installed', 'failed')
+      $divider = '--------------------------------------------------------------'
       $output = $_history.map|$hist| {
         # in case history doesn't contain any updates
         $upgraded = pick($hist['upgraded'], [])
         $installed = pick($hist['installed'], [])
+        $failed = pick($hist['failed'], [])
         $num_upgraded = $upgraded.size
         $num_installed = $installed.size
-        $row_format = '%-30s | %-8s | %-8s'
-        $message = sprintf($row_format, $hist.target.name, $num_upgraded, $num_installed)
+        $num_failed = $failed.size
+        $row_format = '%-30s | %-8s | %-8s | %-8s'
+        $message = sprintf($row_format, $hist.target.name, $num_upgraded, $num_installed, $num_failed)
         $message
       }
 
