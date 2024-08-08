@@ -127,9 +127,12 @@ plan patching::reboot_required (
   ## Check for errors during reboot
   $reboot_filtered = patching::filter_results($reboot_resultset, 'reboot')
 
+  ## Merge the failed results from both the check and the reboot
+  $failed_results = $check_filtered['failed_results'] + $reboot_filtered['failed_results']
+
   ## Return both sets of failures and successes (reboot not required/successfully rebooted)
   return({
-      'ok_targets'     => $targets_reboot_not_required + $reboot_filtered['ok_targets'],
-      'failed_results' => $check_filtered['failed_results'] + $reboot_filtered['failed_results'],
+      'ok_targets'     => $targets - $failed_results.keys,
+      'failed_results' => $failed_results,
   })
 }
