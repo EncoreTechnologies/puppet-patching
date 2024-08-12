@@ -60,5 +60,11 @@ plan patching::pre_post_update (
 
   # TODO pretty print any scripts that were run
 
-  return ResultSet($results_linux + $results_windows)
+  # return ResultSet($results_linux + $results_windows)
+
+  $result_set = ResultSet($results_linux + $results_windows)
+
+  $filtered_results = patching::filter_results($result_set, $task)
+  out::message("FILTERED RESULTS FROM PRE_POST_UPDATE: ${filtered_results}")
+  return $filtered_results
 }
