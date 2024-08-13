@@ -83,17 +83,16 @@ EOF
 STATUS=0
 YUM_OUTPUT=''
 
+YUM_HISTORY_PREV_ID=$(yum history list | grep -Em 1 '^ *[0-9]' | awk '{ print $1 }')
+
 ## Yum package manager
 #
-# Because we're using '| tee' inside a $(), we can't just check $? after the command
-# as it will return the exit code of the LAST thing in the pipe,
-# instead we really want to return code of the `yum` command (first thing in the pipe).
-# For this to work, we need to exit the command in the $() with a value
-# from the $PIPESTATUS array to get access to the `yum` command's return value.
-# Now, the exit status for the $() will be whatever the exit status is for `yum` instead
-# of the exit status of `tee`.
-YUM_UPDATE=$(yum -y update $PACKAGES | tee -a "$LOG_FILE"; exit ${PIPESTATUS[0]})
+# Run the yum command and capture its output and status
+YUM_UPDATE=$(yum -y update $PACKAGES 2>&1)
 STATUS=$?
+
+# Write the captured output to LOG_FILE
+echo "$YUM_UPDATE" | tee -a "$LOG_FILE"
 
 # check if packages were updated or not
 if echo "$YUM_UPDATE" | grep -q "No packages marked for"; then
@@ -106,7 +105,26 @@ EOF
 else
   ## Collect yum history if update was performed.
   YUM_HISTORY_LAST_ID=$(yum history list | grep -Em 1 '^ *[0-9]' | awk '{ print $1 }')
-  YUM_HISTORY_FULL=$(yum history info "$YUM_HISTORY_LAST_ID" | tee -a "$LOG_FILE")
+
+  # Check if the last transaction ID is the same as the previous one
+  # IE no new transaction was created/yum update failed
+  if [ "$YUM_HISTORY_LAST_ID" -eq "$YUM_HISTORY_PREV_ID" ]; then
+    # Write JSON object to RESULT_FILE
+    tee -a "${RESULT_FILE}" <<EOF
+{
+  "upgraded": [],
+  "installed": [],
+  "failed": [
+    {
+    "message": "UPDATE FAILED - PLEASE SEE $LOG_FILE FOR DETAILS",
+    }
+  ]
+}
+EOF
+  exit 1
+  fi
+
+  YUM_HISTORY_FULL=$(yum history info "$YUM_HISTORY_LAST_ID")
 
   ## Look for failures first
   # Extract the return code
