@@ -59,6 +59,8 @@ plan patching::check_puppet (
   _catch_errors => $filter_offline_targets)
   # if we're filtering out offline targets, then only accept the ok_set from the task above
   if $filter_offline_targets {
+    out::message("Removing the following offline targets: ${$targets_version.error_set.map |$t| { $t.target.name }}")
+    log::info($targets_version.error_set.map |$t| { $t.error.message })
     $targets_filtered = $targets_version.ok_set
   }
   else {

@@ -257,12 +257,10 @@ plan patching (
     $patching_results = $tasks_plans.reduce($results_hash) |$acc, $task_plan| {
       # if no remaining targets (ie all targets have failed), break out of loop
       if $acc['remaining_targets'].empty {
-        out::message('No remaining targets to run against')
         break()
       }
       $remaining_targets = $acc['remaining_targets']
 
-      out::message("Targets to run against: ${remaining_targets}")
       if $task_plan['type'] == 'task' {
         $result = run_task($task_plan['name'], $remaining_targets, $task_plan['params'])
       } else {
