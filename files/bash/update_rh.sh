@@ -116,7 +116,7 @@ else
   "installed": [],
   "failed": [
     {
-    "message": "UPDATE FAILED - PLEASE SEE $LOG_FILE FOR DETAILS",
+    "message": "UPDATE FAILED - PLEASE SEE $LOG_FILE FOR DETAILS"
     }
   ]
 }
