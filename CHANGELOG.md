@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
     * If yum records new transaction, packages were attempted to be installed -> report number of failed packages/successful and log error
     * If there is no new transaction something else happened -> log details to LOG_FILE and report 1 failed 'package'
 * Reports update history only for targets where updates were attempted
+
 (Refactor)
 
 Changes for Windows are to follow in the next release.
