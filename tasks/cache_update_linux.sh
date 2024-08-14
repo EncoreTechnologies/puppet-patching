@@ -5,16 +5,6 @@ if [[ -n "$PT__noop" && "$PT__noop" == "true" ]]; then
   exit 0
 fi
 
-# yum() {
-#   if [ -f /etc/fail_test.txt ]; then
-#     echo "File /etc/fail_test.txt exists, simulating failure"
-#     return 1
-#   else
-#     echo "File /etc/fail_test.txt does not exist, proceeding"
-#     return 0
-#   fi
-# }
-
 # Run our OS tests, export OS_RELEASE
 source "${PT__installdir}/patching/files/bash/os_test.sh"
 
