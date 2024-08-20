@@ -68,7 +68,7 @@ plan patching::reboot_required (
   10)
 
   ## Check if reboot required.
-  $reboot_results = run_task('patching::reboot_required', $_targets)
+  $reboot_results = run_task('patching::reboot_required', $_targets, _catch_errors => true)
 
   ## Check for errors during reboot check
   $check_filtered = patching::filter_results($reboot_results, 'patching::reboot_required')

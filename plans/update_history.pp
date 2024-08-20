@@ -54,7 +54,7 @@ plan patching::update_history (
     $_history = $history
   }
   else {
-    $_history = run_task('patching::update_history', $_targets)
+    $_history = run_task('patching::update_history', $_targets, _catch_errors => true)
   }
 
   ## Format the report
