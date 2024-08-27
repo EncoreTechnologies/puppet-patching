@@ -113,7 +113,7 @@ plan patching::snapshot_vmware (
   }
 
   if !$noop {
-    return patching::snapshot_vmware($vm_names,
+    $results =  patching::snapshot_vmware($vm_names,
       $_snapshot_name,
       $vsphere_host,
       $vsphere_username,
@@ -124,5 +124,9 @@ plan patching::snapshot_vmware (
       $_snapshot_memory,
       $_snapshot_quiesce,
     $action)
+
+    $filtered_results = patching::filter_results($results, 'patching::snapshot_vmware')
+
+    return $filtered_results
   }
 }
