@@ -132,7 +132,7 @@ plan patching::reboot_required (
 
   ## Return both sets of failures and successes (reboot not required/successfully rebooted)
   return({
-      'ok_targets'     => $targets - $failed_results.keys,
+      'ok_targets'     => $_targets - $failed_results.keys,
       'failed_results' => $failed_results,
   })
 }
