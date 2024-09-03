@@ -25,6 +25,17 @@ fi
 apt-get "$APT_OPTS" -y "$APT_COMMAND" &>> "$LOG_FILE"
 STATUS=$?
 
+# Check if there are no updates
+if grep -q "0 upgraded, 0 newly installed, 0 to remove" "$LOG_FILE"; then
+  tee -a "${RESULT_FILE}" <<EOF
+{
+  "installed": [],
+  "upgraded": []
+}
+EOF
+  exit 0
+fi
+
 # Sections in the apt/history.log file are segmented by a Start-Date and End-Date
 # delimiters.
 # Look for the last "Start-Date" line and print out everything in the file after that
