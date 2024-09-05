@@ -7,9 +7,27 @@
 ## Apt package manager
 apt-get -y update &>> "$LOG_FILE"
 STATUS=$?
+
 if [[ $STATUS -ne 0 ]]; then
   echo "apt-get -y update FAILED, you probably forgot to run this as sudo or there is a network error."
   exit $STATUS
+fi
+
+# Check for errors in the apt-get update output
+if grep -qE "Err:|W:" "$LOG_FILE"; then
+  echo "apt-get -y update completed with warnings or errors. Check the log file for details."
+  tee -a "${RESULT_FILE}" <<EOF
+{
+  "installed": [],
+  "upgraded": [],
+  "failed": [
+    {
+      "message": "UPDATE FAILED - PLEASE SEE $LOG_FILE FOR DETAILS"
+    }
+  ]
+}
+EOF
+  exit 1
 fi
 
 APT_OPTS="-o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --no-install-recommends"
