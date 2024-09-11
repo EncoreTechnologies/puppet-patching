@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# convert JSON list into spaced list for Bash to be happy with
+# Convert JSON list into spaced list for Bash to be happy with
 IFS=$'\n' vm_names=($(echo "$PT_vm_names" | sed -E -e 's/(\["|"\])//g' | sed -e 's/","/'"\n"'/g'))
-echo "vm_names = $vm_names"
+echo "vm_names = ${vm_names[*]}"
 echo "snapshot_name = $PT_snapshot_name"
 echo "snapshot_description = $PT_snapshot_description"
 echo "snapshot_memory = $PT_snapshot_memory"
@@ -23,12 +23,22 @@ for vm in "${vm_names[@]}"; do
     virsh snapshot-create-as --domain "${vm}" \
           --name "${PT_snapshot_name}" \
           --description "${PT_snapshot_description}" \
-          --atomic
+          --atomic $extra_args
+    if [[ $? -ne 0 ]]; then
+      echo "ERROR: Failed to create snapshot for VM '${vm}'"
+      exit 1
+    fi
   elif [[ "${PT_action}" == "delete" ]]; then
     virsh snapshot-delete --domain "${vm}" \
           --snapshotname "${PT_snapshot_name}"
+    if [[ $? -ne 0 ]]; then
+      echo "ERROR: Failed to delete snapshot for VM '${vm}'"
+      exit 1
+    fi
   else
     echo "ERROR: action='${PT_action}' is not supported. Valid actions are: 'create', 'delete'"
     exit 1
   fi
 done
+
+echo "Snapshot operation completed successfully."

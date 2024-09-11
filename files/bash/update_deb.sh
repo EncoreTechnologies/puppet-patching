@@ -5,11 +5,35 @@
 # export LOG_FILE     - name of the file to write OS specific patching logs to
 
 ## Apt package manager
-apt-get -y update &>> "$LOG_FILE"
+UPDATE_OUTPUT=$(apt-get -y update)
 STATUS=$?
+
+# Write the current date in UTC to the log file
+echo "-----$(date -u)-----" &>> "$LOG_FILE"
+
+# Write the output to the log file
+echo "$UPDATE_OUTPUT" &>> "$LOG_FILE"
+
 if [[ $STATUS -ne 0 ]]; then
   echo "apt-get -y update FAILED, you probably forgot to run this as sudo or there is a network error."
   exit $STATUS
+fi
+
+# Check for errors in the apt-get update output
+if echo "$UPDATE_OUTPUT" | grep -q "Err:"; then
+  echo "apt-get -y update completed with errors. Check the log file for details."
+  tee -a "${RESULT_FILE}" <<EOF
+{
+  "installed": [],
+  "upgraded": [],
+  "failed": [
+    {
+      "message": "UPDATE FAILED - PLEASE SEE $LOG_FILE FOR DETAILS"
+    }
+  ]
+}
+EOF
+  exit 1
 fi
 
 APT_OPTS="-o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --no-install-recommends"
@@ -24,6 +48,17 @@ fi
 
 apt-get "$APT_OPTS" -y "$APT_COMMAND" &>> "$LOG_FILE"
 STATUS=$?
+
+# Check if there are no updates and no errors
+if grep -q "0 upgraded, 0 newly installed, 0 to remove\.?$" "$LOG_FILE"; then
+  tee -a "${RESULT_FILE}" <<EOF
+{
+  "installed": [],
+  "upgraded": []
+}
+EOF
+  exit 0
+fi
 
 # Sections in the apt/history.log file are segmented by a Start-Date and End-Date
 # delimiters.
@@ -51,6 +86,21 @@ LAST_UPGRADE=$(echo -n "$LAST_LOG" | grep '^Upgrade: ' | sed 's/Upgrade: //g')
 LAST_INSTALL_PACKAGES=$(echo -n "$LAST_INSTALL" | sed 's/), /)\n/g')
 LAST_UPGRADE_PACKAGES=$(echo -n "$LAST_UPGRADE" | sed 's/), /)\n/g')
 
+# Initialize failed packages array
+declare -A FAILED_PACKAGES
+
+# Check for failed packages
+if grep -q "dpkg: error processing package" "$LOG_FILE"; then
+  ERRORS=$(grep "dpkg: error processing package" "$LOG_FILE")
+  while read -r line; do
+    package=$(echo "$line" | awk '{print $5}')
+    # Ensure the package name is valid and not empty
+    if [[ -n "$package" && "$package" != "?" ]]; then
+      FAILED_PACKAGES["$package"]="Installation failed - PLEASE SEE $LOG_FILE FOR DETAILS"
+    fi
+  done <<< "$ERRORS"
+fi
+
 # print out all Installed packages as JSON
 tee -a "${RESULT_FILE}" <<EOF
 {
@@ -72,7 +122,7 @@ while read -r line; do
   # from the string
   version=$(echo "$line" | awk '{print $2}' | sed 's/(\|,//g')
   
-  if [ -n $comma ]; then
+  if [ -n "$comma" ]; then
     echo "$comma" | tee -a "${RESULT_FILE}"
   fi
   echo "    {" | tee -a "${RESULT_FILE}"
@@ -108,7 +158,7 @@ while read -r line; do
   # Get the new version and remove the ')' from the string
   version=$(echo "$line" | awk '{print $3}' | sed 's/)//g')
 
-  if [ -n $comma ]; then
+  if [ -n "$comma" ]; then
     echo "$comma" | tee -a "${RESULT_FILE}"
   fi
   echo "    {" | tee -a "${RESULT_FILE}"
@@ -120,7 +170,32 @@ while read -r line; do
 done <<< "$LAST_UPGRADE_PACKAGES"
 tee -a "${RESULT_FILE}" <<EOF
 
+  ],
+EOF
+
+# Add failed packages to the results file
+if [ ${#FAILED_PACKAGES[@]} -ne 0 ]; then
+  tee -a "${RESULT_FILE}" <<EOF
+  "failed": [
+EOF
+  comma=''
+  for package in "${!FAILED_PACKAGES[@]}"; do
+    if [ -n "$comma" ]; then
+      echo "$comma" | tee -a "${RESULT_FILE}"
+    fi
+    echo "    {\"$package\": \"${FAILED_PACKAGES[$package]}\"}" | tee -a "${RESULT_FILE}"
+    comma=','
+  done
+  tee -a "${RESULT_FILE}" <<EOF
   ]
+EOF
+else
+  tee -a "${RESULT_FILE}" <<EOF
+  "failed": []
+EOF
+fi
+
+tee -a "${RESULT_FILE}" <<EOF
 }
 EOF
 

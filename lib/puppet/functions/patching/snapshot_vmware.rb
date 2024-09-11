@@ -26,7 +26,7 @@ Puppet::Functions.create_function(:'patching::snapshot_vmware') do
     optional_param 'Boolean', :snapshot_memory
     optional_param 'Boolean', :snapshot_quiesce
     optional_param 'String',  :action
-    return_type 'Array'
+    return_type 'Hash'
   end
 
   def snapshot_vmware(vm_names,
@@ -40,73 +40,86 @@ Puppet::Functions.create_function(:'patching::snapshot_vmware') do
                       snapshot_memory = false,
                       snapshot_quiesce = false,
                       action = 'create')
-    # Check to make sure a valid action was chosen
-    available_actions = ['create', 'delete']
-    unless available_actions.include? action
-      raise "#{action} is an invalid action. Please choose from create or delete"
-    end
-
-    # Compose vsphere credentials
-    credentials = {
-      host: vsphere_host,
-      user: vsphere_username,
-      password: vsphere_password,
-      insecure: vsphere_insecure,
-    }
-
-    # Establish a connection to vsphere
-    vim = RbVmomi::VIM.connect credentials
-
-    # Get the vsphere Datacenter that we are interested in
-    dc = vim.serviceInstance.find_datacenter(vsphere_datacenter)
-
-    unless dc
-      raise "Could not find datacenter with name: #{vsphere_datacenter}"
-    end
-
-    # Get all the VMs in the datacenter
-    view_hash = {
-      container: dc.vmFolder,
-      type:      ['VirtualMachine'],
-      recursive: true,
-    }
-    all_vms = vim.serviceContent.viewManager.CreateContainerView(view_hash).view
-
-    # Create a snapshot for each VM
-    snapshot_error = []
-    snapshot_tasks = []
-    vm_names.each do |vm_name|
-      snapshot_error_hash = { 'name' => vm_name, 'status' => false }
-      begin
-        task_return = nil
-        if action == 'create'
-          task_return = create_snapshot_on_vm(all_vms, vm_name, snapshot_name, snapshot_description, snapshot_memory, snapshot_quiesce)
-        elsif action == 'delete'
-          task_return = delete_snapshot_from_vm(all_vms, vm_name, snapshot_name)
-        end
-
-        if task_return
-          snapshot_tasks.push(task_return)
-        else
-          snapshot_error_hash['details'] = 'Could not find vm'
-        end
-      rescue => err
-        snapshot_error_hash['details'] = err
+    begin
+      # Check to make sure a valid action was chosen
+      available_actions = ['create', 'delete']
+      unless available_actions.include? action
+        raise "#{action} is an invalid action. Please choose from create or delete"
       end
 
-      if snapshot_error_hash.key?('details')
-        snapshot_error.push(snapshot_error_hash)
+      # Compose vsphere credentials
+      credentials = {
+        host: vsphere_host,
+        user: vsphere_username,
+        password: vsphere_password,
+        insecure: vsphere_insecure,
+      }
+
+      # Establish a connection to vsphere
+      vim = RbVmomi::VIM.connect credentials
+
+      # Get the vsphere Datacenter that we are interested in
+      dc = vim.serviceInstance.find_datacenter(vsphere_datacenter)
+
+      unless dc
+        raise "Could not find datacenter with name: #{vsphere_datacenter}"
       end
+
+      # Get all the VMs in the datacenter
+      view_hash = {
+        container: dc.vmFolder,
+        type:      ['VirtualMachine'],
+        recursive: true,
+      }
+      all_vms = vim.serviceContent.viewManager.CreateContainerView(view_hash).view
+
+      # Create a snapshot for each VM
+      snapshot_error = []
+      snapshot_tasks = []
+      successful_vms = []
+      vm_names.each do |vm_name|
+        snapshot_error_hash = { vm_name => '' }
+        begin
+          task_return = nil
+          if action == 'create'
+            task_return = create_snapshot_on_vm(all_vms, vm_name, snapshot_name, snapshot_description, snapshot_memory, snapshot_quiesce)
+          elsif action == 'delete'
+            task_return = delete_snapshot_from_vm(all_vms, vm_name, snapshot_name)
+          end
+
+          if task_return
+            snapshot_tasks.push(task_return)
+            successful_vms.push(vm_name)
+          else
+            snapshot_error_hash[vm_name] = 'Could not find vm'
+          end
+        rescue RbVmomi::Fault => err
+          snapshot_error_hash[vm_name] = "RbVmomi::Fault: #{err.message}"
+        rescue => err
+          snapshot_error_hash[vm_name] = "General Error: #{err.message}"
+        end
+
+        if snapshot_error_hash[vm_name] != ''
+          snapshot_error.push(snapshot_error_hash)
+        end
+      end
+
+      # Wait for all snapshot tasks to finish
+      completion_errors = wait_for_completion(snapshot_tasks)
+
+      # Combine any errors that are present
+      vmware_error_return = combine_errors(snapshot_error + completion_errors)
+
+      # Return the results
+      {
+        'ok_targets' => successful_vms,
+        'failed_results' => vmware_error_return
+      }
+    rescue RbVmomi::Fault => err
+      raise "RbVmomi::Fault: #{err.message}"
+    rescue => err
+      raise "General Error: #{err.message}"
     end
-
-    # Wait for all snap shot tasks to finish
-    completion_errors = wait_for_completion(snapshot_tasks)
-
-    # Combine any errors that are present
-    vmware_error_return = combine_errors(snapshot_error + completion_errors)
-
-    # Return all errors
-    vmware_error_return
   end
 
   def combine_errors(error_list)
@@ -114,16 +127,13 @@ Puppet::Functions.create_function(:'patching::snapshot_vmware') do
     # combine the details information
     error_return = []
     error_list.each do |error|
-      # Check if error_return already has the vm in it.
-      error_item = error_return.select { |h| h['name'] == error['name'] }
-      # If it does combine the details
-      if !error_item.empty?
-        error_item = error_item[0]
-        error_item['details'] = "#{error_item['details']}, #{error['details']}"
-        error_return.map! { |e| (e['name'] == error['name']) ? error_item : e }
-      else
-        # Otherwise add to the return
-        error_return.push(error)
+      error.each do |vm_name, details|
+        existing_error = error_return.find { |e| e.key?(vm_name) }
+        if existing_error
+          existing_error[vm_name] += ", #{details}"
+        else
+          error_return.push({ vm_name => details })
+        end
       end
     end
     error_return
@@ -213,11 +223,14 @@ Puppet::Functions.create_function(:'patching::snapshot_vmware') do
 
       begin
         snapshot_task.wait_for_completion
+      rescue RbVmomi::Fault => err
+        completion_errors_hash = {
+          snapshot_task.info.entity.name => "RbVmomi::Fault: #{err.message}"
+        }
+        completion_errors.push(completion_errors_hash)
       rescue => err
         completion_errors_hash = {
-          'name' => snapshot_task.info.entity.name,
-          'status' => false,
-          'details' => err,
+          snapshot_task.info.entity.name => "General Error: #{err.message}"
         }
         completion_errors.push(completion_errors_hash)
       end

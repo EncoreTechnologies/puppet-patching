@@ -1,7 +1,7 @@
 #!/bin/bash
 
-## Check for available updates (must have then in our cache already)
-PKGS=$(apt upgrade --simulate 2>/dev/null | awk '$1 == "Inst" {print $0}' | sort)
+## Check for available updates (must have them in our cache already)
+PKGS=$(apt list --upgradable 2>/dev/null | awk 'NR>1 {print $0}' | sort)
 cat <<EOF
 {
   "updates": [
@@ -12,12 +12,10 @@ while read -r line; do
   if [ -z "$line" ]; then
     continue
   fi
-  name=$(echo "$line" | awk '{print $2}')
-  # pull out the stuff in between the ()
-  other_data=$(echo "$line" | awk -F '[()]' '{print $2}')
-  version=$(echo "$other_data" | awk '{print $1}')
-  repo=$(echo "$other_data" | awk '{print $2}' | sed 's/,//g')
-  if [ -n $comma ]; then
+  name=$(echo "$line" | awk -F/ '{print $1}')
+  version=$(echo "$line" | awk '{print $2}')
+  repo=$(echo "$line" | awk '{print $3}')
+  if [ -n "$comma" ]; then
     echo "$comma"
   fi
   echo "    {"

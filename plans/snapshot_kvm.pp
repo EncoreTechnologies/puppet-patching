@@ -94,12 +94,17 @@ plan patching::snapshot_kvm (
   }
 
   if !$noop {
-    return(run_task('patching::snapshot_kvm', $_hypervisor_targets,
+    $results = (run_task('patching::snapshot_kvm', $_hypervisor_targets,
         vm_names => $vm_names,
         snapshot_name => $_snapshot_name,
         snapshot_description => $_snapshot_description,
         snapshot_memory => $_snapshot_memory,
         snapshot_quiesce => $_snapshot_quiesce,
-    action => $action))
+        action => $action,
+    _catch_errors => true))
+
+    $filtered_results = patching::filter_results($results, 'patching::snapshot_kvm')
+
+    return $filtered_results
   }
 }
