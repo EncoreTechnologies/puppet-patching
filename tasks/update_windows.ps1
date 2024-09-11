@@ -36,6 +36,7 @@ function Update-Windows(
     Import-Module "$_installdir\patching\files\powershell\TaskUtils.ps1"
 
     $exitStatus = 0
+    $package_failures = @()
     try {
       Log-Timestamp -Path $log_file -Value "========================================="
       Log-Timestamp -Path $log_file -Value "= Starting Update-Windows in scheduled task"
@@ -85,10 +86,10 @@ function Update-Windows(
           $update.AcceptEula() | Out-Null
 
           if (!$update.IsDownloaded) {
-            $updatesToDownload.Add($update) | Out-Null # need to use .Add() here because it's a special type
+            $updatesToDownload.Add($update) | Out-Null
           }
 
-          $updatesToInstall.Add($update) | Out-Null # need to use .Add() here because it's a special type
+          $updatesToInstall.Add($update) | Out-Null
 
           $kbIds = @()
           foreach ($kb in $update.KBArticleIDs) {
@@ -139,7 +140,7 @@ function Update-Windows(
           # or even an array of results... we have to ask the result object for indexes
           # to determine the results of each patch based on the index in our input array... sorry
           for ($i = 0; $i -lt $updatesToInstall.Count; ++$i) {
-            $update = $updatesToInstall.Item($i)  # need to use .Item() here because it's a special type
+            $update = $updatesToInstall.Item($i) # need to use .Item() here because it's a special type
             $patchingResult = $serverPatchingResultList[$i]
             $updateInstallationResult = $installationResult.GetUpdateResult($i)
             $patchingResult['result_code'] = $updateInstallationResult.ResultCode
@@ -154,13 +155,23 @@ function Update-Windows(
               2 { $patchingResult["result"] = "succeeded"; break }
               3 { $patchingResult["result"] = "succeeded_with_errors"; break }
               4 {
-                $patchingResult["result"] = "_failed"
+                $patchingResult["result"] = "failed"
                 $exitStatus = 2
+                $package_failures += @{
+                  'name' = $update.Title;
+                  'error' = "Installation failed";
+                  'provider' = 'windows'
+                }
                 break
               }
               5 {
                 $patchingResult["result"] = "aborted"
-                $exitStatus = 2;
+                $exitStatus = 2
+                $package_failures += @{
+                  'name' = $update.Title;
+                  'error' = "Installation aborted";
+                  'provider' = 'windows'
+                }
                 break
               }
               default { $patchingResult["result"] = "unknown"; break }
@@ -178,9 +189,10 @@ function Update-Windows(
       # to do this structured data passing we serialize the data to JSON and then parse it below
       ConvertTo-Json -Depth 100 @{'upgraded' = @($patchingResultList);
                                   'installed' = @();
-                                  'exit_code' = 0;
+                                  'exit_code' = $exitStatus;
+                                  'failures' = $package_failures;
                                  }
-      exit 0
+      exit $exitStatus
     }
     Catch {
       $exception_str = $_ | Out-String
@@ -188,6 +200,7 @@ function Update-Windows(
       Log-Timestamp -Path $log_file -Value $exception_str
       ConvertTo-Json -Depth 100 @{'exception' = $exception_str;
                                   'exit_code' = 99;
+                                  'failures' = $package_failures;
                                  }
       exit 99
     }
@@ -281,51 +294,104 @@ function Update-Chocolatey(
   Log-Timestamp -Path $log_file -Value "Finished: choco ugprade ...  exit_code = $exit_code"
   Log-Timestamp -Path $log_file -Value ($output -join "`r`n")
   if ($exit_code -eq 0) {
-    # TODO handle unfound packages more gracefully
+      # TODO handle unfound packages more gracefully
+  
+      # output is in the format:
+      # package name|current version|available version|pinned?
+      $package_versions = @{}
+      $package_success = @()
+      for ($i=0; $i -lt $output.Count; $i++) {
+          $line = $output[$i]
+          if ($line -match "(.*?)\|(.*?)\|(.*?)\|(.*)") {
+              $name = $Matches.1
+              $version_old = $Matches.2
+              $version_new = $Matches.3
+              $pinned = $Matches.4
+  
+              $package_versions[$name] = @{
+                  'name' = $name
+                  'version' = $version_new
+                  'version_old' = $version_old
+                  'pinned' = $pinned
+                  'provider' = 'chocolatey'
+              }
+          }
+          if ($line -match " The upgrade of (.*) was successful\.") {
+              $name = $Matches.1
+              if ($package_versions.ContainsKey($name)) {
+                  $package_success += $package_versions[$name]
+              }
+          }
+      }
+  
+      Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
+      Log-Timestamp -Path $log_file -Value "========================================="
+      return @{
+          'result' = @{
+              'upgraded' = @($package_success)
+              'installed' = @()
+          }
+          'exit_code' = $exit_code
+      }
+  } else {
+      # Chocolatey output is in the following format:
+      # Upgrading the following packages:
+      # all
+      # By upgrading you accept licenses for the packages.
+      # alert_logic_agent|2.19.0.0|2.19.0.0|false
+      # chocolatey|0.10.15|0.10.15|false
+      # fluent-package|5.1.0|5.1.0|false
+      # prometheus_windows_exporter|0.15.0|0.15.0|false
+      # puppet-agent|7.29.1|7.29.1|false
+      # sentinelone|24.1.2.188|24.1.2.188|false
+      # td-agent|4.0.1|4.0.2|false
 
-    # output is in the format:
-    # package name|current version|available version|pinned?
-    $package_versions = @{}
-    $package_success = @()
-    for ($i=0; $i -lt $output.Count; $i++) {
-      $line = $output[$i]
-      if ($line -match "(.*?)\|(.*?)\|(.*?)\|(.*)") {
-        $name = $Matches.1
-        $version_old = $Matches.2
-        $version_new = $Matches.3
-        $pinned = $Matches.4
+      # td-agent v4.0.2
+      # td-agent package files upgrade completed. Performing other installation steps.
+      # Attempt to use original download file name failed for 'C:\ProgramData\chocolatey\lib\td-agent\tools\tools\td-agent-4.0.1-x64.msi'.
+      # Copying td-agent
+      #   from 'C:\ProgramData\chocolatey\lib\td-agent\tools\tools\td-agent-4.0.1-x64.msi'
+      # Installing td-agent...
+      # WARNING: Generic MSI Error. This is a local environment error, not an issue with a package or the MSI itself - it could mean a pending reboot is necessary prior to install or something else (like the same version is already installed). Please see MSI log if available. If not, try again adding '--install-arguments="'/l*v c:\td-agent_msi_install.log'"'. Then search the MSI Log for "Return Value 3" and look above that for the error.
+      # ERROR: Running ["C:\Windows\System32\msiexec.exe" /i "C:\Users\alex.chrystal\AppData\Local\Temp\2\chocolatey\td-agent\4.0.2\td-agentInstall.MSI" /qn /norestart /l*v "C:\Users\alex.chrystal\AppData\Local\Temp\2\chocolatey\td-agent.4.0.2.MsiInstall.log" ] was not successful. Exit code was '1603'. Exit code indicates the following: Generic MSI Error. This is a local environment error, not an issue with a package or the MSI itself - it could mean a pending reboot is necessary prior to install or something else (like the same version is already installed). Please see MSI log if available. If not, try again adding '--install-arguments="'/l*v c:\td-agent_msi_install.log'"'. Then search the MSI Log for "Return Value 3" and look above that for the error..
+      # The upgrade of td-agent was NOT successful.
+      # Error while running 'C:\ProgramData\chocolatey\lib\td-agent\tools\tools\chocolateyinstall.ps1'.
+      # See log for details.
+      # telegraf|1.18.0|1.18.0|false
 
-        $package_versions[$name] =  @{
-          'name' = $name;
-          'version' = $version_new;
-          'version_old' = $version_old;
-          'pinned' = $pinned;
-          'provider' = 'chocolatey';
+      # Chocolatey upgraded 0/8 packages. 1 packages failed.
+      # See the log for details (C:\ProgramData\chocolatey\logs\chocolatey.log).
+
+      # Failures
+      # - td-agent (exited 1603) - Error while running 'C:\ProgramData\chocolatey\lib\td-agent\tools\tools\chocolateyinstall.ps1'.
+      # See log for details.
+      $package_failures = @()
+      $current_error_message = $null
+      for ($i=0; $i -lt $output.Count; $i++) {
+        $line = $output[$i]
+        # Check for error message line
+        if ($line -match "ERROR:\s*(.*)") {
+          $current_error_message = $Matches[1]
+        }
+        # Check for package failure line
+        if ($line -match "The upgrade of (.*) was NOT successful\.\s*") {
+          $current_package = $Matches[1]
+          if ($current_error_message -ne $null) {
+            $package_failures += @{
+              'name' = $current_package;
+              'error' = $current_error_message;
+              'provider' = 'chocolatey'
+            }
+            $current_error_message = $null  # Reset current error message after associating it with the package
+          }
         }
       }
-      if ($line -match " The upgrade of (.*) was successful\.") {
-        $name = $Matches.1
-        if ($package_versions.ContainsKey($name)) {
-          $package_success += $package_versions[$name]
-        }
+      Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
+      Log-Timestamp -Path $log_file -Value "========================================="
+      return @{
+        'result' = $package_failures
+        'exit_code' = $exit_code
       }
-    }
-
-    Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
-    Log-Timestamp -Path $log_file -Value "========================================="
-    return @{
-      'result' = @{'upgraded' = @($package_success);
-                   'installed' = @()};
-      'exit_code' = $exit_code;
-    }
-  }
-  else {
-    Log-Timestamp -Path $log_file -Value "= Finishing Update-Chocolatey"
-    Log-Timestamp -Path $log_file -Value "========================================="
-    return @{
-      'result' = $output;
-      'exit_code' = $exit_code;
-    }
   }
 }
 
@@ -370,7 +436,7 @@ try {
       $result['installed'] += @($result_windows['installed'])
     }
     else {
-      $result['error_windows'] = $result_windows
+      $result['failed'] = $result_windows
       $exit_code = $exit_code_windows
     }
     Log-Timestamp -Path $log_file -Value "exit_code_windows = $exit_code_windows"
@@ -384,7 +450,7 @@ try {
       $result['installed'] += @($result_chocolatey['installed'])
     }
     else {
-      $result['error_chocolatey'] = $result_chocolatey
+      $result['failed'] = $result_chocolatey
       $exit_code = $exit_code_chocolatey
     }
     Log-Timestamp -Path $log_file -Value "exit_code_chocolatey = $exit_code_chocolatey"

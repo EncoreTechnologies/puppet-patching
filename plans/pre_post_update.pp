@@ -18,6 +18,9 @@
 # @param [Boolean] noop
 #   Flag to enable noop mode for the underlying plans and tasks.
 #
+# @param [String[1]] update_phase
+#   Indicates whether the task is a pre-update or post-update task.
+#
 # @return [ResultSet] Returns the ResultSet from the execution of `task`.
 plan patching::pre_post_update (
   TargetSpec $targets,
@@ -25,9 +28,13 @@ plan patching::pre_post_update (
   Optional[String[1]] $script_linux   = undef,
   Optional[String[1]] $script_windows = undef,
   Boolean             $noop           = false,
+  Enum['pre', 'post'] $update_phase,
 ) {
-  out::message("pre_post_update - noop = ${noop}")
+  out::message("pre_post_update - noop = ${noop}, update_phase = ${update_phase}, task = ${task}")
   $_targets = run_plan('patching::get_targets', $targets)
+
+  # Log the update phase and task name
+  log::info("Running ${update_phase} update script: ${task}")
 
   # split into linux vs Windows
   $targets_linux = $_targets.filter |$t| { facts($t)['os']['family'] != 'windows' }
@@ -36,16 +43,18 @@ plan patching::pre_post_update (
   # run pre-patch scripts
   if !$targets_linux.empty() {
     $results_linux = run_task($task, $targets_linux,
-      script => $script_linux,
-    _noop  => $noop).results
+      script      => $script_linux,
+      _noop       => $noop,
+    _catch_errors => true).results
   }
   else {
     $results_linux = []
   }
   if !$targets_windows.empty() {
     $results_windows = run_task($task, $targets_windows,
-      script => $script_windows,
-    _noop  => $noop).results
+      script      => $script_windows,
+      _noop       => $noop,
+    _catch_errors => true).results
   }
   else {
     $results_windows = []
@@ -53,5 +62,11 @@ plan patching::pre_post_update (
 
   # TODO pretty print any scripts that were run
 
-  return ResultSet($results_linux + $results_windows)
+  # return ResultSet($results_linux + $results_windows)
+
+  $result_set = ResultSet($results_linux + $results_windows)
+
+  $filtered_results = patching::filter_results($result_set, $task)
+  out::message("FILTERED RESULTS FROM PRE_POST_UPDATE: ${filtered_results}")
+  return $filtered_results
 }

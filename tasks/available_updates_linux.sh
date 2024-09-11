@@ -1,5 +1,13 @@
 #!/bin/bash
 
+export RESULT_FILE="$PT_result_file"
+if [[ -z "$RESULT_FILE" ]]; then
+  export RESULT_FILE="/var/log/patching.json"
+fi
+if [[ ! -e "$RESULT_FILE" ]]; then
+  touch "$RESULT_FILE"
+fi
+
 # Run our OS tests, export OS_RELEASE
 source "${PT__installdir}/patching/files/bash/os_test.sh"
 

@@ -44,6 +44,26 @@ function AvailableUpdates-Windows() {
   }
 }
 
+# function AvailableUpdates-Windows() {
+#   $exit_code = 1  # Set a non-zero exit code to simulate failure
+#   $error_message = "Simulated failure when checking for available updates on Windows."
+
+#   return @{
+#     'result' = $error_message;
+#     'exit_code' = $exit_code;
+#   }
+# }
+
+# function AvailableUpdates-Chocolatey() {
+#   $exit_code = 1  # Set a non-zero exit code to simulate failure
+#   $error_message = "Simulated failure when checking for available updates on Windows."
+
+#   return @{
+#     'result' = $error_message;
+#     'exit_code' = $exit_code;
+#   }
+# }
+
 function AvailableUpdates-Chocolatey([bool]$choco_required) {
   $exit_code = 0
   $updateList = @()

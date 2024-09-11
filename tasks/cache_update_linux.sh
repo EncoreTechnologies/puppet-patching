@@ -5,7 +5,6 @@ if [[ -n "$PT__noop" && "$PT__noop" == "true" ]]; then
   exit 0
 fi
 
-
 # Run our OS tests, export OS_RELEASE
 source "${PT__installdir}/patching/files/bash/os_test.sh"
 

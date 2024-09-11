@@ -70,9 +70,20 @@ plan patching::post_update (
   $_script_linux = pick($group_vars['patching_post_update_script_linux'], $script_linux)
   $_script_windows = pick($group_vars['patching_post_update_script_windows'], $script_windows)
 
-  return run_plan('patching::pre_post_update', $_targets,
+  $result =  run_plan('patching::pre_post_update', $_targets,
     task           => 'patching::post_update',
     script_linux   => $_script_linux,
     script_windows => $_script_windows,
-  noop           => $noop)
+    noop           => $noop,
+  update_phase   => 'post',)
+
+  $filtered_results = patching::filter_results($result, 'patching::post_update')
+
+  if !$filtered_results['ok_targets'].empty {
+    $filtered_results['ok_targets'].each |$target| {
+      log::info("Post-update script ran successfully on ${target}")
+    }
+  }
+  out::message("FILTERED RESULTS FROM POST_UPDATE: ${filtered_results}")
+  return $filtered_results
 }
