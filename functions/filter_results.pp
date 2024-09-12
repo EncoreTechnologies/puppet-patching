@@ -1,29 +1,47 @@
-# modules/your_module/plans/process_results.pp
 # Function to abstract the processing/error handling of patching results
 function patching::filter_results(
-  Variant[ResultSet, Hash] $results,
+  Variant[ResultSet, Hash, Error] $results,
   String $task_plan_name
 ) >> Hash {
-  if $results =~ Hash {
+  if $results =~ Error {
+    $_results = $results.details['result_set']
+  } else {
+    $_results = $results
+  }
+
+  if $_results =~ Hash {
+    if $_results['failed_results'].empty {
+      $failed_results = {}
+    } else {
+      $failed_results = $_results['failed_results'].reduce({}) |$memo, $entry| {
+        $name = $entry[0]
+        $message = $entry[1]
+        $details = {
+          'plan_or_task_name' => $task_plan_name,
+          'message' => $message,
+        }
+        $memo + { $name => $details }
+      }
+    }
     if $task_plan_name == 'patching::available_updates' {
       $result = {
-        'ok_targets' => $results['has_updates'],
-        'failed_results' => $results['failed_results'],
-        'no_updates' => $results['no_updates'],
+        'ok_targets' => $_results['has_updates'],
+        'failed_results' => $failed_results,
+        'no_updates' => $_results['no_updates'],
       }
       return $result
     } else {
       $result = {
-        'ok_targets' => $results['ok_targets'],
-        'failed_results' => $results['failed_results'],
+        'ok_targets' => $_results['ok_targets'],
+        'failed_results' => $failed_results,
       }
       return $result
     }
   }
 
-  $failed_results = if !$results.error_set.empty {
+  $failed_results = if !$_results.error_set.empty {
     # Return the result of iterating over the error_set to populate the failed_results hash
-    $results.error_set.reduce({}) |$memo, $error| {
+    $_results.error_set.reduce({}) |$memo, $error| {
       $name = $error.target.name
       if $error.value['_output'] {
         $message = $error.value['_output']
@@ -41,14 +59,14 @@ function patching::filter_results(
   }
 
   # Log the failed targets if any
-  if !$results.error_set.empty {
+  if !$_results.error_set.empty {
     alert("The following hosts failed during ${task_plan_name}:")
     alert($failed_results.keys.join("\n"))
     log::info($failed_results)
   }
 
   # Extract the list of targets that succeeded
-  $ok_targets = $results.ok_set.targets.map |$target| { $target.name }
+  $ok_targets = $_results.ok_set.targets.map |$target| { $target.name }
 
   $result_set = {
     'ok_targets' => $ok_targets,
