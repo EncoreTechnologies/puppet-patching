@@ -100,6 +100,7 @@ plan patching::monitoring_prometheus (
       silence_units     => $_monitoring_silence_units,
       ssl_verify        => $ssl_verify,
       ssl_cert          => $ssl_cert,
+      _catch_errors     => true,
     )
     # Target is monitoring host so extract targets from the result of the task
     return $result[0].value
