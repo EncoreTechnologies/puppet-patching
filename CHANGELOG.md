@@ -6,18 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ## Release 1.8.1 (2024-08-14)
 
-### Changes for Linux RedHat only
 * Adds error handling to patching. On error:
   * If error occurs after monitoring is disabled, monitoring is re-enabled
   * If error occurs before updates are attempted, target is removed from further steps
-  * If error occurs while updates are being applied:
+  * On Linux (rhel/debian) If error occurs while updates are being applied:
     * If yum records new transaction, packages were attempted to be installed -> report number of failed packages/successful and log error
     * If there is no new transaction something else happened -> log details to LOG_FILE and report 1 failed 'package'
 * Reports update history only for targets where updates were attempted
 
 (Refactor)
-
-Changes for Windows are to follow in the next release.
 
   Contributed by Alex Chrystal (@asktheaxis)
 
