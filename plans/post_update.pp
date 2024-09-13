@@ -84,6 +84,6 @@ plan patching::post_update (
       log::info("Post-update script ran successfully on ${target}")
     }
   }
-  out::message("FILTERED RESULTS FROM POST_UPDATE: ${filtered_results}")
+
   return $filtered_results
 }

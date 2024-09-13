@@ -125,14 +125,13 @@ Puppet::Functions.create_function(:'patching::snapshot_vmware') do
   def combine_errors(error_list)
     # Combine error lists. If there are multiple errors we will
     # combine the details information
-    error_return = []
+    error_return = {}
     error_list.each do |error|
       error.each do |vm_name, details|
-        existing_error = error_return.find { |e| e.key?(vm_name) }
-        if existing_error
-          existing_error[vm_name] += ", #{details}"
+        if error_return.key?(vm_name)
+          error_return[vm_name] += ", #{details}"
         else
-          error_return.push({ vm_name => details })
+          error_return[vm_name] = details
         end
       end
     end

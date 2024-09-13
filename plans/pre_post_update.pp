@@ -67,6 +67,6 @@ plan patching::pre_post_update (
   $result_set = ResultSet($results_linux + $results_windows)
 
   $filtered_results = patching::filter_results($result_set, $task)
-  out::message("FILTERED RESULTS FROM PRE_POST_UPDATE: ${filtered_results}")
+
   return $filtered_results
 }
