@@ -112,6 +112,7 @@ function patching::build_workflow(
     $monitoring_reenable_group = true
   } else {
     $monitoring_plan = []
+    $monitoring_reenable_group = false
   }
 
   # Determine if snapshots should be created
